@@ -1,0 +1,22 @@
+# Normalize line endings across the cross-platform monorepo.
+* text=auto eol=lf
+
+# Shell scripts and Linux-deployed assets MUST stay LF.
+*.sh text eol=lf
+infra/** text eol=lf
+
+# Windows-only files keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaries — never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
