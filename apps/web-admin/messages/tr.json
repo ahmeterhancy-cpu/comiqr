@@ -1,0 +1,54 @@
+{
+  "app": {
+    "tagline": "Restoranınız için akıllı QR menü, sipariş ve operasyon platformu"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "menu": "Menü",
+    "recipes": "Reçete & Besin",
+    "tables": "Masalar & QR",
+    "orders": "Siparişler",
+    "settings": "Ayarlar",
+    "logout": "Çıkış"
+  },
+  "auth": {
+    "registerTitle": "İşletmenizi oluşturun",
+    "registerSubtitle": "Dakikalar içinde canlı QR menünüz hazır.",
+    "loginTitle": "Panele giriş",
+    "loginSubtitle": "İşletme hesabınızla devam edin.",
+    "businessName": "İşletme adı",
+    "ownerName": "Ad Soyad",
+    "email": "E-posta",
+    "phone": "Telefon (opsiyonel)",
+    "password": "Parola",
+    "passwordConfirm": "Parola (tekrar)",
+    "subdomain": "Alt alan adı",
+    "createAccount": "Hesabı oluştur",
+    "signIn": "Giriş yap",
+    "haveAccount": "Zaten hesabın var mı?",
+    "noAccount": "Hesabın yok mu?",
+    "goLogin": "Giriş yap",
+    "goRegister": "Kayıt ol",
+    "creating": "Oluşturuluyor…",
+    "signingIn": "Giriş yapılıyor…",
+    "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+  },
+  "dashboard": {
+    "welcome": "Hoş geldin, {name}",
+    "emptyTitle": "Paneliniz hazır",
+    "emptyBody": "Menünüzü oluşturarak başlayın. QR kodunuz otomatik üretilecek.",
+    "planLabel": "Plan",
+    "trialEnds": "Deneme bitişi",
+    "statusLabel": "Durum",
+    "subdomainLabel": "Alt alan adı",
+    "nextSteps": "Sonraki adımlar",
+    "stepMenu": "İlk kategorinizi ve ürününüzü ekleyin",
+    "stepRecipe": "Ürünlere reçete girip kalori/alerjen otomatik hesaplansın",
+    "stepQr": "Masalarınızı tanımlayıp QR basın",
+    "comingSoon": "Yakında"
+  },
+  "common": {
+    "loading": "Yükleniyor…",
+    "retry": "Tekrar dene"
+  }
+}

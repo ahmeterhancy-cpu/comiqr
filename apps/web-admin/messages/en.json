@@ -1,0 +1,54 @@
+{
+  "app": {
+    "tagline": "Smart QR menu, ordering and operations platform for your restaurant"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "menu": "Menu",
+    "recipes": "Recipes & Nutrition",
+    "tables": "Tables & QR",
+    "orders": "Orders",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
+  "auth": {
+    "registerTitle": "Create your business",
+    "registerSubtitle": "Your live QR menu is ready in minutes.",
+    "loginTitle": "Sign in to the panel",
+    "loginSubtitle": "Continue with your business account.",
+    "businessName": "Business name",
+    "ownerName": "Full name",
+    "email": "Email",
+    "phone": "Phone (optional)",
+    "password": "Password",
+    "passwordConfirm": "Confirm password",
+    "subdomain": "Subdomain",
+    "createAccount": "Create account",
+    "signIn": "Sign in",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "goLogin": "Sign in",
+    "goRegister": "Register",
+    "creating": "Creating…",
+    "signingIn": "Signing in…",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "emptyTitle": "Your panel is ready",
+    "emptyBody": "Start by building your menu. Your QR code is generated automatically.",
+    "planLabel": "Plan",
+    "trialEnds": "Trial ends",
+    "statusLabel": "Status",
+    "subdomainLabel": "Subdomain",
+    "nextSteps": "Next steps",
+    "stepMenu": "Add your first category and product",
+    "stepRecipe": "Add recipes so calories/allergens compute automatically",
+    "stepQr": "Define your tables and print QR codes",
+    "comingSoon": "Coming soon"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Retry"
+  }
+}
