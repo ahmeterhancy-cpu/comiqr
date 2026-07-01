@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Branch;
 use App\Models\Tenant;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -14,7 +15,9 @@ class BranchFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            // Honour the active tenant so factories cooperate with the global
+            // scope; only spin up a new tenant when there is no context.
+            'tenant_id' => app(TenantManager::class)->id() ?? Tenant::factory(),
             'name' => fake()->company().' '.fake()->city(),
             'address' => fake()->address(),
             'phone' => fake()->e164PhoneNumber(),

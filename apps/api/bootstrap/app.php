@@ -14,8 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Apply the `api` rate limiter to every API route (docs/04 §4.9).
+        // Reset tenant context first (no cross-request leak), then rate-limit
+        // every API route (docs/04 §4.2, §4.9).
         $middleware->api(prepend: [
+            \App\Http\Middleware\ResetTenantContext::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
         ]);
 

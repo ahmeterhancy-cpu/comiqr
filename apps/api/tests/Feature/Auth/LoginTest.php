@@ -58,6 +58,11 @@ it('scopes each owner to only their own tenant', function () {
     getJson('/v1/tenant', ['Authorization' => "Bearer {$tokenA}"])
         ->assertOk()->assertJsonPath('data.id', $ownerA->tenant_id);
 
+    // The auth guard caches the resolved user across sub-requests within a single
+    // test (a harness artifact — in production each request is its own process).
+    // Forget guards so the second Bearer token re-resolves as owner B.
+    app('auth')->forgetGuards();
+
     getJson('/v1/tenant', ['Authorization' => "Bearer {$tokenB}"])
         ->assertOk()->assertJsonPath('data.id', $ownerB->tenant_id);
 });

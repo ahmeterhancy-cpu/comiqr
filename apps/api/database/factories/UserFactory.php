@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -22,7 +23,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => app(TenantManager::class)->id() ?? Tenant::factory(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->e164PhoneNumber(),

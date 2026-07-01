@@ -51,11 +51,13 @@ it('auto-fills tenant_id from the active tenant on create', function () {
 });
 
 it('refuses to create a tenant-owned row with no active tenant', function () {
-    Tenant::factory()->create();
     $this->tenants->forget();
 
-    expect(fn () => Branch::factory()->create())
-        ->toThrow(RuntimeException::class);
+    // Raw model (no factory tenant default) with no active tenant must throw,
+    // so tenant rows can never be written unscoped by accident.
+    $branch = new Branch(['name' => 'Orphan', 'timezone' => 'Asia/Nicosia']);
+
+    expect(fn () => $branch->save())->toThrow(RuntimeException::class);
 });
 
 it('can bypass the scope explicitly with withoutTenancy()', function () {
