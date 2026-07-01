@@ -1,0 +1,62 @@
+# ComiQR — Nginx reverse proxy (Hetzner). Cloudflare terminates SSL in front;
+# Cloudflare for SaaS handles per-tenant custom hostnames / white-label.
+# Wildcard *.comiqr.com → customer PWA (tenant resolved by subdomain).
+
+# --- API (Laravel via PHP-FPM) ---
+server {
+    listen 80;
+    server_name api.comiqr.com;
+    root /var/www/comiqr/apps/api/public;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+    }
+
+    client_max_body_size 25M; # product media uploads
+}
+
+# --- Reverb (WebSocket) ---
+server {
+    listen 80;
+    server_name ws.comiqr.com;
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 3600s;
+    }
+}
+
+# --- Admin panel (Next, PM2 :3001) ---
+server {
+    listen 80;
+    server_name admin.comiqr.com;
+    location / { proxy_pass http://127.0.0.1:3001; include /etc/nginx/proxy_params; }
+}
+
+# --- KDS (Next, PM2 :3002) ---
+server {
+    listen 80;
+    server_name kds.comiqr.com;
+    location / { proxy_pass http://127.0.0.1:3002; include /etc/nginx/proxy_params; }
+}
+
+# --- Customer PWA (Next, PM2 :3000) — wildcard subdomains + custom domains ---
+server {
+    listen 80;
+    server_name comiqr.com *.comiqr.com;
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        include /etc/nginx/proxy_params;
+        proxy_set_header X-Tenant-Host $host; # TenantResolver reads this
+    }
+}

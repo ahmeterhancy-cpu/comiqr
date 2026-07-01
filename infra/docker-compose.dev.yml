@@ -1,0 +1,43 @@
+# ComiQR — local development infrastructure.
+# Mirrors prod services (Neon Postgres + pgvector, Upstash Redis) locally.
+#   pnpm infra:up   /   pnpm infra:down
+services:
+  postgres:
+    # pgvector image ships PostgreSQL 16 + the `vector` extension (AI embeddings).
+    image: pgvector/pgvector:pg16
+    container_name: comiqr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: comiqr
+      POSTGRES_PASSWORD: comiqr
+      POSTGRES_DB: comiqr
+      TZ: Asia/Nicosia
+    ports:
+      - "5432:5432"
+    volumes:
+      - comiqr_pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comiqr -d comiqr"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: comiqr-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - comiqr_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  comiqr_pgdata:
+  comiqr_redisdata:
