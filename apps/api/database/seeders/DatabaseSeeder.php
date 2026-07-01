@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(PlanSeeder::class);
+        $this->call(AllergenSeeder::class);
 
         User::withoutTenancy()->updateOrCreate(
             ['email' => env('SUPERADMIN_EMAIL', 'superadmin@comiqr.com')],
