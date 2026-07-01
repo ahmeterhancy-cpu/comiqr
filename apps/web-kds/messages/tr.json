@@ -1,0 +1,12 @@
+{
+  "app": { "name": "ComiQR KDS" },
+  "board": {
+    "title": "Mutfak Ekranı",
+    "subtitle": "Siparişler Faz 1'de canlı akacak (Reverb).",
+    "columnNew": "Yeni",
+    "columnPreparing": "Hazırlanıyor",
+    "columnReady": "Hazır",
+    "empty": "Bekleyen sipariş yok",
+    "comingSoon": "KDS akışı Faz 1'de bağlanır"
+  }
+}

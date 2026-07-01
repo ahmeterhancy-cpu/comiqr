@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+
+/* ComiQR customer PWA — warm, appetizing, fast. Light and clean, mobile-first. */
+@theme {
+  --color-brand-500: #e2632a;
+  --color-brand-600: #c9531d;
+  --color-ink: #1c1917;
+  --color-muted: #78716c;
+  --color-line: #e7e5e4;
+  --color-surface: #ffffff;
+  --color-canvas: #faf9f7;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+* {
+  border-color: var(--color-line);
+}

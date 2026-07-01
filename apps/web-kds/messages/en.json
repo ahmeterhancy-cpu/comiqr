@@ -1,0 +1,12 @@
+{
+  "app": { "name": "ComiQR KDS" },
+  "board": {
+    "title": "Kitchen Display",
+    "subtitle": "Orders will stream live in Faz 1 (Reverb).",
+    "columnNew": "New",
+    "columnPreparing": "Preparing",
+    "columnReady": "Ready",
+    "empty": "No pending orders",
+    "comingSoon": "KDS stream is wired in Faz 1"
+  }
+}

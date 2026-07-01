@@ -1,0 +1,14 @@
+{
+  "app": { "name": "ComiQR", "tagline": "Menüyü görmek için masanızdaki QR kodu okutun" },
+  "landing": {
+    "title": "Hoş geldiniz",
+    "body": "Bu, ComiQR müşteri uygulamasıdır. Menüye erişmek için işletmenin masasındaki QR kodu telefonunuzla okutun.",
+    "demoNote": "Menü modülü Faz 1'de bağlanır — /m/:qrToken rotası hazırdır."
+  },
+  "menu": {
+    "loading": "Menü yükleniyor…",
+    "notFound": "Menü bulunamadı",
+    "notFoundBody": "Bu QR kodu geçersiz ya da oturum kapanmış olabilir.",
+    "comingSoon": "Menü görüntüleme Faz 1'de aktifleşecek."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "app": { "name": "ComiQR", "tagline": "Scan the QR code on your table to see the menu" },
+  "landing": {
+    "title": "Welcome",
+    "body": "This is the ComiQR customer app. Scan the QR code on the venue's table with your phone to open the menu.",
+    "demoNote": "The menu module is wired in Faz 1 — the /m/:qrToken route is ready."
+  },
+  "menu": {
+    "loading": "Loading menu…",
+    "notFound": "Menu not found",
+    "notFoundBody": "This QR code may be invalid or the session has ended.",
+    "comingSoon": "Menu viewing becomes active in Faz 1."
+  }
+}

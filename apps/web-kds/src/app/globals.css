@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+/*
+  ComiQR KDS — kitchen display. Dark, high-contrast, glanceable from across the
+  line. This is a utility surface (not a brand/marketing page), so dark is the
+  right call for legibility under kitchen lighting.
+*/
+@theme {
+  --color-bg: #0b0f14;
+  --color-panel: #131a22;
+  --color-line: #22303c;
+  --color-ink: #e6edf3;
+  --color-muted: #8b9aa7;
+  --color-new: #f59e0b;
+  --color-prep: #38bdf8;
+  --color-ready: #22c55e;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+* {
+  border-color: var(--color-line);
+}
