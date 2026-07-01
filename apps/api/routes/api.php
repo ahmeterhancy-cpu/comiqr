@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\IngredientController;
+use App\Http\Controllers\Api\Admin\ProductController;
+use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\TenantController;
 use App\Support\Tenancy\SlugGenerator;
 use Illuminate\Http\Request;
@@ -31,6 +36,11 @@ Route::get('auth/slug-available/{slug}', function (string $slug, SlugGenerator $
     ]]);
 })->middleware('throttle:60,1');
 
+// --- Public menu (M1/M4) — tenant resolved from host / X-Tenant (docs/06 §6.2) ---
+Route::middleware('tenant')->group(function () {
+    Route::get('menu', [MenuController::class, 'show']);
+});
+
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -42,5 +52,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('tenant', [TenantController::class, 'show']);
         Route::patch('tenant', [TenantController::class, 'update'])->middleware('role:manager');
+
+        // --- Menu & recipe management (M1/M2, docs/06 §6.5/§6.6) — manager+ ---
+        Route::middleware('role:manager')->group(function () {
+            Route::apiResource('admin/categories', CategoryController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+
+            Route::apiResource('admin/products', ProductController::class)
+                ->only(['index', 'show', 'store', 'update', 'destroy']);
+
+            Route::apiResource('admin/ingredients', IngredientController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+
+            Route::get('admin/products/{product}/recipe', [RecipeController::class, 'show']);
+            Route::put('admin/products/{product}/recipe', [RecipeController::class, 'update']);
+            Route::get('admin/products/{product}/nutrition', [RecipeController::class, 'nutrition']);
+            Route::post('admin/products/{product}/nutrition/recompute', [RecipeController::class, 'recompute']);
+        });
     });
 });
