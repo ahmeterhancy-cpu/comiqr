@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ResolvesQrToken;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Models\Allergen;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\EightySixItem;
+use App\Models\MenuView;
 use App\Models\Table;
 use App\Models\Tenant;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Public menu (M1/M4, docs/06 §6.2). Two entry points:
@@ -21,7 +24,29 @@ use Illuminate\Http\JsonResponse;
  */
 class MenuController extends Controller
 {
+    use ResolvesQrToken;
+
     public function __construct(protected TenantManager $tenants) {}
+
+    /** POST /menu/{qrToken}/view — record a menu/product impression (M9). */
+    public function logView(Request $request, string $qrToken): JsonResponse
+    {
+        [$table] = $this->resolveByToken($qrToken);
+
+        $productId = $request->integer('product_id') ?: null;
+        if ($productId && ! \App\Models\Product::whereKey($productId)->exists()) {
+            $productId = null;
+        }
+
+        MenuView::create([
+            'branch_id' => $table->branch_id,
+            'product_id' => $productId,
+            'locale' => $request->query('locale'),
+            'viewed_at' => now(),
+        ]);
+
+        return response()->json(['data' => ['logged' => true]]);
+    }
 
     /** Tenant already resolved by the `tenant` middleware. */
     public function show(): JsonResponse

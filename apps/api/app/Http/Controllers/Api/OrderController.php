@@ -27,7 +27,14 @@ class OrderController extends Controller
     /** POST /sessions/{qrToken}/orders — place a new order. */
     public function place(Request $request, string $qrToken): JsonResponse
     {
-        [$table] = $this->resolveByToken($qrToken);
+        [$table, $tenant] = $this->resolveByToken($qrToken);
+
+        // Ordering is a plan feature (M12) — Free is view-only (docs/01 §1.6).
+        abort_unless(
+            \App\Support\Plans\PlanGate::allows($tenant, 'ordering'),
+            402,
+            'Ordering is not available on this venue’s plan.',
+        );
 
         $data = $this->validateItems($request);
         $session = $this->openSession($table);

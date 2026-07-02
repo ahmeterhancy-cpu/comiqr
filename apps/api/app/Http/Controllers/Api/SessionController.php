@@ -43,6 +43,7 @@ class SessionController extends Controller
     public function callWaiter(string $qrToken): JsonResponse
     {
         [$table] = $this->resolveByToken($qrToken);
+        $this->openSessionFor($table)?->update(['waiter_called_at' => now()]);
         WaiterCalled::dispatch($table->branch_id, $table->id, $table->code);
 
         return response()->json(['data' => ['called' => true]]);
@@ -52,8 +53,17 @@ class SessionController extends Controller
     public function requestBill(string $qrToken): JsonResponse
     {
         [$table] = $this->resolveByToken($qrToken);
+        $this->openSessionFor($table)?->update(['bill_requested_at' => now()]);
         BillRequested::dispatch($table->branch_id, $table->id, $table->code);
 
         return response()->json(['data' => ['requested' => true]]);
+    }
+
+    private function openSessionFor(\App\Models\Table $table): ?TableSession
+    {
+        return TableSession::firstOrCreate(
+            ['table_id' => $table->id, 'status' => 'open'],
+            ['opened_at' => now()],
+        );
     }
 }

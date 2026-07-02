@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AnalyticsController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\WaiterController;
 use App\Support\Tenancy\SlugGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +51,7 @@ Route::middleware('tenant')->group(function () {
 
 // --- Public QR menu + session + ordering (M3/M4) — tenant from token ---
 Route::get('menu/{qrToken}', [MenuController::class, 'showByToken']);
+Route::post('menu/{qrToken}/view', [MenuController::class, 'logView'])->middleware('throttle:120,1');
 
 Route::prefix('sessions/{qrToken}')->group(function () {
     Route::post('open', [SessionController::class, 'open'])->middleware('throttle:30,1');
@@ -100,6 +103,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/tables/{table}/regenerate-token', [TableController::class, 'regenerate']);
             Route::apiResource('admin/tables', TableController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+        });
+
+        // --- Analytics (M9) — manager+, plan-gated ---
+        Route::middleware(['role:manager', 'plan:analytics'])->group(function () {
+            Route::get('admin/analytics/overview', [AnalyticsController::class, 'overview']);
+        });
+
+        // --- Waiter (M10, docs/06 §6.8) — waiter+ ---
+        Route::middleware('role:waiter')->group(function () {
+            Route::get('waiter/tables', [WaiterController::class, 'tables']);
+            Route::get('waiter/notifications', [WaiterController::class, 'notifications']);
+            Route::post('waiter/order-items/{item}/served', [WaiterController::class, 'served']);
+            Route::post('waiter/sessions/{session}/ack', [WaiterController::class, 'acknowledge']);
         });
 
         // --- KDS (M6, docs/06 §6.7) — kitchen+ ---

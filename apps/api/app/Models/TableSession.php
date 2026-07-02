@@ -15,13 +15,18 @@ class TableSession extends Model
     /** @use HasFactory<\Database\Factories\TableSessionFactory> */
     use BelongsToTenant, HasFactory;
 
-    protected $fillable = ['tenant_id', 'table_id', 'status', 'opened_at', 'closed_at', 'guest_count'];
+    protected $fillable = [
+        'tenant_id', 'table_id', 'status', 'opened_at', 'closed_at', 'guest_count',
+        'waiter_called_at', 'bill_requested_at',
+    ];
 
     protected function casts(): array
     {
         return [
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
+            'waiter_called_at' => 'datetime',
+            'bill_requested_at' => 'datetime',
         ];
     }
 
