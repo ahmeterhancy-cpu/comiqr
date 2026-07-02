@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\StockController;
 use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DiscoveryController;
 use App\Http\Controllers\Api\KdsController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
@@ -60,6 +61,9 @@ Route::get('media/{path}', function (string $path) {
 
     return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
 })->where('path', '.*');
+
+// --- Public consumer discovery portal (M20) — central, tenant-less ---
+Route::get('discover', [DiscoveryController::class, 'index'])->middleware('throttle:120,1');
 
 // --- Public menu (M1/M4) — tenant resolved from host / X-Tenant (docs/06 §6.2) ---
 Route::middleware('tenant')->group(function () {

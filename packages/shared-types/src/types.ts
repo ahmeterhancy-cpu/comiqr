@@ -167,3 +167,13 @@ export interface Menu {
   allergens: AllergenRef[];
   categories: MenuCategory[];
 }
+
+// --- Consumer discovery portal (M20) ---
+
+export interface DiscoverVenue {
+  slug: string;
+  name: string;
+  currency: string;
+  product_count: number;
+  samples: { name: string; image: string | null }[];
+}

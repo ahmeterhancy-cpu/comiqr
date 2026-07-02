@@ -5,6 +5,7 @@
 import type {
   ApiEnvelope,
   AuthSession,
+  DiscoverVenue,
   LoginPayload,
   Menu,
   MeResult,
@@ -130,6 +131,11 @@ export class ApiClient {
   menu(slug?: string): Promise<Menu> {
     const query = slug ? `?tenant=${encodeURIComponent(slug)}` : '';
     return this.request(`/menu${query}`);
+  }
+
+  /** Public consumer discovery portal (M20) — active venues with a live menu. */
+  discover(q?: string): Promise<DiscoverVenue[]> {
+    return this.request(`/discover${q ? `?q=${encodeURIComponent(q)}` : ''}`);
   }
 
   // --- Tenant (docs/06 §6.1) ---
