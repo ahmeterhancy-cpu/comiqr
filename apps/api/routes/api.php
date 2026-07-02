@@ -155,6 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // --- Analytics (M9) — manager+, plan-gated ---
         Route::middleware(['role:manager', 'plan:analytics'])->group(function () {
             Route::get('admin/analytics/overview', [AnalyticsController::class, 'overview']);
+            Route::get('admin/analytics/heatmap', [AnalyticsController::class, 'heatmap']);
         });
 
         // --- AI menu tasks (M7) — manager+, plan-gated ---

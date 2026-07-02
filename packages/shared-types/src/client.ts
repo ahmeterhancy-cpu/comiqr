@@ -263,6 +263,9 @@ export class ApiClient {
   analyticsOverview(branchId?: number): Promise<any> {
     return this.request(`/admin/analytics/overview${branchId ? `?branch_id=${branchId}` : ''}`);
   }
+  analyticsHeatmap(branchId?: number): Promise<any> {
+    return this.request(`/admin/analytics/heatmap${branchId ? `?branch_id=${branchId}` : ''}`);
+  }
 
   // --- Superadmin (M12) ---
   superTenants(): Promise<any[]> {
