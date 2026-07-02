@@ -122,6 +122,84 @@ export class ApiClient {
     return this.request('/tenant');
   }
 
+  // --- Admin: menu management (M1/M2, docs/06 §6.5/§6.6) ---
+  adminCategories(): Promise<any[]> {
+    return this.request('/admin/categories');
+  }
+  createCategory(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/categories', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateCategory(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/categories/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteCategory(id: number): Promise<any> {
+    return this.request(`/admin/categories/${id}`, { method: 'DELETE' });
+  }
+  adminProducts(categoryId?: number): Promise<any[]> {
+    return this.request(`/admin/products${categoryId ? `?category_id=${categoryId}` : ''}`);
+  }
+  createProduct(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/products', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateProduct(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteProduct(id: number): Promise<any> {
+    return this.request(`/admin/products/${id}`, { method: 'DELETE' });
+  }
+  adminIngredients(q?: string): Promise<any[]> {
+    return this.request(`/admin/ingredients${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+  }
+  createIngredient(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/ingredients', { method: 'POST', body: JSON.stringify(body) });
+  }
+  getRecipe(productId: number): Promise<any> {
+    return this.request(`/admin/products/${productId}/recipe`);
+  }
+  putRecipe(productId: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/products/${productId}/recipe`, { method: 'PUT', body: JSON.stringify(body) });
+  }
+  productNutrition(productId: number): Promise<any> {
+    return this.request(`/admin/products/${productId}/nutrition`);
+  }
+
+  // --- Admin: tables / QR (M3) ---
+  adminTables(): Promise<any[]> {
+    return this.request('/admin/tables');
+  }
+  createTable(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/tables', { method: 'POST', body: JSON.stringify(body) });
+  }
+  bulkTables(body: Record<string, unknown>): Promise<any[]> {
+    return this.request('/admin/tables/bulk', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  adminBranches(): Promise<any[]> {
+    return this.request('/admin/branches');
+  }
+
+  // --- Admin: analytics (M9) ---
+  analyticsOverview(): Promise<any> {
+    return this.request('/admin/analytics/overview');
+  }
+
+  // --- KDS / live orders (M6, docs/06 §6.7) ---
+  kdsOrders(branchId: number, station?: number): Promise<any[]> {
+    return this.request(`/kds/${branchId}/orders${station ? `?station=${station}` : ''}`);
+  }
+  kdsItemStatus(itemId: number, status: string): Promise<any> {
+    return this.request(`/kds/order-items/${itemId}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+  }
+  kdsBump(itemId: number): Promise<any> {
+    return this.request(`/kds/order-items/${itemId}/bump`, { method: 'POST' });
+  }
+  eightySix(branchId: number, productId: number): Promise<any> {
+    return this.request('/kds/eighty-six', {
+      method: 'POST',
+      body: JSON.stringify({ branch_id: branchId, product_id: productId }),
+    });
+  }
+
   updateTenant(patch: Partial<Pick<Tenant, 'name' | 'locale_default' | 'currency' | 'timezone'>> & {
     settings_json?: Record<string, unknown>;
   }): Promise<Tenant> {
