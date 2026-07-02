@@ -30,6 +30,23 @@
     "placed": "Siparişiniz alındı",
     "orderStatus": "Durum",
     "total": "Toplam",
-    "error": "Sipariş gönderilemedi. Lütfen tekrar deneyin."
+    "error": "Sipariş gönderilemedi. Lütfen tekrar deneyin.",
+    "callWaiter": "Garson Çağır",
+    "requestBill": "Hesap İste",
+    "called": "Garson çağrıldı",
+    "billRequested": "Hesap istendi",
+    "phone": "Telefon (sadakat puanı için, opsiyonel)",
+    "coupon": "İndirim kodu",
+    "apply": "Uygula",
+    "couponApplied": "İndirim uygulandı",
+    "couponError": "Geçersiz kod",
+    "pay": "Öde",
+    "paying": "Ödeniyor…",
+    "paid": "Ödendi, teşekkürler!",
+    "detail": "Besin detayı",
+    "saturatedFat": "Doymuş yağ",
+    "sugar": "Şeker",
+    "fiber": "Lif",
+    "sodium": "Sodyum"
   }
 }

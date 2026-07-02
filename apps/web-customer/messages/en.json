@@ -30,6 +30,23 @@
     "placed": "Your order was received",
     "orderStatus": "Status",
     "total": "Total",
-    "error": "Could not place the order. Please try again."
+    "error": "Could not place the order. Please try again.",
+    "callWaiter": "Call waiter",
+    "requestBill": "Request bill",
+    "called": "Waiter called",
+    "billRequested": "Bill requested",
+    "phone": "Phone (for loyalty points, optional)",
+    "coupon": "Discount code",
+    "apply": "Apply",
+    "couponApplied": "Discount applied",
+    "couponError": "Invalid code",
+    "pay": "Pay",
+    "paying": "Paying…",
+    "paid": "Paid, thank you!",
+    "detail": "Nutrition detail",
+    "saturatedFat": "Saturated fat",
+    "sugar": "Sugar",
+    "fiber": "Fiber",
+    "sodium": "Sodium"
   }
 }
