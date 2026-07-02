@@ -123,7 +123,7 @@ class SuperadminController extends Controller
     public function storeAllergen(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'code' => ['required', 'string', 'max:40'],
+            'code' => ['required', 'string', 'max:40', Rule::unique('allergens', 'code')],
             'name' => ['required', 'string', 'max:80'],
             'icon' => ['nullable', 'string', 'max:16'],
         ]);
@@ -135,7 +135,7 @@ class SuperadminController extends Controller
     {
         $allergen = Allergen::findOrFail($id);
         $allergen->update($request->validate([
-            'code' => ['sometimes', 'string', 'max:40'],
+            'code' => ['sometimes', 'string', 'max:40', Rule::unique('allergens', 'code')->ignore($allergen->id)],
             'name' => ['sometimes', 'string', 'max:80'],
             'icon' => ['nullable', 'string', 'max:16'],
         ]));

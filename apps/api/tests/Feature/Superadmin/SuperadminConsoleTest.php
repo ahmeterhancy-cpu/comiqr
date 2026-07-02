@@ -129,6 +129,11 @@ it('manages global allergens', function () {
     getJson('/v1/superadmin/allergens')->assertOk()
         ->assertJsonFragment(['code' => 'sesame']);
 
+    // A duplicate code is a clean 422, not a 500 unique-violation.
+    postJson('/v1/superadmin/allergens', ['code' => 'sesame', 'name' => 'Tekrar'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrorFor('code');
+
     deleteJson("/v1/superadmin/allergens/{$id}")->assertOk();
 });
 
