@@ -14,17 +14,9 @@ interface CartLine {
   unitPrice: number;
 }
 
-export function OrderableMenu({
-  menu,
-  qrToken,
-  tableCode,
-}: {
-  menu: Menu;
-  qrToken: string;
-  tableCode?: string;
-}) {
+export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToken: string; tableCode?: string }) {
   const t = useTranslations('order');
-  const m = useTranslations('menu');
+  const mt = useTranslations('menu');
   const locale = useLocale();
   const api = useMemo(() => new ApiClient({ baseUrl: API_URL }), []);
 
@@ -133,47 +125,81 @@ export function OrderableMenu({
   const categories = menu.categories.filter((c) => c.products.length > 0);
 
   return (
-    <div className="mx-auto max-w-2xl pb-28">
-      <header className="sticky top-0 z-10 border-b bg-canvas/90 px-5 py-4 backdrop-blur">
-        <div className="flex items-baseline justify-between gap-2">
-          <h1 className="text-xl font-bold text-ink">{menu.venue.name}</h1>
-          <div className="flex items-center gap-2">
+    <div className="mx-auto max-w-2xl pb-32">
+      {/* Editorial header */}
+      <header className="relative overflow-hidden bg-brand-600 px-6 pb-7 pt-8 text-white">
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
+        <div className="relative flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Menü</p>
+            <h1 className="mt-1 font-display text-3xl font-semibold leading-tight">{menu.venue.name}</h1>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => switchLocale(locale === 'tr' ? 'en' : 'tr')}
-              className="rounded-full border bg-white px-2.5 py-1 text-xs font-semibold text-muted"
+              className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur"
             >
               {locale === 'tr' ? 'EN' : 'TR'}
             </button>
             {tableCode && (
-              <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">
-                {tableCode}
-              </span>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-700">{tableCode}</span>
             )}
           </div>
         </div>
-        <div className="mt-3 flex gap-2">
+        <div className="relative mt-5 flex items-center gap-2">
           <button
             onClick={() => callService('call-waiter', t('called'))}
-            className="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-ink"
+            className="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/25"
           >
             {t('callWaiter')}
           </button>
           <button
-            onClick={() => callService('request-bill', t('billRequested'))}
-            className="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-ink"
+            onClick={() => callService('request-bill', t('requestBill'))}
+            className="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/25"
           >
             {t('requestBill')}
           </button>
-          {service && <span className="self-center text-xs font-medium text-emerald-700">✓ {service}</span>}
+          {service && <span className="text-xs font-medium text-white/90">✓ {service}</span>}
         </div>
       </header>
 
-      {order && <OrderPanel order={order} fmt={fmt} t={t} coupon={coupon} setCoupon={setCoupon} couponMsg={couponMsg} applyCoupon={applyCoupon} pay={pay} paying={paying} paid={paid} />}
+      {/* Sticky category nav */}
+      {categories.length > 1 && (
+        <nav className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-5 py-3 backdrop-blur">
+          {categories.map((c) => (
+            <a
+              key={c.id}
+              href={`#cat-${c.id}`}
+              className="whitespace-nowrap rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-medium text-muted transition hover:border-brand-500 hover:text-brand-600"
+            >
+              {c.name}
+            </a>
+          ))}
+        </nav>
+      )}
+
+      {order && (
+        <OrderPanel
+          order={order}
+          fmt={fmt}
+          t={t}
+          coupon={coupon}
+          setCoupon={setCoupon}
+          couponMsg={couponMsg}
+          applyCoupon={applyCoupon}
+          pay={pay}
+          paying={paying}
+          paid={paid}
+        />
+      )}
 
       {categories.map((c) => (
-        <section key={c.id} className="px-5 pt-6">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-600">{c.name}</h2>
-          <div className="space-y-3">
+        <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-16 px-5 pt-8">
+          <div className="mb-4 flex items-center gap-3">
+            <h2 className="font-display text-xl font-semibold text-ink">{c.name}</h2>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+          <div className="space-y-3.5">
             {c.products.map((p) => (
               <ProductRow
                 key={p.id}
@@ -183,31 +209,32 @@ export function OrderableMenu({
                 allergenMap={allergenMap}
                 fmt={fmt}
                 t={t}
-                m={m}
+                mt={mt}
               />
             ))}
           </div>
         </section>
       ))}
 
+      {/* Cart bar */}
       {count > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-surface px-5 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
-          <div className="mx-auto max-w-2xl space-y-2">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-5 pb-4 pt-3 shadow-[0_-8px_28px_rgba(38,32,28,0.08)] backdrop-blur">
+          <div className="mx-auto max-w-2xl space-y-2.5">
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder={t('phone')}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="w-full rounded-xl border border-line bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
             />
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm">
-                <span className="text-muted">{t('cart')}:</span>{' '}
-                <b className="text-ink">{count} · {fmt.format(total)}</b>
+              <div className="text-sm text-muted">
+                {count} {t('cart').toLowerCase()} ·{' '}
+                <b className="font-display text-base text-ink">{fmt.format(total)}</b>
               </div>
               <button
                 onClick={placeOrder}
                 disabled={placing}
-                className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-xl bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-60"
               >
                 {placing ? t('placing') : t('placeOrder')}
               </button>
@@ -222,26 +249,25 @@ export function OrderableMenu({
 
 function OrderPanel({ order, fmt, t, coupon, setCoupon, couponMsg, applyCoupon, pay, paying, paid }: any) {
   return (
-    <div className="mx-5 mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-emerald-800">
-          ✓ {t('placed')} · {t('orderStatus')}: <b>{order.status}</b> (#{order.id})
+    <div className="mx-5 mt-5 overflow-hidden rounded-2xl border border-sage/30 bg-sage-bg">
+      <div className="flex items-center justify-between px-5 py-4">
+        <span className="text-sm font-medium text-[color:var(--color-sage)]">
+          ✓ {t('placed')} · {order.status} <span className="text-muted">(#{order.id})</span>
         </span>
-        <span className="font-bold text-ink">{fmt.format(Number(order.grand_total))}</span>
+        <span className="font-display text-lg font-semibold text-ink">{fmt.format(Number(order.grand_total))}</span>
       </div>
-
       {paid ? (
-        <p className="mt-3 font-semibold text-emerald-800">✓ {t('paid')}</p>
+        <p className="px-5 pb-4 font-semibold text-[color:var(--color-sage)]">✓ {t('paid')}</p>
       ) : (
-        <div className="mt-3 space-y-2">
+        <div className="space-y-2 border-t border-sage/20 bg-white/60 px-5 py-4">
           <div className="flex gap-2">
             <input
               value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
               placeholder={t('coupon')}
-              className="flex-1 rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="flex-1 rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500"
             />
-            <button onClick={applyCoupon} className="rounded-lg border bg-white px-4 py-2 text-sm font-medium">
+            <button onClick={applyCoupon} className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-medium">
               {t('apply')}
             </button>
           </div>
@@ -249,7 +275,7 @@ function OrderPanel({ order, fmt, t, coupon, setCoupon, couponMsg, applyCoupon, 
           <button
             onClick={pay}
             disabled={paying}
-            className="w-full rounded-lg bg-brand-500 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="w-full rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-60"
           >
             {paying ? t('paying') : `${t('pay')} · ${fmt.format(Number(order.grand_total))}`}
           </button>
@@ -259,7 +285,7 @@ function OrderPanel({ order, fmt, t, coupon, setCoupon, couponMsg, applyCoupon, 
   );
 }
 
-function ProductRow({ product, cartQty, onSet, allergenMap, fmt, t, m }: any) {
+function ProductRow({ product, cartQty, onSet, allergenMap, fmt, t, mt }: any) {
   const [detail, setDetail] = useState(false);
   const variants = product.variants ?? [];
   const [variantId, setVariantId] = useState<number | undefined>(
@@ -280,91 +306,111 @@ function ProductRow({ product, cartQty, onSet, allergenMap, fmt, t, m }: any) {
   }
 
   return (
-    <article className="rounded-2xl border bg-surface p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <article className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
+      <div className="flex gap-4 p-4">
         {product.images?.[0] && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.images[0]} alt={product.name} className="h-20 w-20 shrink-0 rounded-xl object-cover" />
+          <img src={product.images[0]} alt={product.name} className="h-24 w-24 shrink-0 rounded-xl object-cover" />
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-ink">{product.name}</h3>
-          {product.description && <p className="mt-0.5 text-sm text-muted">{product.description}</p>}
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="font-display text-lg font-semibold leading-snug text-ink">{product.name}</h3>
+            <div className="shrink-0 font-display text-lg font-semibold text-ink">{fmt.format(unitPrice)}</div>
+          </div>
+          {product.description && <p className="mt-1 text-sm leading-relaxed text-muted">{product.description}</p>}
+
           {n && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                {Math.round(n.kcal)} {m('kcal')}
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-amber-bg px-2.5 py-0.5 text-xs font-semibold text-[color:var(--color-amber)]">
+                {Math.round(n.kcal)} {mt('kcal')}
               </span>
-              {n.diet.vegan && <Badge>{m('vegan')}</Badge>}
-              {!n.diet.vegan && n.diet.vegetarian && <Badge>{m('vegetarian')}</Badge>}
-              {n.diet.gluten_free && <Badge>{m('glutenFree')}</Badge>}
+              {n.diet.vegan && <Diet>{mt('vegan')}</Diet>}
+              {!n.diet.vegan && n.diet.vegetarian && <Diet>{mt('vegetarian')}</Diet>}
+              {n.diet.gluten_free && <Diet>{mt('glutenFree')}</Diet>}
             </div>
           )}
           {contains.length > 0 && (
-            <p className="mt-1.5 text-xs text-muted">{m('contains')}: {contains.join(', ')}</p>
+            <p className="mt-2 text-xs text-muted">
+              <span className="font-medium text-ink/60">{mt('contains')}:</span> {contains.join(', ')}
+            </p>
           )}
           {n && (
-            <button onClick={() => setDetail((v) => !v)} className="mt-1.5 text-xs font-medium text-brand-600">
+            <button onClick={() => setDetail((v) => !v)} className="mt-2 text-xs font-semibold text-brand-600">
               {t('detail')} {detail ? '▲' : '▼'}
             </button>
           )}
           {n && detail && (
-            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg bg-canvas p-3 text-xs text-ink/80">
-              <Detail label={m('protein')} value={`${n.macros.protein_g} g`} />
-              <Detail label={m('carb')} value={`${n.macros.carb_g} g`} />
-              <Detail label={m('fat')} value={`${n.macros.fat_g} g`} />
+            <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1.5 rounded-xl bg-canvas p-3.5 text-xs">
+              <Detail label={mt('protein')} value={`${n.macros.protein_g} g`} />
+              <Detail label={mt('carb')} value={`${n.macros.carb_g} g`} />
+              <Detail label={mt('fat')} value={`${n.macros.fat_g} g`} />
               <Detail label={t('saturatedFat')} value={`${n.detail.saturated_fat_g} g`} />
               <Detail label={t('sugar')} value={`${n.detail.sugar_g} g`} />
               <Detail label={t('fiber')} value={`${n.detail.fiber_g} g`} />
               <Detail label={t('sodium')} value={`${n.detail.sodium_mg} mg`} />
             </div>
           )}
-        </div>
-        <div className="shrink-0 text-right">
-          <div className="font-bold text-ink">{fmt.format(unitPrice)}</div>
-          <div className="mt-2">
+
+          {variants.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {variants.map((v: any) => (
+                <button
+                  key={v.id}
+                  onClick={() => chooseVariant(v.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                    v.id === variantId
+                      ? 'bg-brand-500 text-white'
+                      : 'border border-line bg-surface text-muted hover:border-brand-500'
+                  }`}
+                >
+                  {v.name}
+                  {Number(v.price_delta) ? ` +${fmt.format(Number(v.price_delta))}` : ''}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3.5">
             {cartQty === 0 ? (
-              <button onClick={() => onSet(1, variantId, unitPrice)} className="rounded-lg border border-brand-500 px-3 py-1 text-sm font-semibold text-brand-600">
-                {t('add')}
+              <button
+                onClick={() => onSet(1, variantId, unitPrice)}
+                className="rounded-xl bg-brand-50 px-4 py-1.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100"
+              >
+                + {t('add')}
               </button>
             ) : (
-              <div className="inline-flex items-center gap-2 rounded-lg border">
-                <button onClick={() => onSet(cartQty - 1, variantId, unitPrice)} className="h-8 w-8 text-lg font-bold text-brand-600">−</button>
-                <span className="min-w-5 text-center text-sm font-semibold">{cartQty}</span>
-                <button onClick={() => onSet(cartQty + 1, variantId, unitPrice)} className="h-8 w-8 text-lg font-bold text-brand-600">+</button>
+              <div className="inline-flex items-center gap-1 rounded-xl bg-brand-50 p-1">
+                <Step onClick={() => onSet(cartQty - 1, variantId, unitPrice)}>−</Step>
+                <span className="min-w-6 text-center text-sm font-bold text-brand-700">{cartQty}</span>
+                <Step onClick={() => onSet(cartQty + 1, variantId, unitPrice)}>+</Step>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {variants.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5 border-t pt-3">
-          {variants.map((v: any) => (
-            <button
-              key={v.id}
-              onClick={() => chooseVariant(v.id)}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                v.id === variantId ? 'bg-brand-500 text-white' : 'border border-line bg-white text-muted'
-              }`}
-            >
-              {v.name}
-              {Number(v.price_delta) ? ` (+${fmt.format(Number(v.price_delta))})` : ''}
-            </button>
-          ))}
-        </div>
-      )}
     </article>
   );
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">{children}</span>;
+function Step({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="grid h-7 w-7 place-items-center rounded-lg bg-white text-lg font-bold text-brand-600 shadow-sm">
+      {children}
+    </button>
+  );
+}
+function Diet({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full bg-sage-bg px-2.5 py-0.5 text-xs font-medium text-[color:var(--color-sage)]">
+      {children}
+    </span>
+  );
 }
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
       <span className="text-muted">{label}</span>
-      <span className="font-medium text-ink">{value}</span>
+      <span className="font-semibold text-ink">{value}</span>
     </div>
   );
 }
