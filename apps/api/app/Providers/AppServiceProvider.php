@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Events\OrderPlaced;
+use App\Listeners\PushOrderToIntegrations;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -35,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiters();
+
+        // Mirror placed orders to the tenant's external systems (POS/ERP/delivery).
+        Event::listen(OrderPlaced::class, PushOrderToIntegrations::class);
     }
 
     /**

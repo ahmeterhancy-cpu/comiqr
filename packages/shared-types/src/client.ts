@@ -279,6 +279,23 @@ export class ApiClient {
     return this.request(`/admin/campaigns/${id}/send`, { method: 'POST' });
   }
 
+  // --- External integrations (POS/ÖKC/ERP/delivery) ---
+  adminIntegrations(): Promise<any[]> {
+    return this.request('/admin/integrations');
+  }
+  createIntegration(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/integrations', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateIntegration(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/integrations/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteIntegration(id: number): Promise<any> {
+    return this.request(`/admin/integrations/${id}`, { method: 'DELETE' });
+  }
+  testIntegration(id: number): Promise<{ ok: boolean }> {
+    return this.request(`/admin/integrations/${id}/test`, { method: 'POST' });
+  }
+
   // --- AI (M7) ---
   aiProductCopy(productId: number, save = true): Promise<any> {
     return this.request('/admin/ai/product-copy', {

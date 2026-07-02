@@ -19,6 +19,7 @@ const NAV = [
   { key: 'customers', href: '/customers' },
   { key: 'coupons', href: '/coupons' },
   { key: 'campaigns', href: '/campaigns' },
+  { key: 'integrations', href: '/integrations' },
 ] as const;
 
 export function AdminShell({ title, children }: { title?: string; children: React.ReactNode }) {

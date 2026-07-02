@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Admin\CouponController;
 use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
+use App\Http\Controllers\Api\Admin\IntegrationController;
 use App\Http\Controllers\Api\Admin\ModifierGroupController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
@@ -183,6 +184,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->only(['index', 'store', 'destroy']);
             Route::post('admin/campaigns/{campaign}/send', [CampaignController::class, 'send'])
                 ->middleware('throttle:10,1');
+
+            // External integrations (POS/ÖKC/ERP/delivery) — connectors + ping.
+            Route::apiResource('admin/integrations', IntegrationController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::post('admin/integrations/{integration}/test', [IntegrationController::class, 'test'])
+                ->middleware('throttle:20,1');
         });
 
         // --- Waiter (M10, docs/06 §6.8) — waiter+ ---
