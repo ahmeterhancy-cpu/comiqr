@@ -245,6 +245,20 @@ export class ApiClient {
     return this.request(`/admin/coupons/${id}`, { method: 'DELETE' });
   }
 
+  // --- Campaigns (M8) ---
+  adminCampaigns(): Promise<any[]> {
+    return this.request('/admin/campaigns');
+  }
+  createCampaign(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/campaigns', { method: 'POST', body: JSON.stringify(body) });
+  }
+  deleteCampaign(id: number): Promise<any> {
+    return this.request(`/admin/campaigns/${id}`, { method: 'DELETE' });
+  }
+  sendCampaign(id: number): Promise<any> {
+    return this.request(`/admin/campaigns/${id}/send`, { method: 'POST' });
+  }
+
   // --- AI (M7) ---
   aiProductCopy(productId: number, save = true): Promise<any> {
     return this.request('/admin/ai/product-copy', {

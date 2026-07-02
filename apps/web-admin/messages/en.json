@@ -12,6 +12,7 @@
     "orders": "Orders",
     "customers": "Customers",
     "coupons": "Coupons",
+    "campaigns": "Campaigns",
     "settings": "Settings",
     "logout": "Log out"
   },

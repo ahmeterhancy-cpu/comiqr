@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\AiController;
 use App\Http\Controllers\Api\Admin\AnalyticsController;
 use App\Http\Controllers\Api\Admin\BranchController;
+use App\Http\Controllers\Api\Admin\CampaignController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\CouponController;
 use App\Http\Controllers\Api\Admin\CustomerController;
@@ -169,6 +170,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('admin/customers', [CustomerController::class, 'index']);
             Route::apiResource('admin/coupons', CouponController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+
+            // Campaigns (M8) — draft + send over the abstract channel.
+            Route::apiResource('admin/campaigns', CampaignController::class)
+                ->only(['index', 'store', 'destroy']);
+            Route::post('admin/campaigns/{campaign}/send', [CampaignController::class, 'send'])
+                ->middleware('throttle:10,1');
         });
 
         // --- Waiter (M10, docs/06 §6.8) — waiter+ ---
