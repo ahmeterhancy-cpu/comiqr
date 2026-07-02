@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\KdsController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\TenantController;
 use App\Support\Tenancy\SlugGenerator;
@@ -58,7 +59,11 @@ Route::prefix('sessions/{qrToken}')->group(function () {
     Route::post('orders', [OrderController::class, 'place'])->middleware('throttle:60,1');
     Route::get('orders/{order}', [OrderController::class, 'show']);
     Route::post('orders/{order}/items', [OrderController::class, 'addItems'])->middleware('throttle:60,1');
+    Route::post('orders/{order}/pay', [PaymentController::class, 'pay'])->middleware('throttle:30,1');
 });
+
+// --- Payment webhooks (M5, docs/06 §6.4) — public, signature-verified ---
+Route::post('payments/webhook/{gateway}', [PaymentController::class, 'webhook']);
 
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
