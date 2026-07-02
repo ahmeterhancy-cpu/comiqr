@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\KdsController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\SessionController;
@@ -94,6 +95,15 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/tables/{table}/regenerate-token', [TableController::class, 'regenerate']);
             Route::apiResource('admin/tables', TableController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+        });
+
+        // --- KDS (M6, docs/06 §6.7) — kitchen+ ---
+        Route::middleware('role:kitchen')->group(function () {
+            Route::get('kds/{branch}/orders', [KdsController::class, 'orders']);
+            Route::post('kds/order-items/{item}/status', [KdsController::class, 'status']);
+            Route::post('kds/order-items/{item}/bump', [KdsController::class, 'bump']);
+            Route::post('kds/eighty-six', [KdsController::class, 'eightySix']);
+            Route::delete('kds/eighty-six/{id}', [KdsController::class, 'removeEightySix']);
         });
     });
 });

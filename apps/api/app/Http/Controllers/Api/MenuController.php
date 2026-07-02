@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Models\Allergen;
+use App\Models\Branch;
 use App\Models\Category;
+use App\Models\EightySixItem;
 use App\Models\Table;
 use App\Models\Tenant;
 use App\Support\Tenancy\TenantManager;
@@ -24,7 +26,10 @@ class MenuController extends Controller
     /** Tenant already resolved by the `tenant` middleware. */
     public function show(): JsonResponse
     {
-        return response()->json(['data' => $this->buildMenu($this->tenants->get())]);
+        $tenant = $this->tenants->get();
+        $branchId = Branch::query()->where('is_active', true)->orderBy('id')->value('id');
+
+        return response()->json(['data' => $this->buildMenu($tenant, $branchId)]);
     }
 
     /** QR-token entry: resolve the venue + table from an unguessable token. */
@@ -43,7 +48,7 @@ class MenuController extends Controller
         $this->tenants->set($tenant);
         app()->setLocale(request()->query('locale', $tenant->locale_default ?? config('app.locale')));
 
-        $data = $this->buildMenu($tenant);
+        $data = $this->buildMenu($tenant, $table->branch_id);
         $data['table'] = [
             'id' => $table->id,
             'code' => $table->code,
@@ -54,14 +59,19 @@ class MenuController extends Controller
     }
 
     /** @return array<string,mixed> */
-    protected function buildMenu(Tenant $tenant): array
+    protected function buildMenu(Tenant $tenant, ?int $branchId = null): array
     {
+        // Products 86'd for this branch are hidden from the menu (docs/06 §6.7).
+        $eightySixed = $branchId ? EightySixItem::activeProductIds($branchId) : [];
+
         $categories = Category::query()
             ->where('is_active', true)
             ->whereNull('parent_id')
             ->with([
                 'translations',
-                'products' => fn ($q) => $q->where('is_active', true)->orderBy('sort'),
+                'products' => fn ($q) => $q->where('is_active', true)
+                    ->when($eightySixed, fn ($qq) => $qq->whereNotIn('id', $eightySixed))
+                    ->orderBy('sort'),
                 'products.translations',
                 'products.variants',
                 'products.nutritionSummary',

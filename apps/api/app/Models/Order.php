@@ -56,4 +56,30 @@ class Order extends Model
         $this->grand_total = $subtotal - (float) $this->discount_total + (float) $this->tip_total + (float) $this->tax_total;
         $this->save();
     }
+
+    /**
+     * Derive the order status from its item statuses (docs/04 §4.5). Cancelled
+     * items are ignored; an all-cancelled order becomes cancelled.
+     */
+    public function refreshStatusFromItems(): void
+    {
+        $statuses = $this->items()->pluck('status');
+        if ($statuses->isEmpty()) {
+            return;
+        }
+
+        $active = $statuses->reject(fn ($s) => $s === 'cancelled');
+
+        $status = match (true) {
+            $active->isEmpty() => 'cancelled',
+            $active->every(fn ($s) => $s === 'served') => 'served',
+            $active->every(fn ($s) => in_array($s, ['ready', 'served'], true)) => 'ready',
+            $active->contains(fn ($s) => in_array($s, ['preparing', 'ready', 'served'], true)) => 'preparing',
+            default => 'pending',
+        };
+
+        if ($status !== $this->status) {
+            $this->update(['status' => $status]);
+        }
+    }
 }
