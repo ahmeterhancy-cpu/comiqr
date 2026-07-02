@@ -69,6 +69,7 @@ Route::get('discover', [DiscoveryController::class, 'index'])->middleware('throt
 
 // --- Marketplace / menu package-service ordering (M20) — venue by slug ---
 Route::post('venues/{slug}/orders', [MarketplaceOrderController::class, 'place'])->middleware('throttle:30,1');
+Route::get('venues/{slug}/cards', [MarketplaceOrderController::class, 'cards'])->middleware('throttle:60,1');
 
 // --- Public menu (M1/M4) — tenant resolved from host / X-Tenant (docs/06 §6.2) ---
 Route::middleware('tenant')->group(function () {

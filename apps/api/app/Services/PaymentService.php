@@ -25,11 +25,11 @@ class PaymentService
      * $amount enables bill splitting (each guest pays a share); it is capped at
      * the outstanding balance.
      */
-    public function initiate(Order $order, string $gatewayName, float $tip = 0, ?float $amount = null): array
+    public function initiate(Order $order, string $gatewayName, float $tip = 0, ?float $amount = null, array $context = []): array
     {
         $gateway = $this->gateways->gateway($gatewayName);
 
-        return DB::transaction(function () use ($order, $gateway, $gatewayName, $tip, $amount) {
+        return DB::transaction(function () use ($order, $gateway, $gatewayName, $tip, $amount, $context) {
             if ($tip > 0) {
                 $order->update(['tip_total' => (float) $order->tip_total + $tip]);
                 $order->recalculateTotals();
@@ -46,7 +46,7 @@ class PaymentService
                 'status' => 'initiated',
             ]);
 
-            $session = $gateway->initiate($payment);
+            $session = $gateway->initiate($payment, $context);
 
             if ($session->isCompleted()) {
                 $this->finalize($payment->fresh(), $session->ref);

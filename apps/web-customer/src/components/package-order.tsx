@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ApiClient } from '@comiqr/shared-types/client';
 import type { Menu, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
 
@@ -43,6 +43,9 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
   const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [method, setMethod] = useState<'cod' | 'online'>('cod');
+  const [saveCard, setSaveCard] = useState(false);
+  const [savedCards, setSavedCards] = useState<{ id: number; alias: string | null; last4: string | null }[]>([]);
+  const [savedCardId, setSavedCardId] = useState<number | null>(null);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<any | null>(null);
@@ -52,6 +55,23 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
   const total = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const count = lines.reduce((s, l) => s + l.qty, 0);
   const categories = menu.categories.filter((c) => c.products.length > 0);
+
+  // Offer the customer's saved cards once they've entered a phone at checkout.
+  useEffect(() => {
+    if (step !== 'checkout' || method !== 'online' || phone.trim().length < 6) {
+      setSavedCards([]);
+      setSavedCardId(null);
+      return;
+    }
+    let active = true;
+    api
+      .venueCards(slug, phone.trim())
+      .then((c) => active && setSavedCards(c))
+      .catch(() => active && setSavedCards([]));
+    return () => {
+      active = false;
+    };
+  }, [step, method, phone, api, slug]);
 
   function qtyFor(productId: number, variantId: number | undefined, modifierIds: number[]) {
     return cart[lineKey(productId, variantId, modifierIds)]?.qty ?? 0;
@@ -81,6 +101,8 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
         contact: { name, phone, address: type === 'delivery' ? address : undefined },
         note: note || undefined,
         payment_method: method,
+        save_card: method === 'online' && !savedCardId ? saveCard : undefined,
+        saved_card_id: method === 'online' ? savedCardId ?? undefined : undefined,
       });
       if (method === 'online' && res.session?.kind === 'form') {
         setTiko({ url: res.session.url, fields: res.session.meta.fields });
@@ -122,6 +144,7 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
       ) : (
         <CheckoutForm
           {...{ type, setType, name, setName, phone, setPhone, address, setAddress, note, setNote, method, setMethod, error, placing, submit, total, fmt }}
+          {...{ savedCards, savedCardId, setSavedCardId, saveCard, setSaveCard }}
           onBack={() => setStep('menu')}
         />
       )}
@@ -263,7 +286,7 @@ function ProductRow({ product, fmt, qtyFor, onSet }: any) {
   );
 }
 
-function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, setAddress, note, setNote, method, setMethod, error, placing, submit, total, fmt, onBack }: any) {
+function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, setAddress, note, setNote, method, setMethod, error, placing, submit, total, fmt, savedCards, savedCardId, setSavedCardId, saveCard, setSaveCard, onBack }: any) {
   const canSubmit = name.trim() && phone.trim() && (type === 'takeaway' || address.trim());
   return (
     <div className="px-5 pt-6">
@@ -308,6 +331,39 @@ function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, 
         ))}
       </div>
 
+      {method === 'online' && (
+        <div className="mt-3 space-y-2 rounded-xl border border-line bg-canvas p-3">
+          {savedCards.length > 0 && (
+            <>
+              <p className="text-xs font-semibold text-ink">Kayıtlı kartlar</p>
+              {savedCards.map((c: any) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="savedcard"
+                    checked={savedCardId === c.id}
+                    onChange={() => setSavedCardId(c.id)}
+                  />
+                  <span className="text-ink">
+                    💳 {c.alias ?? 'Kart'} {c.last4 ? `•••• ${c.last4}` : ''}
+                  </span>
+                </label>
+              ))}
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" name="savedcard" checked={savedCardId === null} onChange={() => setSavedCardId(null)} />
+                <span className="text-ink">Yeni kart ile öde</span>
+              </label>
+            </>
+          )}
+          {savedCardId === null && (
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input type="checkbox" checked={saveCard} onChange={(e) => setSaveCard(e.target.checked)} />
+              Kartımı sonraki siparişler için kaydet
+            </label>
+          )}
+        </div>
+      )}
+
       {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
 
       <button
@@ -348,21 +404,30 @@ function Field({ label, value, onChange, placeholder, textarea }: any) {
 
 /** Native form POST to Tiko pay3d — card data goes browser→Tiko, never our server. */
 function TikoCardForm({ form, fmt, total }: { form: TikoForm; fmt: Intl.NumberFormat; total: number }) {
+  const stored = 'CardId' in form.fields;
   return (
     <div className="mx-auto max-w-md px-5 py-10">
       <h1 className="font-display text-xl font-semibold text-ink">Kart ile Öde · {fmt.format(total)}</h1>
-      <p className="mt-1 text-sm text-muted">Kart bilgileriniz doğrudan Tiko güvenli ödeme sayfasına gönderilir.</p>
+      <p className="mt-1 text-sm text-muted">
+        {stored
+          ? 'Kayıtlı kartınızla güvenli ödeme yapılacak.'
+          : 'Kart bilgileriniz doğrudan Tiko güvenli ödeme sayfasına gönderilir.'}
+      </p>
       <form method="POST" action={form.url} className="mt-5 space-y-3">
         {Object.entries(form.fields).map(([k, v]) => (
           <input key={k} type="hidden" name={k} value={v} />
         ))}
-        <CardField name="CardName" label="Kart Sahibi" placeholder="Ad Soyad" />
-        <CardField name="CardNo" label="Kart Numarası" placeholder="0000 0000 0000 0000" inputMode="numeric" />
-        <div className="grid grid-cols-3 gap-2">
-          <CardField name="CardExpireMonth" label="Ay" placeholder="12" inputMode="numeric" />
-          <CardField name="CardExpireYear" label="Yıl" placeholder="27" inputMode="numeric" />
-          <CardField name="CardCvv" label="CVV" placeholder="123" inputMode="numeric" />
-        </div>
+        {!stored && (
+          <>
+            <CardField name="CardName" label="Kart Sahibi" placeholder="Ad Soyad" />
+            <CardField name="CardNo" label="Kart Numarası" placeholder="0000 0000 0000 0000" inputMode="numeric" />
+            <div className="grid grid-cols-3 gap-2">
+              <CardField name="CardExpireMonth" label="Ay" placeholder="12" inputMode="numeric" />
+              <CardField name="CardExpireYear" label="Yıl" placeholder="27" inputMode="numeric" />
+              <CardField name="CardCvv" label="CVV" placeholder="123" inputMode="numeric" />
+            </div>
+          </>
+        )}
         <button type="submit" className="w-full rounded-xl bg-brand-500 py-3.5 text-sm font-semibold text-white" style={{ color: '#ffffff' }}>
           Güvenli Öde
         </button>

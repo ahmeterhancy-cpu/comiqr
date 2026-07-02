@@ -30,7 +30,7 @@ class TikoGateway implements PaymentGateway
         return 'tiko';
     }
 
-    public function initiate(Payment $payment): PaymentSession
+    public function initiate(Payment $payment, array $context = []): PaymentSession
     {
         $orderId = 'TIKO'.$payment->id.'X'.substr(md5((string) $payment->created_at), 0, 8);
         $payment->update(['gateway_ref' => $orderId]);
@@ -48,7 +48,9 @@ class TikoGateway implements PaymentGateway
         $userName = $customer?->name ?: 'Musteri';
         $userEmail = $customer?->email ?: 'guest@comiqr.app';
 
-        $hashStr = $merchantId.$ip.$orderId.$urlOk.$urlFail.$amount.$currency.$installment.$isTest;
+        // Paying with a stored card appends CardId to the hash (docs: kart-saklama).
+        $cardId = $context['card_id'] ?? null;
+        $hashStr = $merchantId.$ip.$orderId.$urlOk.$urlFail.$amount.$currency.$installment.$isTest.($cardId ?? '');
 
         $fields = [
             'MerchantId' => $merchantId,
@@ -64,6 +66,17 @@ class TikoGateway implements PaymentGateway
             'IsTest' => $isTest,
             'Hash' => $this->hash($hashStr),
         ];
+
+        if ($cardId !== null) {
+            // Pay with a stored card — no card fields collected in the browser.
+            $fields['CardId'] = (string) $cardId;
+        } elseif (! empty($context['save_card']) && ! empty($context['card_group_key'])) {
+            // Store the card during this payment (SaveCard/CardGroupKey/Alias are
+            // extra fields, not part of the request hash per the docs).
+            $fields['SaveCard'] = 'true';
+            $fields['CardGroupKey'] = (string) $context['card_group_key'];
+            $fields['Alias'] = (string) ($context['alias'] ?? 'Kartım');
+        }
 
         // Card fields (CardNo/CardCvv/…) are intentionally omitted — the browser
         // collects them and posts them straight to Tiko.

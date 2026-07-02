@@ -143,6 +143,11 @@ export class ApiClient {
     return this.request(`/venues/${encodeURIComponent(slug)}/orders`, { method: 'POST', body: JSON.stringify(body) });
   }
 
+  /** A customer's saved cards at a venue (masked; identified by phone). */
+  venueCards(slug: string, phone: string): Promise<{ id: number; alias: string | null; last4: string | null }[]> {
+    return this.request(`/venues/${encodeURIComponent(slug)}/cards?phone=${encodeURIComponent(phone)}`);
+  }
+
   // --- Tenant (docs/06 §6.1) ---
   getTenant(): Promise<Tenant> {
     return this.request('/tenant');

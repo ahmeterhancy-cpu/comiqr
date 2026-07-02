@@ -102,14 +102,31 @@ class PaymentController extends Controller
 
         $orderId = null;
         if ($ref !== null) {
-            $orderId = Payment::withoutTenancy()->where('gateway_ref', $ref)->value('order_id');
-            if ($success) {
+            $payment = Payment::withoutTenancy()->where('gateway_ref', $ref)->with('order')->first();
+            $orderId = $payment?->order_id;
+            if ($success && $payment) {
                 $this->payments->confirmByReference($ref);
+                $this->captureSavedCard($payment, $payload);
             }
         }
 
         return redirect()->away(
             $resultUrl.'?status='.($success ? 'paid' : 'failed').($orderId ? '&order='.$orderId : ''),
+        );
+    }
+
+    /** Persist a Tiko-tokenised card (CardId) when the gateway returned one. */
+    private function captureSavedCard(Payment $payment, array $payload): void
+    {
+        $cardId = $payload['CardId'] ?? null;
+        $customerId = $payment->order?->customer_id;
+        if (! $cardId || ! $customerId) {
+            return;
+        }
+
+        \App\Models\SavedCard::firstOrCreate(
+            ['customer_id' => $customerId, 'tiko_card_id' => (string) $cardId],
+            ['tenant_id' => $payment->tenant_id, 'alias' => $payload['Alias'] ?? 'Kartım', 'last4' => $payload['CardLast4'] ?? null],
         );
     }
 

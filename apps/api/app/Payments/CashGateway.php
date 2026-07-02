@@ -16,7 +16,7 @@ class CashGateway implements PaymentGateway
         return 'cash';
     }
 
-    public function initiate(Payment $payment): PaymentSession
+    public function initiate(Payment $payment, array $context = []): PaymentSession
     {
         return PaymentSession::completed('cash_'.Str::lower(Str::random(16)));
     }

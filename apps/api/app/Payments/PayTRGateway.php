@@ -19,7 +19,7 @@ class PayTRGateway implements PaymentGateway
         return 'paytr';
     }
 
-    public function initiate(Payment $payment): PaymentSession
+    public function initiate(Payment $payment, array $context = []): PaymentSession
     {
         $merchantOid = 'PTR'.$payment->id.'X'.substr(md5((string) $payment->created_at), 0, 8);
         $payment->update(['gateway_ref' => $merchantOid]);

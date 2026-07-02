@@ -12,8 +12,13 @@ interface PaymentGateway
 {
     public function name(): string;
 
-    /** Start a payment for the given (initiated) payment row. */
-    public function initiate(Payment $payment): PaymentSession;
+    /**
+     * Start a payment for the given (initiated) payment row. $context carries
+     * gateway-specific options (Tiko: save_card, card_group_key, alias, card_id).
+     *
+     * @param  array<string,mixed>  $context
+     */
+    public function initiate(Payment $payment, array $context = []): PaymentSession;
 
     /** Verify a webhook is authentic (signature/hash). */
     public function verifyWebhook(array $payload, ?string $signature = null): bool;
