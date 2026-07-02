@@ -9,6 +9,7 @@ use App\Http\Resources\TenantResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\TenantOnboardingService;
+use App\Support\Auth\Totp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -102,14 +103,61 @@ class AuthController extends Controller
     }
 
     /**
-     * Two-factor verification (docs/06 §6.1). Full TOTP enrolment is a later
-     * phase; until a user has a confirmed secret this reports 2FA as not enabled
-     * rather than pretending to verify.
+     * Begin TOTP enrolment (M12, docs/06 §6.1). Generates a pending secret and
+     * returns it plus an otpauth:// URI for the authenticator QR. The secret is
+     * only trusted once confirmed with a valid code (see confirmTwoFactor).
+     */
+    public function enableTwoFactor(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_if(
+            $user->two_factor_confirmed_at !== null,
+            422,
+            'Two-factor authentication is already enabled. Disable it first to re-enrol.',
+        );
+
+        $secret = Totp::generateSecret();
+        $user->forceFill([
+            'two_factor_secret' => $secret,
+            'two_factor_confirmed_at' => null,
+        ])->save();
+
+        return response()->json(['data' => [
+            'secret' => $secret,
+            'otpauth_uri' => Totp::provisioningUri(
+                $secret,
+                $user->email,
+                config('app.name', 'ComiQR'),
+            ),
+        ]]);
+    }
+
+    /** Confirm enrolment by verifying the first code, then activate 2FA. */
+    public function confirmTwoFactor(Request $request): JsonResponse
+    {
+        $request->validate(['code' => ['required', 'string']]);
+        $user = $request->user();
+
+        abort_if(empty($user->two_factor_secret), 422, 'Start two-factor enrolment first.');
+        abort_if($user->two_factor_confirmed_at !== null, 422, 'Two-factor is already confirmed.');
+
+        if (! Totp::verify($user->two_factor_secret, $request->input('code'))) {
+            throw ValidationException::withMessages(['code' => ['Invalid verification code.']]);
+        }
+
+        $user->forceFill(['two_factor_confirmed_at' => now()])->save();
+
+        return response()->json(['data' => ['two_factor_enabled' => true]]);
+    }
+
+    /**
+     * Step-up verification for a confirmed account (docs/06 §6.1). Returns 422
+     * when 2FA is not enabled, and a validation error for a wrong/expired code.
      */
     public function verifyTwoFactor(Request $request): JsonResponse
     {
         $request->validate(['code' => ['required', 'string']]);
-
         $user = $request->user();
 
         if (empty($user->two_factor_secret) || $user->two_factor_confirmed_at === null) {
@@ -118,10 +166,31 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // TODO(Faz 2): verify TOTP code against the decrypted secret.
-        return response()->json([
-            'errors' => ['two_factor' => ['Two-factor verification is not yet available.']],
-        ], 501);
+        if (! Totp::verify($user->two_factor_secret, $request->input('code'))) {
+            throw ValidationException::withMessages(['code' => ['Invalid verification code.']]);
+        }
+
+        return response()->json(['data' => ['verified' => true]]);
+    }
+
+    /** Disable 2FA — requires a valid current code to prevent lock-in/hijack. */
+    public function disableTwoFactor(Request $request): JsonResponse
+    {
+        $request->validate(['code' => ['required', 'string']]);
+        $user = $request->user();
+
+        abort_if($user->two_factor_confirmed_at === null, 422, 'Two-factor authentication is not enabled.');
+
+        if (! Totp::verify($user->two_factor_secret, $request->input('code'))) {
+            throw ValidationException::withMessages(['code' => ['Invalid verification code.']]);
+        }
+
+        $user->forceFill([
+            'two_factor_secret' => null,
+            'two_factor_confirmed_at' => null,
+        ])->save();
+
+        return response()->json(['data' => ['two_factor_enabled' => false]]);
     }
 
     protected function panelUrlFor(string $slug): string

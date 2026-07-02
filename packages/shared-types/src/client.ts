@@ -104,6 +104,20 @@ export class ApiClient {
     return this.request('/auth/logout', { method: 'POST' });
   }
 
+  // --- Two-factor auth (M12) ---
+  enableTwoFactor(): Promise<{ secret: string; otpauth_uri: string }> {
+    return this.request('/auth/2fa/enable', { method: 'POST' });
+  }
+  confirmTwoFactor(code: string): Promise<{ two_factor_enabled: boolean }> {
+    return this.request('/auth/2fa/confirm', { method: 'POST', body: JSON.stringify({ code }) });
+  }
+  verifyTwoFactor(code: string): Promise<{ verified: boolean }> {
+    return this.request('/auth/2fa/verify', { method: 'POST', body: JSON.stringify({ code }) });
+  }
+  disableTwoFactor(code: string): Promise<{ two_factor_enabled: boolean }> {
+    return this.request('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ code }) });
+  }
+
   me(): Promise<MeResult> {
     return this.request('/auth/me');
   }

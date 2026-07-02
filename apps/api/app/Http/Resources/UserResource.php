@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'role' => $this->role?->value,
             'role_label' => $this->role?->label(),
+            'two_factor_enabled' => $this->two_factor_confirmed_at !== null,
             'last_login_at' => $this->last_login_at,
             'created_at' => $this->created_at,
         ];

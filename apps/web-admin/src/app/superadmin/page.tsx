@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Brand, Button, Card } from '@/components/ui';
+import { Brand, Button, Card, Input } from '@/components/ui';
 import { APP_NAME, createApi } from '@/lib/api';
 import { setSession } from '@/lib/auth';
 import { useApi } from '@/lib/useApi';
@@ -66,6 +66,8 @@ export default function SuperadminPage() {
       </header>
 
       <main className="mx-auto max-w-5xl p-6">
+        <TwoFactorSection api={api} enabled={!!me?.user.two_factor_enabled} />
+
         <div className="mb-5 flex gap-2">
           {(['tenants', 'audit'] as const).map((k) => (
             <button
@@ -153,5 +155,103 @@ export default function SuperadminPage() {
         )}
       </main>
     </div>
+  );
+}
+
+function TwoFactorSection({ api, enabled }: { api: any; enabled: boolean }) {
+  const [setup, setSetup] = useState<{ secret: string; otpauth_uri: string } | null>(null);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function begin() {
+    setError(null);
+    setBusy(true);
+    try {
+      setSetup(await api.enableTwoFactor());
+    } catch {
+      setError('2FA başlatılamadı.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirm() {
+    setError(null);
+    setBusy(true);
+    try {
+      await api.confirmTwoFactor(code.trim());
+      window.location.reload();
+    } catch {
+      setError('Kod hatalı. Uygulamadaki güncel kodu girin.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disable() {
+    setError(null);
+    setBusy(true);
+    try {
+      await api.disableTwoFactor(code.trim());
+      window.location.reload();
+    } catch {
+      setError('Kod hatalı. Devre dışı bırakmak için güncel kodu girin.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="mb-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">İki adımlı doğrulama (2FA)</h2>
+          <p className="text-xs text-muted">
+            {enabled ? 'Hesabınız TOTP ile korunuyor.' : 'Google Authenticator / Authy ile hesabınızı koruyun.'}
+          </p>
+        </div>
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+            enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+          }`}
+        >
+          {enabled ? 'Aktif' : 'Kapalı'}
+        </span>
+      </div>
+
+      {!enabled && !setup && (
+        <Button className="mt-3" onClick={begin} disabled={busy}>
+          {busy ? '…' : 'Etkinleştir'}
+        </Button>
+      )}
+
+      {!enabled && setup && (
+        <div className="mt-3 space-y-2 rounded-lg border border-line bg-canvas p-3">
+          <p className="text-xs text-muted">
+            Authenticator uygulamanıza bu anahtarı girin (veya otpauth bağlantısını QR olarak okutun), ardından
+            oluşan 6 haneli kodu doğrulayın:
+          </p>
+          <code className="block break-all rounded bg-white px-2 py-1 font-mono text-sm text-ink">{setup.secret}</code>
+          <div className="flex gap-2">
+            <Input placeholder="6 haneli kod" value={code} onChange={(e) => setCode(e.target.value)} className="w-40" />
+            <Button onClick={confirm} disabled={busy || code.trim().length < 6}>
+              Doğrula
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {enabled && (
+        <div className="mt-3 flex gap-2">
+          <Input placeholder="Devre dışı için kod" value={code} onChange={(e) => setCode(e.target.value)} className="w-48" />
+          <Button variant="ghost" onClick={disable} disabled={busy || code.trim().length < 6}>
+            Devre dışı bırak
+          </Button>
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+    </Card>
   );
 }

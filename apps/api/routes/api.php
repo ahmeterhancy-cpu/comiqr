@@ -89,7 +89,10 @@ Route::post('payments/webhook/{gateway}', [PaymentController::class, 'webhook'])
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::post('auth/2fa/enable', [AuthController::class, 'enableTwoFactor']);
+    Route::post('auth/2fa/confirm', [AuthController::class, 'confirmTwoFactor']);
     Route::post('auth/2fa/verify', [AuthController::class, 'verifyTwoFactor']);
+    Route::post('auth/2fa/disable', [AuthController::class, 'disableTwoFactor']);
 
     // --- Platform superadmin (M12, docs/06 §6.11) — no tenant context ---
     Route::middleware('superadmin')->prefix('superadmin')->group(function () {
