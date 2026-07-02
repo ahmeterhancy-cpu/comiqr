@@ -13,6 +13,7 @@ use App\Services\LoyaltyService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Support\Plans\PlanGate;
+use App\Support\Restaurant\RestaurantSettings;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,12 @@ class MarketplaceOrderController extends Controller
             'saved_card_id' => ['nullable', 'integer'],
         ]);
 
+        // Fulfilment + payment gates from the restaurant settings (M20).
+        $settings = $tenant->settings_json ?? [];
+        abort_if($data['type'] === 'delivery' && ! RestaurantSettings::allows($settings, 'allow_delivery'), 422, 'Bu işletme teslimat siparişi almıyor.');
+        abort_if($data['type'] === 'takeaway' && ! RestaurantSettings::allows($settings, 'allow_takeaway'), 422, 'Bu işletme gel-al siparişi almıyor.');
+        abort_if($data['payment_method'] === 'online' && ! RestaurantSettings::allows($settings, 'allow_online_payment'), 422, 'Bu işletme online ödeme kabul etmiyor.');
+
         $branch = Branch::where('is_active', true)->orderBy('id')->first();
         abort_if($branch === null, 422, 'Venue has no active branch.');
 
@@ -66,6 +73,8 @@ class MarketplaceOrderController extends Controller
             'phone' => $data['contact']['phone'],
             'name' => $data['contact']['name'],
         ]);
+
+        $deliveryFee = $data['type'] === 'delivery' ? RestaurantSettings::deliveryCharge($settings) : 0.0;
 
         $order = $this->orders->placeDirect(
             $branch,
@@ -78,6 +87,7 @@ class MarketplaceOrderController extends Controller
             ],
             $data['note'] ?? null,
             $customer,
+            $deliveryFee,
         );
 
         OrderPlaced::dispatch($order);

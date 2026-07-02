@@ -368,6 +368,9 @@ export class ApiClient {
   superStartSubscription(id: number, body: Record<string, unknown>): Promise<any> {
     return this.request(`/superadmin/tenants/${id}/subscription`, { method: 'POST', body: JSON.stringify(body) });
   }
+  superUpdateRestaurant(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/superadmin/tenants/${id}/restaurant`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
   superImpersonate(id: number): Promise<{ token: string; tenant: any; user: any }> {
     return this.request(`/superadmin/tenants/${id}/impersonate`, { method: 'POST' });
   }

@@ -20,7 +20,7 @@ class Order extends Model
 
     protected $fillable = [
         'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'type', 'status', 'payment_status',
-        'subtotal', 'discount_total', 'tip_total', 'tax_total', 'grand_total', 'note',
+        'subtotal', 'discount_total', 'tip_total', 'tax_total', 'delivery_fee', 'grand_total', 'note',
         'contact_phone', 'address', 'placed_at',
     ];
 
@@ -31,6 +31,7 @@ class Order extends Model
             'discount_total' => 'decimal:2',
             'tip_total' => 'decimal:2',
             'tax_total' => 'decimal:2',
+            'delivery_fee' => 'decimal:2',
             'grand_total' => 'decimal:2',
             'placed_at' => 'datetime',
         ];
@@ -66,7 +67,7 @@ class Order extends Model
     {
         $subtotal = (float) $this->items()->sum('line_total');
         $this->subtotal = $subtotal;
-        $this->grand_total = $subtotal - (float) $this->discount_total + (float) $this->tip_total + (float) $this->tax_total;
+        $this->grand_total = $subtotal - (float) $this->discount_total + (float) $this->tip_total + (float) $this->tax_total + (float) $this->delivery_fee;
         $this->save();
     }
 

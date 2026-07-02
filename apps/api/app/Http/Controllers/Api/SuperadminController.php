@@ -14,6 +14,7 @@ use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Payments\TikoGateway;
+use App\Support\Restaurant\RestaurantSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -228,6 +229,7 @@ class SuperadminController extends Controller
             'currency' => $tenant->currency,
             'trial_ends_at' => $tenant->trial_ends_at,
             'created_at' => $tenant->created_at,
+            'settings' => $tenant->settings_json ?? [],
             'counts' => [
                 'users' => $tenant->users_count,
                 'branches' => $tenant->branches_count,
@@ -369,6 +371,43 @@ class SuperadminController extends Controller
                 'gateway_ref' => $subscription->gateway_ref,
             ],
             'tiko' => $result['Result'] ?? null,
+        ]]);
+    }
+
+    /**
+     * PATCH /superadmin/tenants/{id}/restaurant — manage a tenant's restaurant
+     * profile/settings (name + settings_json.*) on the operator's behalf. Same
+     * shape as the owner's self-serve update; merges settings_json.
+     */
+    public function updateRestaurant(Request $request, string $id): JsonResponse
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'min:2', 'max:255'],
+            'settings_json' => ['sometimes', 'array'],
+            ...RestaurantSettings::rules(),
+        ]);
+
+        if (array_key_exists('settings_json', $data)) {
+            $data['settings_json'] = array_replace_recursive($tenant->settings_json ?? [], $data['settings_json']);
+        }
+        $tenant->fill($data)->save();
+
+        AuditLog::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $request->user()->id,
+            'action' => 'superadmin.restaurant_updated',
+            'subject_type' => Tenant::class,
+            'subject_id' => $tenant->id,
+            'meta_json' => ['fields' => array_keys($data)],
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json(['data' => [
+            'id' => $tenant->id,
+            'name' => $tenant->name,
+            'settings' => $tenant->fresh()->settings_json ?? [],
         ]]);
     }
 

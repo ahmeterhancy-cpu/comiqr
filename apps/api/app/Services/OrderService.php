@@ -54,9 +54,9 @@ class OrderService
      * @param  array<int,array<string,mixed>>  $items
      * @param  array{name?:string,phone?:string,address?:string}  $contact
      */
-    public function placeDirect(\App\Models\Branch $branch, array $items, string $type, array $contact = [], ?string $note = null, ?\App\Models\Customer $customer = null): Order
+    public function placeDirect(\App\Models\Branch $branch, array $items, string $type, array $contact = [], ?string $note = null, ?\App\Models\Customer $customer = null, float $deliveryFee = 0): Order
     {
-        return DB::transaction(function () use ($branch, $items, $type, $contact, $note, $customer) {
+        return DB::transaction(function () use ($branch, $items, $type, $contact, $note, $customer, $deliveryFee) {
             $order = Order::create([
                 'branch_id' => $branch->id,
                 'table_session_id' => null,
@@ -68,6 +68,7 @@ class OrderService
                 'note' => $note,
                 'contact_phone' => $contact['phone'] ?? null,
                 'address' => $type === 'delivery' ? ($contact['address'] ?? null) : null,
+                'delivery_fee' => $type === 'delivery' ? $deliveryFee : 0,
                 'placed_at' => now(),
             ]);
 

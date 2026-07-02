@@ -84,6 +84,32 @@ it('returns a Tiko form session for online payment', function () {
         ->assertJsonPath('data.session.url', 'https://www.tikokart.com/api-sanalpos/gateway/pay3d');
 });
 
+it('rejects delivery when the venue disabled delivery', function () {
+    ['tenant' => $tenant, 'product' => $product] = marketplaceVenue();
+    $tenant->update(['settings_json' => ['allow_delivery' => false]]);
+
+    postJson('/v1/venues/girne-meze/orders', [
+        'type' => 'delivery',
+        'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        'contact' => ['name' => 'Ali', 'phone' => '05300000000', 'address' => 'X'],
+        'payment_method' => 'cod',
+    ])->assertStatus(422);
+});
+
+it('adds the delivery fee to the order total', function () {
+    ['tenant' => $tenant, 'product' => $product] = marketplaceVenue();
+    $tenant->update(['settings_json' => ['delivery_charge' => 25]]);
+
+    postJson('/v1/venues/girne-meze/orders', [
+        'type' => 'delivery',
+        'items' => [['product_id' => $product->id, 'quantity' => 1]],
+        'contact' => ['name' => 'Ali', 'phone' => '05300000000', 'address' => 'X'],
+        'payment_method' => 'cod',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.order.grand_total', '125.00'); // 100 + 25 delivery
+});
+
 it('404s for an unknown venue', function () {
     postJson('/v1/venues/yok/orders', [
         'type' => 'takeaway',

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Enums\Role;
+use App\Support\Restaurant\RestaurantSettings;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,6 +25,7 @@ class UpdateTenantRequest extends FormRequest
             'timezone' => ['sometimes', 'timezone'],
             'settings_json' => ['sometimes', 'array'],
             'settings_json.branding' => ['sometimes', 'array'],
+            ...RestaurantSettings::rules(),
         ];
     }
 }
