@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Brand, Button } from './ui';
 import { APP_NAME, createApi } from '@/lib/api';
-import { clearSession, getToken } from '@/lib/auth';
+import { clearSession, getImpersonator, getToken, getUser, returnToImpersonator } from '@/lib/auth';
 import { getActiveBranchId, setActiveBranchId } from '@/lib/branch';
 
 const NAV = [
@@ -28,6 +28,17 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
   const router = useRouter();
   const [branches, setBranches] = useState<any[]>([]);
   const [activeBranch, setActive] = useState<number | null>(null);
+  const [impersonating, setImpersonating] = useState(false);
+  const [currentName, setCurrentName] = useState<string>('');
+
+  useEffect(() => {
+    setImpersonating(!!getImpersonator());
+    setCurrentName(getUser()?.name ?? '');
+  }, []);
+
+  function returnToSuper() {
+    if (returnToImpersonator()) window.location.href = '/superadmin';
+  }
 
   useEffect(() => {
     createApi(getToken())
@@ -96,6 +107,19 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
       </aside>
 
       <main className="bg-canvas p-6 lg:p-10">
+        {impersonating && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <span className="text-sm text-amber-900">
+              🔓 <b>{currentName || 'Bir işletme'}</b> paneline süper admin olarak giriş yaptınız.
+            </span>
+            <button
+              onClick={returnToSuper}
+              className="rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+            >
+              ← Süper admin&apos;e dön
+            </button>
+          </div>
+        )}
         {title && <h1 className="mb-6 text-2xl font-bold text-ink">{title}</h1>}
         {children}
       </main>

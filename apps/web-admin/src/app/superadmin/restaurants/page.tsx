@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Panel } from '@/components/superadmin-ui';
 import { Input } from '@/components/ui';
-import { setSession } from '@/lib/auth';
+import { setSession, startImpersonation } from '@/lib/auth';
 import { useApi } from '@/lib/useApi';
 
 function relativeTime(iso?: string): string {
@@ -56,6 +56,7 @@ export default function RestaurantsPage() {
   }
   async function impersonate(t: any) {
     const res = await api.superImpersonate(t.id);
+    startImpersonation(); // remember the superadmin session so we can return
     setSession(res.token, res.user as any);
     router.replace('/dashboard');
   }
@@ -174,25 +175,35 @@ export default function RestaurantsPage() {
                     {t.address ?? '—'}
                   </td>
                   <td className="text-xs text-muted">{relativeTime(t.created_at)}</td>
-                  <td className="py-3 text-right">
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="flex gap-2">
-                        <button onClick={() => impersonate(t)} className="text-xs font-semibold text-brand-600">
-                          ↪ Giriş
-                        </button>
-                        <button onClick={() => remove(t)} className="text-xs font-medium text-red-600">
-                          ✕ Sil
-                        </button>
-                      </div>
+                  <td className="py-3">
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => impersonate(t)}
+                        className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
+                      >
+                        ↪ Giriş
+                      </button>
                       {t.status === 'suspended' ? (
-                        <button onClick={() => setStatus(t, 'active')} className="text-[11px] text-emerald-700">
+                        <button
+                          onClick={() => setStatus(t, 'active')}
+                          className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                        >
                           Aktifleştir
                         </button>
                       ) : (
-                        <button onClick={() => setStatus(t, 'suspended')} className="text-[11px] text-muted">
+                        <button
+                          onClick={() => setStatus(t, 'suspended')}
+                          className="inline-flex items-center rounded-md border border-line bg-white px-2.5 py-1 text-xs font-medium text-muted transition hover:bg-canvas hover:text-ink"
+                        >
                           Askıya al
                         </button>
                       )}
+                      <button
+                        onClick={() => remove(t)}
+                        className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                      >
+                        ✕ Sil
+                      </button>
                     </div>
                   </td>
                 </tr>
