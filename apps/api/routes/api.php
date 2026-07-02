@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\AnalyticsController;
 use App\Http\Controllers\Api\Admin\BranchController;
 use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
 use App\Http\Controllers\Api\Admin\ProductController;
@@ -116,6 +117,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // --- Analytics (M9) — manager+, plan-gated ---
         Route::middleware(['role:manager', 'plan:analytics'])->group(function () {
             Route::get('admin/analytics/overview', [AnalyticsController::class, 'overview']);
+        });
+
+        // --- CRM / loyalty (M8) — manager+ ---
+        Route::middleware('role:manager')->group(function () {
+            Route::get('admin/customers', [CustomerController::class, 'index']);
         });
 
         // --- Waiter (M10, docs/06 §6.8) — waiter+ ---

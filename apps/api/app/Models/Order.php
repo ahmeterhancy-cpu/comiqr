@@ -17,7 +17,7 @@ class Order extends Model
     use BelongsToTenant, HasFactory;
 
     protected $fillable = [
-        'tenant_id', 'branch_id', 'table_session_id', 'source', 'status', 'payment_status',
+        'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'status', 'payment_status',
         'subtotal', 'discount_total', 'tip_total', 'tax_total', 'grand_total', 'note', 'placed_at',
     ];
 
@@ -51,6 +51,11 @@ class Order extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     /** Recompute money from the current items (server authoritative). */

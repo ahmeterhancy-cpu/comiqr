@@ -9,6 +9,7 @@ use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Table;
 use App\Models\TableSession;
+use App\Services\LoyaltyService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,10 @@ class OrderController extends Controller
 {
     use ResolvesQrToken;
 
-    public function __construct(protected OrderService $orders) {}
+    public function __construct(
+        protected OrderService $orders,
+        protected LoyaltyService $loyalty,
+    ) {}
 
     /** POST /sessions/{qrToken}/orders — place a new order. */
     public function place(Request $request, string $qrToken): JsonResponse
@@ -39,7 +43,10 @@ class OrderController extends Controller
         $data = $this->validateItems($request);
         $session = $this->openSession($table);
 
-        $order = $this->orders->place($table, $session, $data['items'], $data['note'] ?? null);
+        // Optional loyalty identity (phone) — enables points on payment (M8).
+        $customer = $this->loyalty->identify($request->input('customer', []));
+
+        $order = $this->orders->place($table, $session, $data['items'], $data['note'] ?? null, $customer);
 
         OrderPlaced::dispatch($order);
 
@@ -89,6 +96,9 @@ class OrderController extends Controller
             'items.*.modifiers.*' => ['integer'],
             'items.*.note' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:500'],
+            'customer' => ['nullable', 'array'],
+            'customer.phone' => ['nullable', 'string', 'max:32'],
+            'customer.name' => ['nullable', 'string', 'max:120'],
         ]);
     }
 

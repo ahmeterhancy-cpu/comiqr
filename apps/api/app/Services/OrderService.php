@@ -23,12 +23,13 @@ class OrderService
     /**
      * @param  array<int,array{product_id:int,variant_id?:int|null,quantity:int,modifiers?:array<int,int>,note?:string}>  $items
      */
-    public function place(Table $table, TableSession $session, array $items, ?string $note = null): Order
+    public function place(Table $table, TableSession $session, array $items, ?string $note = null, ?\App\Models\Customer $customer = null): Order
     {
-        return DB::transaction(function () use ($table, $session, $items, $note) {
+        return DB::transaction(function () use ($table, $session, $items, $note, $customer) {
             $order = Order::create([
                 'branch_id' => $table->branch_id,
                 'table_session_id' => $session->id,
+                'customer_id' => $customer?->id,
                 'source' => 'qr',
                 'status' => 'pending',
                 'payment_status' => 'unpaid',

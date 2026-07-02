@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\DB;
  */
 class PaymentService
 {
-    public function __construct(protected PaymentManager $gateways) {}
+    public function __construct(
+        protected PaymentManager $gateways,
+        protected LoyaltyService $loyalty,
+    ) {}
 
     /**
      * Start a payment for an order. Cash completes immediately. An explicit
@@ -72,9 +75,13 @@ class PaymentService
 
         $order = $payment->order;
         $paid = (float) $order->payments()->where('status', 'paid')->sum('amount');
-        $order->update([
-            'payment_status' => $paid + 0.001 >= (float) $order->grand_total ? 'paid' : 'partially_paid',
-        ]);
+        $fullyPaid = $paid + 0.001 >= (float) $order->grand_total;
+        $order->update(['payment_status' => $fullyPaid ? 'paid' : 'partially_paid']);
+
+        // Award loyalty points once the order is fully paid (M8).
+        if ($fullyPaid) {
+            $this->loyalty->earnForOrder($order->fresh());
+        }
     }
 
     protected function outstanding(Order $order): float
