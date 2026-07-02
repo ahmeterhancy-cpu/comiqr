@@ -101,7 +101,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- Platform superadmin (M12, docs/06 §6.11) — no tenant context ---
     Route::middleware('superadmin')->prefix('superadmin')->group(function () {
+        Route::get('overview', [SuperadminController::class, 'overview']);
+        Route::get('plans', [SuperadminController::class, 'plans']);
+        Route::patch('plans/{id}', [SuperadminController::class, 'updatePlan']);
+        Route::get('users', [SuperadminController::class, 'userSearch']);
         Route::get('tenants', [SuperadminController::class, 'tenants']);
+        Route::get('tenants/{id}', [SuperadminController::class, 'tenantDetail']);
         Route::patch('tenants/{id}', [SuperadminController::class, 'updateTenant']);
         Route::post('tenants/{id}/impersonate', [SuperadminController::class, 'impersonate']);
         Route::get('audit-logs', [SuperadminController::class, 'auditLogs']);

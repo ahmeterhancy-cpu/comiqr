@@ -319,6 +319,21 @@ export class ApiClient {
   }
 
   // --- Superadmin (M12) ---
+  superOverview(): Promise<any> {
+    return this.request('/superadmin/overview');
+  }
+  superPlans(): Promise<any[]> {
+    return this.request('/superadmin/plans');
+  }
+  superUpdatePlan(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/superadmin/plans/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  superTenantDetail(id: number): Promise<any> {
+    return this.request(`/superadmin/tenants/${id}`);
+  }
+  superUsers(q: string): Promise<any[]> {
+    return this.request(`/superadmin/users?q=${encodeURIComponent(q)}`);
+  }
   superTenants(): Promise<any[]> {
     return this.request('/superadmin/tenants');
   }
