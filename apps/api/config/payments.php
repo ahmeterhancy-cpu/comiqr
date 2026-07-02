@@ -14,10 +14,17 @@ return [
             'merchant_salt' => env('PAYTR_MERCHANT_SALT'),
             'iframe_base' => env('PAYTR_IFRAME_BASE', 'https://www.paytr.com/odeme/guvenli'),
         ],
+        // Tiko (tikokart.com) Virtual POS. Hash = base64(hmac_sha256(hashStr +
+        // password, secret)); card data goes browser→Tiko via HTML form POST.
         'tiko' => [
-            'api_key' => env('TIKO_API_KEY'),
-            'api_secret' => env('TIKO_API_SECRET'),
-            'checkout_base' => env('TIKO_CHECKOUT_BASE', 'https://checkout.tiko.example'),
+            'merchant_id' => env('TIKO_MERCHANT_ID'),
+            'secret' => env('TIKO_SECRET'),       // API Key (HMAC key)
+            'password' => env('TIKO_PASSWORD'),   // appended to the hash string
+            'base_url' => env('TIKO_BASE_URL', 'https://www.tikokart.com/api-sanalpos'),
+            'is_test' => (bool) env('TIKO_IS_TEST', true),
+            'currency' => env('TIKO_CURRENCY', 'TRY'),
+            'url_ok' => env('TIKO_URL_OK'),       // falls back to the return route
+            'url_fail' => env('TIKO_URL_FAIL'),
         ],
     ],
 ];

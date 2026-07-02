@@ -10,7 +10,7 @@ namespace App\Payments;
 final class PaymentSession
 {
     private function __construct(
-        public readonly string $kind,     // completed | redirect | iframe
+        public readonly string $kind,     // completed | redirect | iframe | form
         public readonly ?string $url,
         public readonly string $ref,
         public readonly array $meta = [],
@@ -24,6 +24,18 @@ final class PaymentSession
     public static function redirect(string $url, string $ref, array $meta = []): self
     {
         return new self('redirect', $url, $ref, $meta);
+    }
+
+    /**
+     * Auto-submitting form POST to the gateway. `fields` are hidden inputs the
+     * browser posts; the client collects any card fields itself so card data
+     * never touches our server (Tiko pay3d, docs/04 §4.6).
+     *
+     * @param  array<string,string>  $fields
+     */
+    public static function form(string $url, array $fields, string $ref, array $meta = []): self
+    {
+        return new self('form', $url, $ref, array_merge($meta, ['fields' => $fields]));
     }
 
     public static function iframe(string $url, string $ref, array $meta = []): self
