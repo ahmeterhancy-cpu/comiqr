@@ -51,6 +51,12 @@
     "required": "Required",
     "optional": "optional",
     "upTo": "up to {count}",
-    "chooseRequired": "Make the required selections to continue"
+    "chooseRequired": "Make the required selections to continue",
+    "tracking": "Order status",
+    "st_pending": "Received",
+    "st_preparing": "Preparing",
+    "st_ready": "Ready",
+    "st_served": "Served",
+    "st_cancelled": "Cancelled"
   }
 }

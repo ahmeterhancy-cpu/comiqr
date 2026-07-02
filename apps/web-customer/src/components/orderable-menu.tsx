@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ApiClient, ApiError } from '@comiqr/shared-types/client';
 import type { AllergenRef, Menu, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
@@ -33,6 +33,11 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
     () => new Map<number, AllergenRef>(menu.allergens.map((a) => [a.id, a])),
     [menu.allergens],
   );
+  const productNames = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const c of menu.categories) for (const p of c.products) m.set(p.id, p.name);
+    return m;
+  }, [menu.categories]);
   const fmt = useMemo(
     () =>
       new Intl.NumberFormat(menu.venue.locale_default ?? 'tr', {
@@ -57,6 +62,21 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const lines = Object.values(cart);
   const total = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const count = lines.reduce((s, l) => s + l.qty, 0);
+
+  // Live order tracking: poll the order until every item is served (KDS
+  // advances item status → OrderItemStatusChanged also broadcasts over Reverb).
+  useEffect(() => {
+    if (!order || paid || order.status === 'served') return;
+    const id = setInterval(async () => {
+      try {
+        const fresh = await api.request<any>(`/sessions/${encodeURIComponent(qrToken)}/orders/${order.id}`);
+        setOrder(fresh);
+      } catch {
+        /* transient — keep polling */
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [order?.id, order?.status, paid, api, qrToken]);
 
   function qtyFor(productId: number, variantId: number | undefined, modifierIds: number[]): number {
     return cart[lineKey(productId, variantId, modifierIds)]?.qty ?? 0;
@@ -202,6 +222,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           order={order}
           fmt={fmt}
           t={t}
+          productNames={productNames}
           coupon={coupon}
           setCoupon={setCoupon}
           couponMsg={couponMsg}
@@ -282,15 +303,34 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   );
 }
 
-function OrderPanel({ order, fmt, t, coupon, setCoupon, couponMsg, applyCoupon, pay, paying, paid }: any) {
+function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg, applyCoupon, pay, paying, paid }: any) {
+  const items = order.items ?? [];
   return (
     <div className="mx-5 mt-5 overflow-hidden rounded-2xl border border-sage/30 bg-sage-bg">
       <div className="flex items-center justify-between px-5 py-4">
         <span className="text-sm font-medium text-[color:var(--color-sage)]">
-          ✓ {t('placed')} · {order.status} <span className="text-muted">(#{order.id})</span>
+          ✓ {t('placed')} <span className="text-muted">(#{order.id})</span>
         </span>
         <span className="font-display text-lg font-semibold text-ink">{fmt.format(Number(order.grand_total))}</span>
       </div>
+
+      {items.length > 0 && (
+        <div className="border-t border-sage/20 bg-white/60 px-5 py-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{t('tracking')}</p>
+          <ul className="space-y-1.5">
+            {items.map((i: any) => (
+              <li key={i.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate text-ink">
+                  <b className="font-semibold">{i.quantity}×</b>{' '}
+                  {productNames.get(i.product_id) ?? `#${i.product_id}`}
+                </span>
+                <OrderStatus status={i.status} t={t} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {paid ? (
         <p className="px-5 pb-4 font-semibold text-[color:var(--color-sage)]">✓ {t('paid')}</p>
       ) : (
@@ -512,6 +552,31 @@ function Step({ children, onClick }: { children: React.ReactNode; onClick: () =>
     <button onClick={onClick} className="grid h-7 w-7 place-items-center rounded-lg bg-white text-lg font-bold text-brand-600 shadow-sm">
       {children}
     </button>
+  );
+}
+function OrderStatus({ status, t }: { status: string; t: any }) {
+  const style: Record<string, string> = {
+    pending: 'bg-canvas text-muted',
+    preparing: 'bg-amber-bg text-[color:var(--color-amber)]',
+    ready: 'bg-sage-bg text-[color:var(--color-sage)]',
+    served: 'bg-brand-50 text-brand-700',
+    cancelled: 'bg-red-50 text-red-600',
+  };
+  const dot: Record<string, string> = {
+    pending: '○',
+    preparing: '◐',
+    ready: '●',
+    served: '✓',
+    cancelled: '×',
+  };
+  const key = status in style ? status : 'pending';
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${style[key]}`}
+    >
+      <span aria-hidden>{dot[key]}</span>
+      {t(`st_${key}`)}
+    </span>
   );
 }
 function Diet({ children }: { children: React.ReactNode }) {

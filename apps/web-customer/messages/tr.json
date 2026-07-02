@@ -51,6 +51,12 @@
     "required": "Zorunlu",
     "optional": "opsiyonel",
     "upTo": "en fazla {count}",
-    "chooseRequired": "Devam etmek için zorunlu seçimleri yapın"
+    "chooseRequired": "Devam etmek için zorunlu seçimleri yapın",
+    "tracking": "Sipariş durumu",
+    "st_pending": "Alındı",
+    "st_preparing": "Hazırlanıyor",
+    "st_ready": "Hazır",
+    "st_served": "Servis edildi",
+    "st_cancelled": "İptal"
   }
 }
