@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Http\Resources;
+
+use App\Models\Order;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/** @mixin Order */
+class OrderResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'table_session_id' => $this->table_session_id,
+            'source' => $this->source,
+            'status' => $this->status,
+            'payment_status' => $this->payment_status,
+            'subtotal' => $this->subtotal,
+            'discount_total' => $this->discount_total,
+            'tip_total' => $this->tip_total,
+            'grand_total' => $this->grand_total,
+            'note' => $this->note,
+            'placed_at' => $this->placed_at,
+            'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($i) => [
+                'id' => $i->id,
+                'product_id' => $i->product_id,
+                'variant_id' => $i->variant_id,
+                'quantity' => $i->quantity,
+                'unit_price' => $i->unit_price,
+                'modifiers' => $i->modifiers_json ?? [],
+                'line_total' => $i->line_total,
+                'status' => $i->status,
+                'note' => $i->note,
+            ])),
+        ];
+    }
+}

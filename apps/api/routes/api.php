@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MenuController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\TenantController;
 use App\Support\Tenancy\SlugGenerator;
@@ -44,9 +45,19 @@ Route::middleware('tenant')->group(function () {
     Route::get('menu', [MenuController::class, 'show']);
 });
 
-// --- Public QR menu + session (M3, docs/06 §6.2/§6.3) — tenant from token ---
+// --- Public QR menu + session + ordering (M3/M4) — tenant from token ---
 Route::get('menu/{qrToken}', [MenuController::class, 'showByToken']);
-Route::post('sessions/{qrToken}/open', [SessionController::class, 'open'])->middleware('throttle:30,1');
+
+Route::prefix('sessions/{qrToken}')->group(function () {
+    Route::post('open', [SessionController::class, 'open'])->middleware('throttle:30,1');
+    Route::post('call-waiter', [SessionController::class, 'callWaiter'])->middleware('throttle:20,1');
+    Route::post('request-bill', [SessionController::class, 'requestBill'])->middleware('throttle:20,1');
+
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::post('orders', [OrderController::class, 'place'])->middleware('throttle:60,1');
+    Route::get('orders/{order}', [OrderController::class, 'show']);
+    Route::post('orders/{order}/items', [OrderController::class, 'addItems'])->middleware('throttle:60,1');
+});
 
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
