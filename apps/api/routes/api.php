@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AiController;
 use App\Http\Controllers\Api\Admin\AnalyticsController;
 use App\Http\Controllers\Api\Admin\BranchController;
 use App\Http\Controllers\Api\Admin\CategoryController;
@@ -119,6 +120,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // --- Analytics (M9) — manager+, plan-gated ---
         Route::middleware(['role:manager', 'plan:analytics'])->group(function () {
             Route::get('admin/analytics/overview', [AnalyticsController::class, 'overview']);
+        });
+
+        // --- AI menu tasks (M7) — manager+, plan-gated ---
+        Route::middleware(['role:manager', 'plan:ai'])->group(function () {
+            Route::post('admin/ai/product-copy', [AiController::class, 'productCopy'])->middleware('throttle:30,1');
+            Route::post('admin/ai/translate-menu', [AiController::class, 'translateMenu'])->middleware('throttle:10,1');
         });
 
         // --- CRM / loyalty / coupons (M8) — manager+ ---

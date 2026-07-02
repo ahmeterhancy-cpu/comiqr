@@ -18,6 +18,15 @@ class AppServiceProvider extends ServiceProvider
         // One tenant context per request/job (docs/04 §4.2).
         $this->app->singleton(TenantManager::class);
         $this->app->alias(TenantManager::class, 'tenant');
+
+        // Text AI provider (docs/04 §4.7) — Anthropic when a key is set, else null.
+        $this->app->singleton(\App\AI\AiProvider::class, function () {
+            $key = config('ai.anthropic.key');
+
+            return $key
+                ? new \App\AI\AnthropicProvider($key, config('ai.anthropic.model'), (int) config('ai.anthropic.max_tokens', 1024))
+                : new \App\AI\NullAiProvider;
+        });
     }
 
     /**
