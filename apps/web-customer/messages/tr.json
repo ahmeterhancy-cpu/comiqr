@@ -21,5 +21,15 @@
     "glutenFree": "Glutensiz",
     "estimated": "Besin değerleri tahminidir",
     "empty": "Bu menüde henüz ürün yok."
+  },
+  "order": {
+    "add": "Ekle",
+    "cart": "Sepet",
+    "placeOrder": "Sipariş Ver",
+    "placing": "Gönderiliyor…",
+    "placed": "Siparişiniz alındı",
+    "orderStatus": "Durum",
+    "total": "Toplam",
+    "error": "Sipariş gönderilemedi. Lütfen tekrar deneyin."
   }
 }

@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { MenuView } from '@/components/menu';
+import { OrderableMenu } from '@/components/orderable-menu';
 import { fetchMenuByToken } from '@/lib/menu';
 
 /**
- * Menu reached by scanning a table QR (M3, docs/06 §6.2: GET /menu/{qrToken}).
- * Renders the live menu with nutrition and the resolved table context.
+ * Menu reached by scanning a table QR (M3/M4, docs/06 §6.2/§6.3). Renders the
+ * live menu with nutrition, plus an interactive cart that places orders against
+ * the table's session (server-priced).
  */
 export default async function ScannedMenuPage({ params }: { params: Promise<{ qrToken: string }> }) {
   const { qrToken } = await params;
@@ -16,6 +17,8 @@ export default async function ScannedMenuPage({ params }: { params: Promise<{ qr
   }
 
   const t = await getTranslations('menu');
+  const o = await getTranslations('order');
+
   const labels = {
     kcal: t('kcal'),
     protein: t('protein'),
@@ -30,5 +33,25 @@ export default async function ScannedMenuPage({ params }: { params: Promise<{ qr
     empty: t('empty'),
   };
 
-  return <MenuView menu={menu} labels={labels} tableCode={menu.table?.code} />;
+  const strings = {
+    add: o('add'),
+    cart: o('cart'),
+    placeOrder: o('placeOrder'),
+    placing: o('placing'),
+    placed: o('placed'),
+    orderStatus: o('orderStatus'),
+    empty: t('empty'),
+    total: o('total'),
+    error: o('error'),
+  };
+
+  return (
+    <OrderableMenu
+      menu={menu}
+      labels={labels}
+      qrToken={qrToken}
+      tableCode={menu.table?.code}
+      strings={strings}
+    />
+  );
 }

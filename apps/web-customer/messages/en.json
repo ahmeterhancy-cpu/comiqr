@@ -21,5 +21,15 @@
     "glutenFree": "Gluten-free",
     "estimated": "Nutrition values are estimates",
     "empty": "This menu has no items yet."
+  },
+  "order": {
+    "add": "Add",
+    "cart": "Cart",
+    "placeOrder": "Place order",
+    "placing": "Sending…",
+    "placed": "Your order was received",
+    "orderStatus": "Status",
+    "total": "Total",
+    "error": "Could not place the order. Please try again."
   }
 }
