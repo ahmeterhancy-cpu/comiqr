@@ -152,6 +152,12 @@ export class ApiClient {
   getTenant(): Promise<Tenant> {
     return this.request('/tenant');
   }
+  uploadRestaurantMedia(type: 'logo' | 'cover', file: File): Promise<{ type: string; url: string }> {
+    const form = new FormData();
+    form.append('type', type);
+    form.append('image', file);
+    return this.request('/tenant/media', { method: 'POST', body: form });
+  }
 
   // --- Admin: menu management (M1/M2, docs/06 §6.5/§6.6) ---
   adminCategories(): Promise<any[]> {

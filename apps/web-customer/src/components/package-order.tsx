@@ -121,11 +121,24 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
 
   return (
     <div className="mx-auto max-w-2xl pb-32">
-      <header className="bg-brand-600 px-6 pb-6 pt-8 text-white">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Paket Servis</p>
-        <h1 className="mt-1 font-display text-2xl font-semibold" style={{ color: '#ffffff' }}>
-          {menu.venue.name}
-        </h1>
+      <header className="relative overflow-hidden bg-brand-600 px-6 pb-6 pt-8 text-white">
+        {menu.venue.cover && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={menu.venue.cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+        )}
+        <div className="relative flex items-center gap-3">
+          {menu.venue.logo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={menu.venue.logo} alt={menu.venue.name} className="h-14 w-14 shrink-0 rounded-xl object-cover ring-2 ring-white/40" />
+          )}
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Paket Servis</p>
+            <h1 className="font-display text-2xl font-semibold leading-tight" style={{ color: '#ffffff' }}>
+              {menu.venue.name}
+            </h1>
+            {menu.venue.sub_title && <p className="text-sm text-white/80">{menu.venue.sub_title}</p>}
+          </div>
+        </div>
       </header>
 
       {step === 'menu' ? (

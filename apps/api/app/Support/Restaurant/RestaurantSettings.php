@@ -2,6 +2,8 @@
 
 namespace App\Support\Restaurant;
 
+use Illuminate\Validation\Rule;
+
 /**
  * Restaurant profile/settings stored in tenants.settings_json (Faz 2, M20).
  * Shared validation + defaults for the owner (self-serve) and superadmin
@@ -25,8 +27,13 @@ class RestaurantSettings
             'settings_json.delivery_charge' => ['sometimes', 'numeric', 'min:0'],
             'settings_json.order_notification' => ['sometimes', 'boolean'],
             'settings_json.allow_online_payment' => ['sometimes', 'boolean'],
+            'settings_json.theme' => ['sometimes', Rule::in(self::THEMES)],
+            'settings_json.logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'settings_json.cover' => ['sometimes', 'nullable', 'string', 'max:2048'],
         ];
     }
+
+    public const THEMES = ['classic', 'flipbook', 'modern'];
 
     /** Is a feature allowed for this settings blob (missing → allowed)? */
     public static function allows(?array $settings, string $key): bool

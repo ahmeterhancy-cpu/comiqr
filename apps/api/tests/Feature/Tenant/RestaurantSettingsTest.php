@@ -3,10 +3,15 @@
 use App\Enums\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\getJson;
 use function Pest\Laravel\patchJson;
+use function Pest\Laravel\post;
 
 uses(RefreshDatabase::class);
 
@@ -52,4 +57,40 @@ it('forbids a non-superadmin from the superadmin restaurant update', function ()
     Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Owner)->create());
 
     patchJson("/v1/superadmin/tenants/{$tenant->id}/restaurant", ['name' => 'x'])->assertForbidden();
+});
+
+it('uploads a restaurant logo into settings', function () {
+    Storage::fake('public');
+    $tenant = Tenant::factory()->create();
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Manager)->create());
+
+    $res = post('/v1/tenant/media', ['type' => 'logo', 'image' => UploadedFile::fake()->image('logo.png')])
+        ->assertCreated();
+
+    expect($res->json('data.type'))->toBe('logo');
+    expect($res->json('data.url'))->toContain('/v1/media/restaurants/');
+    expect($tenant->fresh()->settings_json['logo'])->toBe($res->json('data.url'));
+});
+
+it('validates the restaurant theme', function () {
+    $tenant = Tenant::factory()->create();
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Manager)->create());
+
+    patchJson('/v1/tenant', ['settings_json' => ['theme' => 'space']])->assertStatus(422);
+    patchJson('/v1/tenant', ['settings_json' => ['theme' => 'modern']])
+        ->assertOk()
+        ->assertJsonPath('data.settings.theme', 'modern');
+});
+
+it('exposes venue branding + theme on the public menu', function () {
+    $tenant = Tenant::factory()->create(['slug' => 'brand-venue']);
+    app(TenantManager::class)->runAs($tenant, fn () => $tenant->update([
+        'settings_json' => ['theme' => 'modern', 'logo' => 'https://x/logo.png', 'sub_title' => 'Kebap & Mangal'],
+    ]));
+
+    getJson('/v1/menu?tenant=brand-venue')
+        ->assertOk()
+        ->assertJsonPath('data.venue.theme', 'modern')
+        ->assertJsonPath('data.venue.logo', 'https://x/logo.png')
+        ->assertJsonPath('data.venue.sub_title', 'Kebap & Mangal');
 });

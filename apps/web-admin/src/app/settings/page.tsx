@@ -21,6 +21,7 @@ export default function SettingsPage() {
           initialSettings={tenant.settings}
           currency={tenant.currency}
           onSave={(payload) => api.updateTenant(payload as any)}
+          onUpload={(type, file) => api.uploadRestaurantMedia(type, file)}
         />
       ) : (
         <p className="text-sm text-muted">Yükleniyor…</p>

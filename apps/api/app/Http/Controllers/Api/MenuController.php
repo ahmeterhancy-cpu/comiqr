@@ -105,11 +105,20 @@ class MenuController extends Controller
             ->orderBy('sort')
             ->get();
 
+        $settings = $tenant->settings_json ?? [];
+
         return [
             'venue' => [
                 'name' => $tenant->name,
                 'locale_default' => $tenant->locale_default,
                 'currency' => $tenant->currency,
+                'sub_title' => $settings['sub_title'] ?? null,
+                'timing' => $settings['timing'] ?? null,
+                'description' => $settings['description'] ?? null,
+                'address' => $settings['address'] ?? null,
+                'logo' => $settings['logo'] ?? null,
+                'cover' => $settings['cover'] ?? null,
+                'theme' => $settings['theme'] ?? 'classic',
             ],
             'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
             'categories' => CategoryResource::collection($categories)->resolve(),

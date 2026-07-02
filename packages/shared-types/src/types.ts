@@ -162,8 +162,21 @@ export interface AllergenRef {
   icon: string | null;
 }
 
+export interface MenuVenue {
+  name: string;
+  locale_default: Locale;
+  currency: string;
+  sub_title?: string | null;
+  timing?: string | null;
+  description?: string | null;
+  address?: string | null;
+  logo?: string | null;
+  cover?: string | null;
+  theme?: 'classic' | 'flipbook' | 'modern';
+}
+
 export interface Menu {
-  venue: { name: string; locale_default: Locale; currency: string };
+  venue: MenuVenue;
   allergens: AllergenRef[];
   categories: MenuCategory[];
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Admin\IntegrationController;
 use App\Http\Controllers\Api\Admin\ModifierGroupController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
+use App\Http\Controllers\Api\Admin\RestaurantMediaController;
 use App\Http\Controllers\Api\Admin\ProductVariantController;
 use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\StockController;
@@ -134,6 +135,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('tenant', [TenantController::class, 'show']);
         Route::patch('tenant', [TenantController::class, 'update'])->middleware('role:manager');
+        Route::post('tenant/media', [RestaurantMediaController::class, 'upload'])->middleware('role:manager');
 
         // --- Menu & recipe management (M1/M2, docs/06 §6.5/§6.6) — manager+ ---
         Route::middleware('role:manager')->group(function () {

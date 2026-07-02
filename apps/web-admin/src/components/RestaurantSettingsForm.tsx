@@ -10,19 +10,31 @@ type Settings = Record<string, any>;
  * and the superadmin "manage restaurant" page. onSave receives the PATCH payload
  * { name, settings_json }.
  */
+const THEMES: [string, string][] = [
+  ['classic', 'Classic'],
+  ['flipbook', 'Flipbook'],
+  ['modern', 'Modern'],
+];
+
 export function RestaurantSettingsForm({
   initialName,
   initialSettings,
   currency,
   onSave,
+  onUpload,
 }: {
   initialName: string;
   initialSettings?: Settings;
   currency?: string;
   onSave: (payload: Record<string, unknown>) => Promise<unknown>;
+  onUpload?: (type: 'logo' | 'cover', file: File) => Promise<{ url: string }>;
 }) {
   const s = initialSettings ?? {};
   const [name, setName] = useState(initialName ?? '');
+  const [theme, setTheme] = useState<string>(s.theme ?? 'classic');
+  const [logo, setLogo] = useState<string | null>(s.logo ?? null);
+  const [cover, setCover] = useState<string | null>(s.cover ?? null);
+  const [uploading, setUploading] = useState<string | null>(null);
   const [subTitle, setSubTitle] = useState<string>(s.sub_title ?? '');
   const [timing, setTiming] = useState<string>(s.timing ?? '');
   const [description, setDescription] = useState<string>(s.description ?? '');
@@ -57,6 +69,9 @@ export function RestaurantSettingsForm({
           delivery_charge: Number(deliveryCharge || 0),
           order_notification: notify,
           allow_online_payment: online,
+          theme,
+          logo,
+          cover,
         },
       });
       setSaved(true);
@@ -64,6 +79,21 @@ export function RestaurantSettingsForm({
       setError('Kaydedilemedi.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function upload(type: 'logo' | 'cover', file: File) {
+    if (!onUpload) return;
+    setUploading(type);
+    setError(null);
+    try {
+      const res = await onUpload(type, file);
+      if (type === 'logo') setLogo(res.url);
+      else setCover(res.url);
+    } catch {
+      setError('Görsel yüklenemedi.');
+    } finally {
+      setUploading(null);
     }
   }
 
@@ -95,6 +125,30 @@ export function RestaurantSettingsForm({
             <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="İşletme adresi" />
           </Field>
         </div>
+      </Card>
+
+      <Card>
+        <h3 className="mb-3 text-sm font-semibold text-ink">Görünüm & Tema</h3>
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          {THEMES.map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setTheme(val)}
+              className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
+                theme === val ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-muted'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {onUpload && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ImageUpload label="Logo" url={logo} busy={uploading === 'logo'} onPick={(f) => upload('logo', f)} />
+            <ImageUpload label="Kapak Görseli" url={cover} busy={uploading === 'cover'} onPick={(f) => upload('cover', f)} wide />
+          </div>
+        )}
       </Card>
 
       <Card>
@@ -137,6 +191,43 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
       {children}
     </label>
+  );
+}
+
+function ImageUpload({
+  label,
+  url,
+  busy,
+  onPick,
+  wide,
+}: {
+  label: string;
+  url: string | null;
+  busy: boolean;
+  onPick: (file: File) => void;
+  wide?: boolean;
+}) {
+  return (
+    <div>
+      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+      <div className={`mb-2 overflow-hidden rounded-lg border border-line bg-canvas ${wide ? 'aspect-[3/1]' : 'aspect-square max-w-[120px]'}`}>
+        {url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt={label} className="h-full w-full object-cover" />
+        ) : (
+          <div className="grid h-full place-items-center text-xs text-muted">—</div>
+        )}
+      </div>
+      <label className="inline-block cursor-pointer rounded-md border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-canvas">
+        {busy ? 'Yükleniyor…' : 'Görsel Yükle'}
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])}
+        />
+      </label>
+    </div>
   );
 }
 
