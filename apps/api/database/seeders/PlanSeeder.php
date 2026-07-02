@@ -72,7 +72,7 @@ class PlanSeeder extends Seeder
         ];
 
         foreach ($plans as $plan) {
-            Plan::updateOrCreate(['code' => $plan['code']], $plan + ['currency' => 'EUR', 'is_active' => true]);
+            Plan::updateOrCreate(['code' => $plan['code']], $plan + ['currency' => 'TRY', 'is_active' => true]);
         }
     }
 }
