@@ -47,6 +47,10 @@
     "saturatedFat": "Saturated fat",
     "sugar": "Sugar",
     "fiber": "Fiber",
-    "sodium": "Sodium"
+    "sodium": "Sodium",
+    "required": "Required",
+    "optional": "optional",
+    "upTo": "up to {count}",
+    "chooseRequired": "Make the required selections to continue"
   }
 }

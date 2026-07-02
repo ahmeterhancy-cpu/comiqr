@@ -159,6 +159,35 @@ export class ApiClient {
   deleteVariant(productId: number, variantId: number): Promise<any> {
     return this.request(`/admin/products/${productId}/variants/${variantId}`, { method: 'DELETE' });
   }
+
+  // --- Admin: modifier groups (M1) ---
+  adminModifierGroups(): Promise<any[]> {
+    return this.request('/admin/modifier-groups');
+  }
+  createModifierGroup(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/modifier-groups', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateModifierGroup(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/modifier-groups/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteModifierGroup(id: number): Promise<any> {
+    return this.request(`/admin/modifier-groups/${id}`, { method: 'DELETE' });
+  }
+  addModifier(groupId: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/modifier-groups/${groupId}/modifiers`, { method: 'POST', body: JSON.stringify(body) });
+  }
+  deleteModifier(groupId: number, modifierId: number): Promise<any> {
+    return this.request(`/admin/modifier-groups/${groupId}/modifiers/${modifierId}`, { method: 'DELETE' });
+  }
+  attachModifierGroup(productId: number, groupId: number): Promise<any> {
+    return this.request(`/admin/products/${productId}/modifier-groups`, {
+      method: 'POST',
+      body: JSON.stringify({ modifier_group_id: groupId }),
+    });
+  }
+  detachModifierGroup(productId: number, groupId: number): Promise<any> {
+    return this.request(`/admin/products/${productId}/modifier-groups/${groupId}`, { method: 'DELETE' });
+  }
   adminIngredients(q?: string): Promise<any[]> {
     return this.request(`/admin/ingredients${q ? `?q=${encodeURIComponent(q)}` : ''}`);
   }

@@ -7,6 +7,7 @@ use App\Jobs\RecomputeNutrition;
 use App\Models\Allergen;
 use App\Models\Category;
 use App\Models\Ingredient;
+use App\Models\ModifierGroup;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Recipe;
@@ -68,17 +69,32 @@ class DemoMenuSeeder extends Seeder
             $tatlilar = $this->category('Tatlılar', 3);
 
             // --- Products + recipes ---
-            $this->product($mezeler, 'Hellim Izgara', 140, ['tags_json' => ['favorite']], [
+            $hellimIzgara = $this->product($mezeler, 'Hellim Izgara', 140, ['tags_json' => ['favorite']], [
                 [$hellim, 150, 'g'], [$zeytin, 10, 'ml'],
             ]);
 
-            $this->product($anaYemek, 'Şeftali Kebabı', 280, ['tags_json' => ['chefs_choice']], [
+            $seftali = $this->product($anaYemek, 'Şeftali Kebabı', 280, ['tags_json' => ['chefs_choice']], [
                 [$kiyma, 220, 'g'], [$bulgur, 120, 'g'], [$ekmek, 60, 'g'],
             ]);
 
             $this->product($tatlilar, 'Cevizli Baklava', 120, ['tags_json' => ['new']], [
                 [$baklavaHamur, 90, 'g'], [$ceviz, 40, 'g'],
             ]);
+
+            // --- Modifier groups (M1) — optional extras + a required doneness choice ---
+            $extras = $this->modifierGroup('Ekstra Malzeme', ['min_select' => 0, 'max_select' => 3, 'is_required' => false], [
+                ['name' => 'Ekstra Hellim', 'price_delta' => 40],
+                ['name' => 'Acılı Sos', 'price_delta' => 0],
+                ['name' => 'Ceviz', 'price_delta' => 25],
+            ]);
+            $hellimIzgara->modifierGroups()->syncWithoutDetaching([$extras->id]);
+
+            $doneness = $this->modifierGroup('Pişme Derecesi', ['min_select' => 1, 'max_select' => 1, 'is_required' => true], [
+                ['name' => 'Az Pişmiş', 'price_delta' => 0],
+                ['name' => 'Orta', 'price_delta' => 0],
+                ['name' => 'İyi Pişmiş', 'price_delta' => 0],
+            ]);
+            $seftali->modifierGroups()->syncWithoutDetaching([$doneness->id]);
 
             // Recompute nutrition for every product with a recipe.
             Product::whereHas('recipe')->pluck('id')
@@ -110,7 +126,7 @@ class DemoMenuSeeder extends Seeder
     }
 
     /** @param array<int,array{0:Ingredient,1:float,2:string}> $items */
-    private function product(Category $category, string $name, float $price, array $extra, array $items): void
+    private function product(Category $category, string $name, float $price, array $extra, array $items): Product
     {
         $product = Product::updateOrCreate(
             ['category_id' => $category->id, 'name' => $name],
@@ -122,5 +138,23 @@ class DemoMenuSeeder extends Seeder
         foreach ($items as [$ingredient, $qty, $unit]) {
             $recipe->items()->create(['ingredient_id' => $ingredient->id, 'quantity' => $qty, 'unit' => $unit]);
         }
+
+        return $product;
+    }
+
+    /**
+     * @param  array{min_select:int,max_select:int,is_required:bool}  $attrs
+     * @param  array<int,array{name:string,price_delta:float}>  $options
+     */
+    private function modifierGroup(string $name, array $attrs, array $options): ModifierGroup
+    {
+        $group = ModifierGroup::updateOrCreate(['name' => $name], $attrs);
+
+        $group->modifiers()->delete();
+        foreach ($options as $sort => $option) {
+            $group->modifiers()->create($option + ['sort' => $sort]);
+        }
+
+        return $group;
     }
 }

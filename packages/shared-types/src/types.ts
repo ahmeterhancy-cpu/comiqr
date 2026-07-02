@@ -110,6 +110,21 @@ export interface MenuVariant {
   is_default: boolean;
 }
 
+export interface MenuModifier {
+  id: number;
+  name: string;
+  price_delta: string | number;
+}
+
+export interface MenuModifierGroup {
+  id: number;
+  name: string;
+  min_select: number;
+  max_select: number;
+  is_required: boolean;
+  modifiers: MenuModifier[];
+}
+
 export interface MenuProduct {
   id: number;
   category_id: number;
@@ -124,6 +139,7 @@ export interface MenuProduct {
   tags: string[];
   calories_display: boolean;
   variants: MenuVariant[];
+  modifier_groups: MenuModifierGroup[];
   nutrition: NutritionInfo | null;
 }
 

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Modifier;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -103,27 +102,66 @@ class OrderService
     }
 
     /**
-     * Resolve modifier ids to a priced snapshot, constrained to this tenant's
-     * modifier groups (whereHas('group') applies the group's tenant scope).
+     * Validate the chosen modifier ids against the product's own modifier groups
+     * and return a priced snapshot. Server-authoritative (docs/05 §5.2):
+     *   - every id must belong to a group attached to this product,
+     *   - per-group selections must satisfy min/required and not exceed max_select.
+     * Selecting a modifier from another product/tenant's group is rejected.
      *
      * @param  array<int,int>  $ids
      * @return array<int,array{id:int,name:string,price_delta:float}>
      */
     protected function resolveModifiers(Product $product, array $ids): array
     {
-        if (empty($ids)) {
-            return [];
+        $product->loadMissing('modifierGroups.modifiers');
+        $groups = $product->modifierGroups;
+
+        // Fast index: modifier id => [modifier, owning group].
+        $allowed = [];
+        foreach ($groups as $group) {
+            foreach ($group->modifiers as $modifier) {
+                $allowed[$modifier->id] = ['modifier' => $modifier, 'group' => $group];
+            }
         }
 
-        return Modifier::whereIn('id', $ids)
-            ->whereHas('group')
-            ->get()
-            ->map(fn (Modifier $m) => [
-                'id' => $m->id,
-                'name' => $m->name,
-                'price_delta' => (float) $m->price_delta,
-            ])
-            ->values()
-            ->all();
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        // Reject any id that isn't an option of one of this product's groups.
+        foreach ($ids as $id) {
+            if (! isset($allowed[$id])) {
+                throw ValidationException::withMessages([
+                    'items' => ['Invalid modifier for product.'],
+                ]);
+            }
+        }
+
+        // Enforce each group's selection bounds.
+        $perGroup = [];
+        foreach ($ids as $id) {
+            $groupId = $allowed[$id]['group']->id;
+            $perGroup[$groupId] = ($perGroup[$groupId] ?? 0) + 1;
+        }
+        foreach ($groups as $group) {
+            $count = $perGroup[$group->id] ?? 0;
+            $min = $group->is_required ? max(1, $group->min_select) : $group->min_select;
+
+            if ($count < $min) {
+                throw ValidationException::withMessages([
+                    'items' => ["Select at least {$min} option(s) from {$group->name}."],
+                ]);
+            }
+            if ($group->max_select > 0 && $count > $group->max_select) {
+                throw ValidationException::withMessages([
+                    'items' => ["Select at most {$group->max_select} option(s) from {$group->name}."],
+                ]);
+            }
+        }
+
+        // Priced snapshot, preserving the order the guest selected them in.
+        return array_map(fn (int $id) => [
+            'id' => $allowed[$id]['modifier']->id,
+            'name' => $allowed[$id]['modifier']->name,
+            'price_delta' => (float) $allowed[$id]['modifier']->price_delta,
+        ], $ids);
     }
 }

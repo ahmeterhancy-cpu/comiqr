@@ -11,20 +11,23 @@ export default function MenuPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [ingredients, setIngredients] = useState<any[]>([]);
+  const [modifierGroups, setModifierGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [cats, prods, ings] = await Promise.all([
+    const [cats, prods, ings, mods] = await Promise.all([
       api.adminCategories(),
       api.adminProducts(),
       api.adminIngredients(),
+      api.adminModifierGroups(),
     ]);
     setCategories(cats);
     setProducts(prods);
     setIngredients(ings);
+    setModifierGroups(mods);
     setLoading(false);
   }, [api]);
 
@@ -148,6 +151,7 @@ export default function MenuPage() {
                     {expanded === p.id && (
                       <>
                         <VariantsManager product={p} api={api} onChanged={load} />
+                        <ModifiersManager product={p} api={api} groups={modifierGroups} onChanged={load} />
                         <RecipeEditor product={p} ingredients={ingredients} api={api} />
                       </>
                     )}
@@ -221,6 +225,175 @@ function VariantsManager({ product, api, onChanged }: { product: any; api: any; 
         <Button type="submit" variant="ghost">Ekle</Button>
       </form>
     </div>
+  );
+}
+
+function ModifiersManager({
+  product,
+  api,
+  groups,
+  onChanged,
+}: {
+  product: any;
+  api: any;
+  groups: any[];
+  onChanged: () => void;
+}) {
+  const attachedIds: number[] = (product.modifier_groups ?? []).map((g: any) => g.id);
+  const attached = groups.filter((g) => attachedIds.includes(g.id));
+  const available = groups.filter((g) => !attachedIds.includes(g.id));
+
+  const [attachId, setAttachId] = useState('');
+  const [newName, setNewName] = useState('');
+  const [minSel, setMinSel] = useState('0');
+  const [maxSel, setMaxSel] = useState('1');
+  const [required, setRequired] = useState(false);
+
+  async function createAndAttach() {
+    if (!newName.trim()) return;
+    const g = await api.createModifierGroup({
+      name: newName.trim(),
+      min_select: Number(minSel || 0),
+      max_select: Math.max(1, Number(maxSel || 1)),
+      is_required: required,
+    });
+    await api.attachModifierGroup(product.id, g.id);
+    setNewName('');
+    setMinSel('0');
+    setMaxSel('1');
+    setRequired(false);
+    onChanged();
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-line bg-canvas p-4">
+      <h4 className="mb-2 text-sm font-semibold text-ink">Ekstra / Seçenek Grupları</h4>
+
+      {attached.length === 0 && <p className="mb-2 text-xs text-muted">Bu ürüne bağlı grup yok.</p>}
+
+      <div className="space-y-3">
+        {attached.map((g) => (
+          <div key={g.id} className="rounded-lg border border-line bg-white p-3">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-ink">
+                {g.name}{' '}
+                <span className="text-xs font-normal text-muted">
+                  ({g.is_required ? 'zorunlu' : 'opsiyonel'} · {g.min_select}–{g.max_select})
+                </span>
+              </span>
+              <button
+                onClick={async () => {
+                  await api.detachModifierGroup(product.id, g.id);
+                  onChanged();
+                }}
+                className="text-xs font-medium text-red-600"
+              >
+                Üründen çıkar
+              </button>
+            </div>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {(g.modifiers ?? []).map((m: any) => (
+                <span key={m.id} className="flex items-center gap-1.5 rounded-full bg-canvas px-2.5 py-0.5 text-xs">
+                  {m.name}
+                  {Number(m.price_delta) ? ` (+₺${Number(m.price_delta).toFixed(0)})` : ''}
+                  <button
+                    onClick={async () => {
+                      await api.deleteModifier(g.id, m.id);
+                      onChanged();
+                    }}
+                    className="text-red-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {(g.modifiers ?? []).length === 0 && <span className="text-xs text-muted">Seçenek yok.</span>}
+            </div>
+            <AddOption groupId={g.id} api={api} onChanged={onChanged} />
+          </div>
+        ))}
+      </div>
+
+      {available.length > 0 && (
+        <div className="mt-3 flex gap-2">
+          <select
+            value={attachId}
+            onChange={(e) => setAttachId(e.target.value)}
+            className="flex-1 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+          >
+            <option value="">Mevcut grubu bağla…</option>
+            {available.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={async () => {
+              if (!attachId) return;
+              await api.attachModifierGroup(product.id, Number(attachId));
+              setAttachId('');
+              onChanged();
+            }}
+          >
+            Bağla
+          </Button>
+        </div>
+      )}
+
+      <div className="mt-3 border-t border-line pt-3">
+        <p className="mb-1.5 text-xs font-medium text-muted">Yeni grup oluştur ve bağla</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Grup adı (ör. Ekstra Malzeme)"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="min-w-[180px] flex-1"
+          />
+          <label className="flex items-center gap-1 text-xs text-muted">
+            min
+            <Input type="number" className="w-14" value={minSel} onChange={(e) => setMinSel(e.target.value)} />
+          </label>
+          <label className="flex items-center gap-1 text-xs text-muted">
+            maks
+            <Input type="number" className="w-14" value={maxSel} onChange={(e) => setMaxSel(e.target.value)} />
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted">
+            <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
+            Zorunlu
+          </label>
+          <Button type="button" variant="ghost" onClick={createAndAttach}>
+            Oluştur
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddOption({ groupId, api, onChanged }: { groupId: number; api: any; onChanged: () => void }) {
+  const [name, setName] = useState('');
+  const [delta, setDelta] = useState('');
+  return (
+    <form
+      className="flex gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        await api.addModifier(groupId, { name: name.trim(), price_delta: Number(delta || 0) });
+        setName('');
+        setDelta('');
+        onChanged();
+      }}
+    >
+      <Input placeholder="Seçenek (ör. Ekstra Peynir)" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder="+₺" type="number" className="w-24" value={delta} onChange={(e) => setDelta(e.target.value)} />
+      <Button type="submit" variant="ghost">
+        Ekle
+      </Button>
+    </form>
   );
 }
 

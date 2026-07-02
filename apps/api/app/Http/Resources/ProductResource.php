@@ -31,6 +31,7 @@ class ProductResource extends JsonResource
             'tags' => $this->tags_json ?? [],
             'calories_display' => $this->calories_display,
             'variants' => VariantResource::collection($this->whenLoaded('variants')),
+            'modifier_groups' => ModifierGroupResource::collection($this->whenLoaded('modifierGroups')),
             'nutrition' => $showNutrition ? new NutritionSummaryResource($summary) : null,
         ];
     }

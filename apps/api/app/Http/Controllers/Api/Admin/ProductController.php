@@ -22,7 +22,7 @@ class ProductController extends Controller
     {
         $products = Product::query()
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id')))
-            ->with(['variants', 'nutritionSummary'])
+            ->with(['variants', 'modifierGroups', 'nutritionSummary'])
             ->orderBy('sort')
             ->get();
 

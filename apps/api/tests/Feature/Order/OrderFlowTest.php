@@ -28,8 +28,9 @@ function seedOrderable(): array
         $category = Category::factory()->create();
         $product = Product::factory()->forCategory($category)->create(['price' => 100]);
         $variant = ProductVariant::create(['product_id' => $product->id, 'name' => 'Large', 'price_delta' => 20]);
-        $group = ModifierGroup::factory()->create();
+        $group = ModifierGroup::factory()->create(['max_select' => 2]);
         $modifier = Modifier::create(['modifier_group_id' => $group->id, 'name' => 'Extra Peynir', 'price_delta' => 15]);
+        $product->modifierGroups()->attach($group->id);
         $table = Table::factory()->create(['code' => 'Masa 3']);
 
         return compact('tenant', 'product', 'variant', 'modifier', 'table');

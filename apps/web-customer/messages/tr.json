@@ -47,6 +47,10 @@
     "saturatedFat": "Doymuş yağ",
     "sugar": "Şeker",
     "fiber": "Lif",
-    "sodium": "Sodyum"
+    "sodium": "Sodyum",
+    "required": "Zorunlu",
+    "optional": "opsiyonel",
+    "upTo": "en fazla {count}",
+    "chooseRequired": "Devam etmek için zorunlu seçimleri yapın"
   }
 }

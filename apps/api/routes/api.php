@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\CouponController;
 use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
+use App\Http\Controllers\Api\Admin\ModifierGroupController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
 use App\Http\Controllers\Api\Admin\ProductVariantController;
@@ -121,6 +122,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('admin/products/{product}/media', [ProductMediaController::class, 'destroy']);
             Route::post('admin/products/{product}/variants', [ProductVariantController::class, 'store']);
             Route::delete('admin/products/{product}/variants/{variant}', [ProductVariantController::class, 'destroy']);
+
+            // Modifier groups (M1) — reusable option sets + product attachment.
+            Route::apiResource('admin/modifier-groups', ModifierGroupController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::post('admin/modifier-groups/{group}/modifiers', [ModifierGroupController::class, 'storeModifier']);
+            Route::delete('admin/modifier-groups/{group}/modifiers/{modifier}', [ModifierGroupController::class, 'destroyModifier']);
+            Route::post('admin/products/{product}/modifier-groups', [ModifierGroupController::class, 'attach']);
+            Route::delete('admin/products/{product}/modifier-groups/{group}', [ModifierGroupController::class, 'detach']);
 
             Route::apiResource('admin/ingredients', IngredientController::class)
                 ->only(['index', 'store', 'update', 'destroy']);

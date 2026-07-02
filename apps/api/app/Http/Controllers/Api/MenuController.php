@@ -99,6 +99,7 @@ class MenuController extends Controller
                     ->orderBy('sort'),
                 'products.translations',
                 'products.variants',
+                'products.modifierGroups.modifiers',
                 'products.nutritionSummary',
             ])
             ->orderBy('sort')
