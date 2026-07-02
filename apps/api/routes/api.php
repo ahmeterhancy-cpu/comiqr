@@ -113,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('tenants', [SuperadminController::class, 'tenants']);
         Route::get('tenants/{id}', [SuperadminController::class, 'tenantDetail']);
         Route::patch('tenants/{id}', [SuperadminController::class, 'updateTenant']);
+        Route::delete('tenants/{id}', [SuperadminController::class, 'deleteTenant']);
         Route::post('tenants/{id}/impersonate', [SuperadminController::class, 'impersonate']);
         Route::get('audit-logs', [SuperadminController::class, 'auditLogs']);
     });

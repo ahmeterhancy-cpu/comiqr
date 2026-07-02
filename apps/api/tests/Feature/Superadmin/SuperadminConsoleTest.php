@@ -132,6 +132,20 @@ it('manages global allergens', function () {
     deleteJson("/v1/superadmin/allergens/{$id}")->assertOk();
 });
 
+it('tenant list carries the owner name and supports soft delete', function () {
+    $tenant = Tenant::factory()->create(['name' => 'Silinecek Mekan']);
+    User::factory()->forTenant($tenant)->role(Role::Owner)->create(['name' => 'Ali Veli']);
+
+    Sanctum::actingAs(rootUser());
+
+    getJson('/v1/superadmin/tenants')->assertOk()->assertJsonPath('data.0.owner_name', 'Ali Veli');
+
+    deleteJson("/v1/superadmin/tenants/{$tenant->id}")->assertOk();
+
+    getJson('/v1/superadmin/tenants')->assertOk()->assertJsonMissing(['name' => 'Silinecek Mekan']);
+    expect(Tenant::withTrashed()->whereKey($tenant->id)->first()->trashed())->toBeTrue();
+});
+
 it('forbids non-superadmins from the console', function () {
     $tenant = Tenant::factory()->create();
     Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Owner)->create());

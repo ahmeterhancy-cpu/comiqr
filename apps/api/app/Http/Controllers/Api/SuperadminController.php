@@ -277,21 +277,53 @@ class SuperadminController extends Controller
             ->with('plan:id,code,name')
             ->withCount(['users', 'branches'])
             ->orderByDesc('id')
-            ->get()
-            ->map(fn (Tenant $t) => [
-                'id' => $t->id,
-                'name' => $t->name,
-                'slug' => $t->slug,
-                'status' => $t->status,
-                'plan' => $t->plan?->name,
-                'plan_id' => $t->plan_id,
-                'users' => $t->users_count,
-                'branches' => $t->branches_count,
-                'trial_ends_at' => $t->trial_ends_at,
-                'created_at' => $t->created_at,
-            ]);
+            ->get();
 
-        return response()->json(['data' => $tenants]);
+        // Owner name per tenant (first Owner user), for the list column.
+        $owners = User::query()
+            ->whereIn('tenant_id', $tenants->pluck('id'))
+            ->where('role', Role::Owner->value)
+            ->orderBy('id')
+            ->get(['id', 'tenant_id', 'name'])
+            ->groupBy('tenant_id')
+            ->map(fn ($group) => $group->first()->name);
+
+        $data = $tenants->map(fn (Tenant $t) => [
+            'id' => $t->id,
+            'name' => $t->name,
+            'slug' => $t->slug,
+            'status' => $t->status,
+            'plan' => $t->plan?->name,
+            'plan_id' => $t->plan_id,
+            'owner_name' => $owners[$t->id] ?? null,
+            'address' => $t->settings_json['address'] ?? null,
+            'users' => $t->users_count,
+            'branches' => $t->branches_count,
+            'trial_ends_at' => $t->trial_ends_at,
+            'created_at' => $t->created_at,
+        ]);
+
+        return response()->json(['data' => $data]);
+    }
+
+    /** DELETE /superadmin/tenants/{id} — soft-delete a tenant (recoverable). */
+    public function deleteTenant(Request $request, string $id): JsonResponse
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        AuditLog::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $request->user()->id,
+            'action' => 'superadmin.tenant_deleted',
+            'subject_type' => Tenant::class,
+            'subject_id' => $tenant->id,
+            'meta_json' => ['slug' => $tenant->slug, 'name' => $tenant->name],
+            'ip' => $request->ip(),
+        ]);
+
+        $tenant->delete();
+
+        return response()->json(['data' => ['deleted' => true]]);
     }
 
     /** PATCH /superadmin/tenants/{id} — change status/plan. */
