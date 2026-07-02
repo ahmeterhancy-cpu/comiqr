@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\AnalyticsController;
 use App\Http\Controllers\Api\Admin\BranchController;
 use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\CouponController;
 use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
@@ -65,6 +66,7 @@ Route::prefix('sessions/{qrToken}')->group(function () {
     Route::post('orders', [OrderController::class, 'place'])->middleware('throttle:60,1');
     Route::get('orders/{order}', [OrderController::class, 'show']);
     Route::post('orders/{order}/items', [OrderController::class, 'addItems'])->middleware('throttle:60,1');
+    Route::post('orders/{order}/apply-coupon', [OrderController::class, 'applyCoupon'])->middleware('throttle:20,1');
     Route::post('orders/{order}/pay', [PaymentController::class, 'pay'])->middleware('throttle:30,1');
 });
 
@@ -119,9 +121,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('admin/analytics/overview', [AnalyticsController::class, 'overview']);
         });
 
-        // --- CRM / loyalty (M8) — manager+ ---
+        // --- CRM / loyalty / coupons (M8) — manager+ ---
         Route::middleware('role:manager')->group(function () {
             Route::get('admin/customers', [CustomerController::class, 'index']);
+            Route::apiResource('admin/coupons', CouponController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
         });
 
         // --- Waiter (M10, docs/06 §6.8) — waiter+ ---

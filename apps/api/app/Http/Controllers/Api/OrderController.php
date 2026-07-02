@@ -74,6 +74,26 @@ class OrderController extends Controller
         return response()->json(['data' => new OrderResource($model->load('items'))]);
     }
 
+    /** POST /sessions/{qrToken}/orders/{order}/apply-coupon */
+    public function applyCoupon(Request $request, string $qrToken, string $order): JsonResponse
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'max:64']]);
+        $model = $this->orderForToken($qrToken, $order);
+        abort_if($model->payment_status !== 'unpaid', 422, 'Order can no longer be discounted.');
+
+        $coupon = \App\Models\Coupon::where('code', $data['code'])->first();
+        abort_if($coupon === null || ! $coupon->isRedeemable(), 422, 'Invalid or expired coupon.');
+
+        $discount = $coupon->discountFor((float) $model->subtotal);
+        abort_if($discount <= 0, 422, 'Coupon conditions not met.');
+
+        $model->update(['discount_total' => $discount]);
+        $model->recalculateTotals();
+        $coupon->increment('used_count');
+
+        return response()->json(['data' => new OrderResource($model->fresh('items'))]);
+    }
+
     /** POST /sessions/{qrToken}/orders/{order}/items — multi-round: add items. */
     public function addItems(Request $request, string $qrToken, string $order): JsonResponse
     {
