@@ -10,6 +10,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
 interface CartLine {
   product: MenuProduct;
   qty: number;
+  variantId?: number;
+  unitPrice: number;
 }
 
 export function OrderableMenu({
@@ -52,14 +54,14 @@ export function OrderableMenu({
   const [error, setError] = useState<string | null>(null);
 
   const lines = Object.values(cart);
-  const total = lines.reduce((s, l) => s + Number(l.product.price) * l.qty, 0);
+  const total = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const count = lines.reduce((s, l) => s + l.qty, 0);
 
-  function setQty(p: MenuProduct, qty: number) {
+  function setQty(p: MenuProduct, qty: number, variantId: number | undefined, unitPrice: number) {
     setCart((c) => {
       const n = { ...c };
       if (qty <= 0) delete n[p.id];
-      else n[p.id] = { product: p, qty };
+      else n[p.id] = { product: p, qty, variantId, unitPrice };
       return n;
     });
   }
@@ -86,7 +88,7 @@ export function OrderableMenu({
       const res = await api.request<any>(`/sessions/${encodeURIComponent(qrToken)}/orders`, {
         method: 'POST',
         body: JSON.stringify({
-          items: lines.map((l) => ({ product_id: l.product.id, quantity: l.qty })),
+          items: lines.map((l) => ({ product_id: l.product.id, quantity: l.qty, variant_id: l.variantId })),
           customer: phone ? { phone } : undefined,
         }),
       });
@@ -176,8 +178,8 @@ export function OrderableMenu({
               <ProductRow
                 key={p.id}
                 product={p}
-                qty={cart[p.id]?.qty ?? 0}
-                onQty={(q: number) => setQty(p, q)}
+                cartQty={cart[p.id]?.qty ?? 0}
+                onSet={(qty: number, vid: number | undefined, up: number) => setQty(p, qty, vid, up)}
                 allergenMap={allergenMap}
                 fmt={fmt}
                 t={t}
@@ -257,10 +259,25 @@ function OrderPanel({ order, fmt, t, coupon, setCoupon, couponMsg, applyCoupon, 
   );
 }
 
-function ProductRow({ product, qty, onQty, allergenMap, fmt, t, m }: any) {
+function ProductRow({ product, cartQty, onSet, allergenMap, fmt, t, m }: any) {
   const [detail, setDetail] = useState(false);
+  const variants = product.variants ?? [];
+  const [variantId, setVariantId] = useState<number | undefined>(
+    variants.find((v: any) => v.is_default)?.id ?? variants[0]?.id,
+  );
   const n = product.nutrition;
   const contains = (n?.allergens.contains ?? []).map((id: number) => allergenMap.get(id)?.name).filter(Boolean);
+
+  const variant = variants.find((v: any) => v.id === variantId);
+  const unitPrice = Number(product.price) + Number(variant?.price_delta ?? 0);
+
+  function chooseVariant(id: number) {
+    setVariantId(id);
+    if (cartQty > 0) {
+      const v = variants.find((x: any) => x.id === id);
+      onSet(cartQty, id, Number(product.price) + Number(v?.price_delta ?? 0));
+    }
+  }
 
   return (
     <article className="rounded-2xl border bg-surface p-4 shadow-sm">
@@ -303,22 +320,39 @@ function ProductRow({ product, qty, onQty, allergenMap, fmt, t, m }: any) {
           )}
         </div>
         <div className="shrink-0 text-right">
-          <div className="font-bold text-ink">{fmt.format(Number(product.price))}</div>
+          <div className="font-bold text-ink">{fmt.format(unitPrice)}</div>
           <div className="mt-2">
-            {qty === 0 ? (
-              <button onClick={() => onQty(1)} className="rounded-lg border border-brand-500 px-3 py-1 text-sm font-semibold text-brand-600">
+            {cartQty === 0 ? (
+              <button onClick={() => onSet(1, variantId, unitPrice)} className="rounded-lg border border-brand-500 px-3 py-1 text-sm font-semibold text-brand-600">
                 {t('add')}
               </button>
             ) : (
               <div className="inline-flex items-center gap-2 rounded-lg border">
-                <button onClick={() => onQty(qty - 1)} className="h-8 w-8 text-lg font-bold text-brand-600">−</button>
-                <span className="min-w-5 text-center text-sm font-semibold">{qty}</span>
-                <button onClick={() => onQty(qty + 1)} className="h-8 w-8 text-lg font-bold text-brand-600">+</button>
+                <button onClick={() => onSet(cartQty - 1, variantId, unitPrice)} className="h-8 w-8 text-lg font-bold text-brand-600">−</button>
+                <span className="min-w-5 text-center text-sm font-semibold">{cartQty}</span>
+                <button onClick={() => onSet(cartQty + 1, variantId, unitPrice)} className="h-8 w-8 text-lg font-bold text-brand-600">+</button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {variants.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t pt-3">
+          {variants.map((v: any) => (
+            <button
+              key={v.id}
+              onClick={() => chooseVariant(v.id)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                v.id === variantId ? 'bg-brand-500 text-white' : 'border border-line bg-white text-muted'
+              }`}
+            >
+              {v.name}
+              {Number(v.price_delta) ? ` (+${fmt.format(Number(v.price_delta))})` : ''}
+            </button>
+          ))}
+        </div>
+      )}
     </article>
   );
 }

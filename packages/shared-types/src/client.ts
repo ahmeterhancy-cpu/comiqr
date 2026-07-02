@@ -153,6 +153,12 @@ export class ApiClient {
     form.append('image', file);
     return this.request(`/admin/products/${id}/media`, { method: 'POST', body: form });
   }
+  addVariant(productId: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/products/${productId}/variants`, { method: 'POST', body: JSON.stringify(body) });
+  }
+  deleteVariant(productId: number, variantId: number): Promise<any> {
+    return this.request(`/admin/products/${productId}/variants/${variantId}`, { method: 'DELETE' });
+  }
   adminIngredients(q?: string): Promise<any[]> {
     return this.request(`/admin/ingredients${q ? `?q=${encodeURIComponent(q)}` : ''}`);
   }

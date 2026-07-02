@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
+use App\Http\Controllers\Api\Admin\ProductVariantController;
 use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\StockController;
 use App\Http\Controllers\Api\Admin\TableController;
@@ -108,6 +109,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->only(['index', 'show', 'store', 'update', 'destroy']);
             Route::post('admin/products/{product}/media', [ProductMediaController::class, 'upload']);
             Route::delete('admin/products/{product}/media', [ProductMediaController::class, 'destroy']);
+            Route::post('admin/products/{product}/variants', [ProductVariantController::class, 'store']);
+            Route::delete('admin/products/{product}/variants/{variant}', [ProductVariantController::class, 'destroy']);
 
             Route::apiResource('admin/ingredients', IngredientController::class)
                 ->only(['index', 'store', 'update', 'destroy']);

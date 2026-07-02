@@ -145,7 +145,12 @@ export default function MenuPage() {
                         </button>
                       </div>
                     </div>
-                    {expanded === p.id && <RecipeEditor product={p} ingredients={ingredients} api={api} />}
+                    {expanded === p.id && (
+                      <>
+                        <VariantsManager product={p} api={api} onChanged={load} />
+                        <RecipeEditor product={p} ingredients={ingredients} api={api} />
+                      </>
+                    )}
                   </li>
                 ))}
             </ul>
@@ -175,6 +180,47 @@ function AddCategory({ onAdd }: { onAdd: (name: string) => void }) {
         <Button type="submit">Kategori Ekle</Button>
       </form>
     </Card>
+  );
+}
+
+function VariantsManager({ product, api, onChanged }: { product: any; api: any; onChanged: () => void }) {
+  const [name, setName] = useState('');
+  const [delta, setDelta] = useState('');
+  const variants = product.variants ?? [];
+
+  return (
+    <div className="mt-3 rounded-xl border border-line bg-canvas p-4">
+      <h4 className="mb-2 text-sm font-semibold text-ink">Varyasyonlar (boy/porsiyon)</h4>
+      <div className="mb-2 flex flex-wrap gap-2">
+        {variants.map((v: any) => (
+          <span key={v.id} className="flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs">
+            {v.name} {Number(v.price_delta) ? `(+₺${Number(v.price_delta).toFixed(0)})` : ''}
+            <button
+              onClick={async () => { await api.deleteVariant(product.id, v.id); onChanged(); }}
+              className="text-red-600"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {variants.length === 0 && <span className="text-xs text-muted">Varyasyon yok.</span>}
+      </div>
+      <form
+        className="flex gap-2"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!name.trim()) return;
+          await api.addVariant(product.id, { name: name.trim(), price_delta: Number(delta || 0) });
+          setName('');
+          setDelta('');
+          onChanged();
+        }}
+      >
+        <Input placeholder="Ad (ör. Büyük)" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input placeholder="+₺" type="number" className="w-24" value={delta} onChange={(e) => setDelta(e.target.value)} />
+        <Button type="submit" variant="ghost">Ekle</Button>
+      </form>
+    </div>
   );
 }
 
