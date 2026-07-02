@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\RecipeController;
+use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MenuController;
+use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\TenantController;
 use App\Support\Tenancy\SlugGenerator;
 use Illuminate\Http\Request;
@@ -41,6 +44,10 @@ Route::middleware('tenant')->group(function () {
     Route::get('menu', [MenuController::class, 'show']);
 });
 
+// --- Public QR menu + session (M3, docs/06 §6.2/§6.3) — tenant from token ---
+Route::get('menu/{qrToken}', [MenuController::class, 'showByToken']);
+Route::post('sessions/{qrToken}/open', [SessionController::class, 'open'])->middleware('throttle:30,1');
+
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -68,6 +75,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('admin/products/{product}/recipe', [RecipeController::class, 'update']);
             Route::get('admin/products/{product}/nutrition', [RecipeController::class, 'nutrition']);
             Route::post('admin/products/{product}/nutrition/recompute', [RecipeController::class, 'recompute']);
+
+            // QR & tables (M3)
+            Route::apiResource('admin/dining-areas', DiningAreaController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::post('admin/tables/bulk', [TableController::class, 'bulk']);
+            Route::post('admin/tables/{table}/regenerate-token', [TableController::class, 'regenerate']);
+            Route::apiResource('admin/tables', TableController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
         });
     });
 });

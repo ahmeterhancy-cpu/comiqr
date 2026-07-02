@@ -6,22 +6,56 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Models\Allergen;
 use App\Models\Category;
+use App\Models\Table;
+use App\Models\Tenant;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Public menu (M1/M4, docs/06 §6.2). Tenant is resolved from the host / X-Tenant
- * header by the `tenant` middleware; the QR-token route (M3) will front this.
+ * Public menu (M1/M4, docs/06 §6.2). Two entry points:
+ *  - GET /menu           tenant from host / X-Tenant / ?tenant= (`tenant` middleware)
+ *  - GET /menu/{qrToken} tenant + table resolved from the scanned QR token (M3)
  * Reads the cached nutrition summary — never a live calculation (docs/03 §3.3).
  */
 class MenuController extends Controller
 {
     public function __construct(protected TenantManager $tenants) {}
 
+    /** Tenant already resolved by the `tenant` middleware. */
     public function show(): JsonResponse
     {
-        $tenant = $this->tenants->get();
+        return response()->json(['data' => $this->buildMenu($this->tenants->get())]);
+    }
 
+    /** QR-token entry: resolve the venue + table from an unguessable token. */
+    public function showByToken(string $qrToken): JsonResponse
+    {
+        $table = Table::withoutTenancy()
+            ->where('qr_token', $qrToken)
+            ->where('is_active', true)
+            ->first();
+
+        abort_if($table === null, 404, 'Menu not found.');
+
+        $tenant = Tenant::find($table->tenant_id);
+        abort_if($tenant === null || $tenant->status === 'suspended', 404, 'Menu not found.');
+
+        $this->tenants->set($tenant);
+        app()->setLocale(request()->query('locale', $tenant->locale_default ?? config('app.locale')));
+
+        $data = $this->buildMenu($tenant);
+        $data['table'] = [
+            'id' => $table->id,
+            'code' => $table->code,
+            'qr_token' => $table->qr_token,
+        ];
+
+        return response()->json(['data' => $data]);
+    }
+
+    /** @return array<string,mixed> */
+    protected function buildMenu(Tenant $tenant): array
+    {
         $categories = Category::query()
             ->where('is_active', true)
             ->whereNull('parent_id')
@@ -35,17 +69,14 @@ class MenuController extends Controller
             ->orderBy('sort')
             ->get();
 
-        return response()->json([
-            'data' => [
-                'venue' => [
-                    'name' => $tenant->name,
-                    'locale_default' => $tenant->locale_default,
-                    'currency' => $tenant->currency,
-                ],
-                // Allergen reference so the client can label ids from the summary.
-                'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
-                'categories' => CategoryResource::collection($categories),
+        return [
+            'venue' => [
+                'name' => $tenant->name,
+                'locale_default' => $tenant->locale_default,
+                'currency' => $tenant->currency,
             ],
-        ]);
+            'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
+            'categories' => CategoryResource::collection($categories)->resolve(),
+        ];
     }
 }

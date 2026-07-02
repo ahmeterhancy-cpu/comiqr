@@ -1,20 +1,34 @@
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { MenuView } from '@/components/menu';
+import { fetchMenuByToken } from '@/lib/menu';
 
 /**
- * Public menu route reached by scanning a table QR (docs/06 §6.2:
- * GET /menu/{qrToken}). Faz 0 renders a placeholder; Faz 1 fetches and renders
- * the live menu (categories, products, nutrition summary) here.
+ * Menu reached by scanning a table QR (M3, docs/06 §6.2: GET /menu/{qrToken}).
+ * Renders the live menu with nutrition and the resolved table context.
  */
-export default async function MenuPage({ params }: { params: Promise<{ qrToken: string }> }) {
+export default async function ScannedMenuPage({ params }: { params: Promise<{ qrToken: string }> }) {
   const { qrToken } = await params;
-  const t = await getTranslations('menu');
+  const menu = await fetchMenuByToken(qrToken);
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
-      <h1 className="text-xl font-bold text-ink">{t('comingSoon')}</h1>
-      <p className="mt-3 break-all rounded-lg bg-white px-4 py-3 font-mono text-xs text-muted shadow-sm">
-        qrToken: {qrToken}
-      </p>
-    </main>
-  );
+  if (!menu) {
+    notFound();
+  }
+
+  const t = await getTranslations('menu');
+  const labels = {
+    kcal: t('kcal'),
+    protein: t('protein'),
+    carb: t('carb'),
+    fat: t('fat'),
+    contains: t('contains'),
+    traces: t('traces'),
+    vegan: t('vegan'),
+    vegetarian: t('vegetarian'),
+    glutenFree: t('glutenFree'),
+    estimated: t('estimated'),
+    empty: t('empty'),
+  };
+
+  return <MenuView menu={menu} labels={labels} tableCode={menu.table?.code} />;
 }

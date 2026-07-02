@@ -14,7 +14,15 @@ export interface MenuLabels {
   empty: string;
 }
 
-export function MenuView({ menu, labels }: { menu: Menu; labels: MenuLabels }) {
+export function MenuView({
+  menu,
+  labels,
+  tableCode,
+}: {
+  menu: Menu;
+  labels: MenuLabels;
+  tableCode?: string;
+}) {
   const allergenMap = new Map<number, AllergenRef>(menu.allergens.map((a) => [a.id, a]));
   const format = new Intl.NumberFormat(menu.venue.locale_default ?? 'tr', {
     style: 'currency',
@@ -27,7 +35,14 @@ export function MenuView({ menu, labels }: { menu: Menu; labels: MenuLabels }) {
   return (
     <div className="mx-auto max-w-2xl pb-16">
       <header className="sticky top-0 z-10 border-b bg-canvas/90 px-5 py-4 backdrop-blur">
-        <h1 className="text-xl font-bold text-ink">{menu.venue.name}</h1>
+        <div className="flex items-baseline justify-between gap-2">
+          <h1 className="text-xl font-bold text-ink">{menu.venue.name}</h1>
+          {tableCode && (
+            <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">
+              {tableCode}
+            </span>
+          )}
+        </div>
         {categories.length > 1 && (
           <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {categories.map((c) => (
