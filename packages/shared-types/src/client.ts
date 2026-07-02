@@ -177,6 +177,37 @@ export class ApiClient {
   adminBranches(): Promise<any[]> {
     return this.request('/admin/branches');
   }
+  adminAllergens(): Promise<any[]> {
+    return this.request('/admin/allergens');
+  }
+
+  // --- CRM / coupons (M8) ---
+  adminCustomers(): Promise<any[]> {
+    return this.request('/admin/customers');
+  }
+  adminCoupons(): Promise<any[]> {
+    return this.request('/admin/coupons');
+  }
+  createCoupon(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/coupons', { method: 'POST', body: JSON.stringify(body) });
+  }
+  deleteCoupon(id: number): Promise<any> {
+    return this.request(`/admin/coupons/${id}`, { method: 'DELETE' });
+  }
+
+  // --- AI (M7) ---
+  aiProductCopy(productId: number, save = true): Promise<any> {
+    return this.request('/admin/ai/product-copy', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId, save }),
+    });
+  }
+  aiTranslateMenu(locale: string, productIds?: number[]): Promise<any> {
+    return this.request('/admin/ai/translate-menu', {
+      method: 'POST',
+      body: JSON.stringify({ locale, product_ids: productIds }),
+    });
+  }
 
   // --- Admin: analytics (M9) ---
   analyticsOverview(): Promise<any> {

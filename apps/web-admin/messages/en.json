@@ -5,9 +5,12 @@
   "nav": {
     "dashboard": "Dashboard",
     "menu": "Menu",
+    "ingredients": "Ingredients",
     "recipes": "Recipes & Nutrition",
     "tables": "Tables & QR",
     "orders": "Orders",
+    "customers": "Customers",
+    "coupons": "Coupons",
     "settings": "Settings",
     "logout": "Log out"
   },

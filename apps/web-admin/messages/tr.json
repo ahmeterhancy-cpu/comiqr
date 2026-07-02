@@ -5,9 +5,12 @@
   "nav": {
     "dashboard": "Panel",
     "menu": "Menü",
+    "ingredients": "Malzemeler",
     "recipes": "Reçete & Besin",
     "tables": "Masalar & QR",
     "orders": "Siparişler",
+    "customers": "Müşteriler",
+    "coupons": "Kuponlar",
     "settings": "Ayarlar",
     "logout": "Çıkış"
   },

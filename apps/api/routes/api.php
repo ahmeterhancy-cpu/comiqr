@@ -89,6 +89,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // --- Menu & recipe management (M1/M2, docs/06 §6.5/§6.6) — manager+ ---
         Route::middleware('role:manager')->group(function () {
             Route::get('admin/branches', [BranchController::class, 'index']);
+            Route::get('admin/allergens', fn () => response()->json([
+                'data' => \App\Models\Allergen::orderBy('id')->get(['id', 'code', 'name']),
+            ]));
 
             Route::apiResource('admin/categories', CategoryController::class)
                 ->only(['index', 'store', 'update', 'destroy']);

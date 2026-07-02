@@ -10,8 +10,11 @@ import { clearSession, getToken } from '@/lib/auth';
 const NAV = [
   { key: 'dashboard', href: '/dashboard' },
   { key: 'menu', href: '/menu' },
+  { key: 'ingredients', href: '/ingredients' },
   { key: 'orders', href: '/orders' },
   { key: 'tables', href: '/tables' },
+  { key: 'customers', href: '/customers' },
+  { key: 'coupons', href: '/coupons' },
 ] as const;
 
 export function AdminShell({ title, children }: { title?: string; children: React.ReactNode }) {
