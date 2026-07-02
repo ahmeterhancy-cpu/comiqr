@@ -31,6 +31,8 @@ class PaymentController extends Controller
         $data = $request->validate([
             'gateway' => ['nullable', 'string'],
             'tip' => ['nullable', 'numeric', 'min:0'],
+            // Partial amount → bill splitting (each guest pays a share).
+            'amount' => ['nullable', 'numeric', 'gt:0'],
         ]);
 
         $gateway = $data['gateway'] ?? config('payments.default', 'cash');
@@ -43,6 +45,7 @@ class PaymentController extends Controller
             $model,
             $gateway,
             (float) ($data['tip'] ?? 0),
+            isset($data['amount']) ? (float) $data['amount'] : null,
         );
 
         return response()->json(['data' => [

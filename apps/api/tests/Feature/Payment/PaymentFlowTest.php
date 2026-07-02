@@ -56,6 +56,18 @@ it('rejects paying an already-paid order', function () {
     postJson("/v1/sessions/{$table->qr_token}/orders/{$order->id}/pay", ['gateway' => 'cash'])->assertStatus(422);
 });
 
+it('splits a bill across partial payments', function () {
+    ['table' => $table, 'order' => $order] = payableOrder(100);
+
+    postJson("/v1/sessions/{$table->qr_token}/orders/{$order->id}/pay", ['gateway' => 'cash', 'amount' => 50])
+        ->assertCreated()
+        ->assertJsonPath('data.order.payment_status', 'partially_paid');
+
+    postJson("/v1/sessions/{$table->qr_token}/orders/{$order->id}/pay", ['gateway' => 'cash', 'amount' => 50])
+        ->assertCreated()
+        ->assertJsonPath('data.order.payment_status', 'paid');
+});
+
 it('completes a PayTR payment only via a valid webhook', function () {
     config([
         'payments.gateways.paytr.merchant_key' => 'test-key',

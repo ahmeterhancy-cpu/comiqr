@@ -17,21 +17,28 @@ class PaymentService
 {
     public function __construct(protected PaymentManager $gateways) {}
 
-    /** Start a payment for an order. Cash completes immediately. */
-    public function initiate(Order $order, string $gatewayName, float $tip = 0): array
+    /**
+     * Start a payment for an order. Cash completes immediately. An explicit
+     * $amount enables bill splitting (each guest pays a share); it is capped at
+     * the outstanding balance.
+     */
+    public function initiate(Order $order, string $gatewayName, float $tip = 0, ?float $amount = null): array
     {
         $gateway = $this->gateways->gateway($gatewayName);
 
-        return DB::transaction(function () use ($order, $gateway, $gatewayName, $tip) {
+        return DB::transaction(function () use ($order, $gateway, $gatewayName, $tip, $amount) {
             if ($tip > 0) {
                 $order->update(['tip_total' => (float) $order->tip_total + $tip]);
                 $order->recalculateTotals();
             }
 
+            $outstanding = $this->outstanding($order);
+            $payAmount = $amount === null ? $outstanding : min($amount, $outstanding);
+
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'gateway' => $gatewayName,
-                'amount' => $this->outstanding($order),
+                'amount' => $payAmount,
                 'tip_amount' => $tip,
                 'status' => 'initiated',
             ]);
