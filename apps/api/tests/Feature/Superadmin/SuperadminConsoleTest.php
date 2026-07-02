@@ -4,11 +4,14 @@ use App\Enums\Role;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\patchJson;
+use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
 
@@ -78,6 +81,55 @@ it('searches users across tenants by email', function () {
 
     $emails = collect(getJson('/v1/superadmin/users?q=ahmet')->assertOk()->json('data'))->pluck('email');
     expect($emails)->toContain('ahmet@venuea.com')->not->toContain('mehmet@venueb.com');
+});
+
+it('overview includes recent lists and 7-day series', function () {
+    Plan::factory()->create(['code' => 'p-s', 'price_monthly' => 0]);
+    $tenant = Tenant::factory()->create(['name' => 'Yeni Mekan']);
+    User::factory()->forTenant($tenant)->role(Role::Owner)->create(['name' => 'Sahip']);
+
+    Sanctum::actingAs(rootUser());
+
+    $data = getJson('/v1/superadmin/overview')->assertOk()->json('data');
+
+    expect($data['recent_restaurants'][0]['name'])->toBe('Yeni Mekan');
+    expect($data['users_total'])->toBeGreaterThanOrEqual(1);
+    expect($data['restaurants_series'])->toHaveCount(7);
+    expect($data['users_series'])->toHaveCount(7);
+    // Today's bucket counts the tenant we just created.
+    expect(collect($data['restaurants_series'])->last()['count'])->toBeGreaterThanOrEqual(1);
+});
+
+it('lists platform transactions', function () {
+    $tenant = Tenant::factory()->create();
+    app(TenantManager::class)->runAs($tenant, function () {
+        $branch = \App\Models\Branch::factory()->create();
+        $order = \App\Models\Order::factory()->create(['branch_id' => $branch->id]);
+        \App\Models\Payment::create([
+            'order_id' => $order->id, 'gateway' => 'cash', 'amount' => 250, 'status' => 'paid',
+        ]);
+    });
+
+    Sanctum::actingAs(rootUser());
+
+    getJson('/v1/superadmin/transactions')
+        ->assertOk()
+        ->assertJsonPath('data.0.gateway', 'cash')
+        ->assertJsonPath('data.0.status', 'paid');
+});
+
+it('manages global allergens', function () {
+    Sanctum::actingAs(rootUser());
+
+    $id = postJson('/v1/superadmin/allergens', ['code' => 'sesame', 'name' => 'Susam', 'icon' => '🌰'])
+        ->assertCreated()
+        ->assertJsonPath('data.code', 'sesame')
+        ->json('data.id');
+
+    getJson('/v1/superadmin/allergens')->assertOk()
+        ->assertJsonFragment(['code' => 'sesame']);
+
+    deleteJson("/v1/superadmin/allergens/{$id}")->assertOk();
 });
 
 it('forbids non-superadmins from the console', function () {

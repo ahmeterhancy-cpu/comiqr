@@ -322,6 +322,18 @@ export class ApiClient {
   superOverview(): Promise<any> {
     return this.request('/superadmin/overview');
   }
+  superTransactions(): Promise<any[]> {
+    return this.request('/superadmin/transactions');
+  }
+  superAllergens(): Promise<any[]> {
+    return this.request('/superadmin/allergens');
+  }
+  superCreateAllergen(body: Record<string, unknown>): Promise<any> {
+    return this.request('/superadmin/allergens', { method: 'POST', body: JSON.stringify(body) });
+  }
+  superDeleteAllergen(id: number): Promise<any> {
+    return this.request(`/superadmin/allergens/${id}`, { method: 'DELETE' });
+  }
   superPlans(): Promise<any[]> {
     return this.request('/superadmin/plans');
   }

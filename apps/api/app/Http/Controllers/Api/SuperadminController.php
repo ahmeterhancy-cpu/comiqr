@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Allergen;
 use App\Models\AuditLog;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -42,11 +45,109 @@ class SuperadminController extends Controller
                 'trialing' => (int) ($byStatus['trialing'] ?? 0),
                 'suspended' => (int) ($byStatus['suspended'] ?? 0),
             ],
+            'users_total' => User::count(),
+            'customers_total' => Customer::count(),
             'orders' => Order::count(),
             'revenue' => round((float) Payment::where('status', 'paid')->sum('amount'), 2),
             'mrr' => round($mrr, 2),
             'currency' => Plan::query()->where('is_active', true)->value('currency') ?? 'TRY',
+            'recent_restaurants' => Tenant::query()->latest('id')->limit(5)
+                ->get(['id', 'name', 'slug', 'status', 'created_at'])
+                ->map(fn (Tenant $t) => [
+                    'id' => $t->id,
+                    'name' => $t->name,
+                    'slug' => $t->slug,
+                    'status' => $t->status,
+                    'created_at' => $t->created_at,
+                ]),
+            'recent_users' => User::query()->with('tenant:id,name')->latest('id')->limit(5)->get()
+                ->map(fn (User $u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'tenant' => $u->tenant?->name,
+                    'created_at' => $u->created_at,
+                ]),
+            'restaurants_series' => $this->dailySeries(Tenant::query(), 'created_at'),
+            'users_series' => $this->dailySeries(User::query(), 'created_at'),
         ]]);
+    }
+
+    /**
+     * A daily count for the last $days, zero-filled (for the dashboard charts).
+     *
+     * @return array<int,array{date:string,count:int}>
+     */
+    private function dailySeries(Builder $query, string $column, int $days = 7): array
+    {
+        $from = now()->subDays($days - 1)->startOfDay();
+
+        $rows = $query
+            ->where($column, '>=', $from)
+            ->selectRaw("to_char({$column}, 'YYYY-MM-DD') as d, count(*) as c")
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $series = [];
+        for ($i = 0; $i < $days; $i++) {
+            $date = now()->subDays($days - 1 - $i)->format('Y-m-d');
+            $series[] = ['date' => $date, 'count' => (int) ($rows[$date] ?? 0)];
+        }
+
+        return $series;
+    }
+
+    /** GET /superadmin/transactions — recent payments across the platform. */
+    public function transactions(): JsonResponse
+    {
+        $payments = Payment::query()->with('tenant:id,name,slug')->latest('id')->limit(100)->get()
+            ->map(fn (Payment $p) => [
+                'id' => $p->id,
+                'tenant' => $p->tenant?->name,
+                'gateway' => $p->gateway,
+                'amount' => $p->amount,
+                'tip' => $p->tip_amount,
+                'status' => $p->status,
+                'created_at' => $p->created_at,
+            ]);
+
+        return response()->json(['data' => $payments]);
+    }
+
+    /** GET /superadmin/allergens — global allergen reference (EU 14 + custom). */
+    public function allergens(): JsonResponse
+    {
+        return response()->json(['data' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon'])]);
+    }
+
+    public function storeAllergen(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:40'],
+            'name' => ['required', 'string', 'max:80'],
+            'icon' => ['nullable', 'string', 'max:16'],
+        ]);
+
+        return response()->json(['data' => Allergen::create($data)], 201);
+    }
+
+    public function updateAllergen(Request $request, string $id): JsonResponse
+    {
+        $allergen = Allergen::findOrFail($id);
+        $allergen->update($request->validate([
+            'code' => ['sometimes', 'string', 'max:40'],
+            'name' => ['sometimes', 'string', 'max:80'],
+            'icon' => ['nullable', 'string', 'max:16'],
+        ]));
+
+        return response()->json(['data' => $allergen]);
+    }
+
+    public function deleteAllergen(string $id): JsonResponse
+    {
+        Allergen::findOrFail($id)->delete();
+
+        return response()->json(['data' => ['deleted' => true]]);
     }
 
     /** GET /superadmin/plans — every plan with pricing, gates and tenant count. */
