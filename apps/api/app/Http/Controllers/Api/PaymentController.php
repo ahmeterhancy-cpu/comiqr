@@ -6,9 +6,11 @@ use App\Http\Controllers\Concerns\ResolvesQrToken;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Payments\PaymentManager;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -77,6 +79,38 @@ class PaymentController extends Controller
 
         // Gateways expect a plain OK acknowledgement.
         return response()->json(['data' => ['ok' => true]]);
+    }
+
+    /**
+     * GET|POST /payments/return/{gateway} — the browser POST-redirect the gateway
+     * sends after 3D Secure (Tiko UrlOk/UrlFail). We verify the signature, confirm
+     * the payment when successful, then 302 the guest to the customer result page.
+     */
+    public function paymentReturn(Request $request, string $gateway): RedirectResponse
+    {
+        $resultUrl = rtrim((string) config('payments.result_url', 'http://localhost:3010/order-result'), '/');
+
+        if (! $this->gateways->isEnabled($gateway)) {
+            return redirect()->away($resultUrl.'?status=error');
+        }
+
+        $impl = $this->gateways->gateway($gateway);
+        $payload = $request->all();
+
+        $success = $impl->verifyWebhook($payload) && $impl->isSuccessful($payload);
+        $ref = $impl->referenceFrom($payload);
+
+        $orderId = null;
+        if ($ref !== null) {
+            $orderId = Payment::withoutTenancy()->where('gateway_ref', $ref)->value('order_id');
+            if ($success) {
+                $this->payments->confirmByReference($ref);
+            }
+        }
+
+        return redirect()->away(
+            $resultUrl.'?status='.($success ? 'paid' : 'failed').($orderId ? '&order='.$orderId : ''),
+        );
     }
 
     private function orderForToken(string $qrToken, string $orderId): Order

@@ -7,6 +7,9 @@ return [
     // Gateways offered to customers (docs/04 §4.6).
     'enabled' => array_filter(explode(',', (string) env('PAYMENT_ENABLED', 'cash,paytr,tiko'))),
 
+    // Customer result page the 3DS browser-return redirects to (web-customer).
+    'result_url' => env('PAYMENT_RESULT_URL', 'http://localhost:3010/order-result'),
+
     'gateways' => [
         'paytr' => [
             'merchant_id' => env('PAYTR_MERCHANT_ID'),

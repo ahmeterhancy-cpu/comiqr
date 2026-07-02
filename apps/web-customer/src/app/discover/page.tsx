@@ -53,14 +53,13 @@ export default function DiscoverPage() {
 
         <div className="grid gap-3.5 sm:grid-cols-2">
           {venues.map((v) => (
-            <Link
+            <div
               key={v.slug}
-              href={`/v/${v.slug}`}
-              className="group overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)] transition hover:border-brand-500"
+              className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]"
             >
               <div className="p-4">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="font-display text-lg font-semibold text-ink group-hover:text-brand-600">{v.name}</h2>
+                  <h2 className="font-display text-lg font-semibold text-ink">{v.name}</h2>
                   <span className="shrink-0 text-xs text-muted">{v.product_count} ürün</span>
                 </div>
                 {v.samples.length > 0 && (
@@ -68,9 +67,19 @@ export default function DiscoverPage() {
                     {v.samples.map((s) => s.name).join(' · ')}
                   </p>
                 )}
-                <span className="mt-3 inline-block text-xs font-semibold text-brand-600">Menüyü gör →</span>
+                <div className="mt-3 flex items-center gap-3">
+                  <Link href={`/v/${v.slug}`} className="text-xs font-semibold text-brand-600 hover:underline">
+                    Menüyü gör →
+                  </Link>
+                  <Link
+                    href={`/order/${v.slug}`}
+                    className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white"
+                  >
+                    Paket servis
+                  </Link>
+                </div>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>

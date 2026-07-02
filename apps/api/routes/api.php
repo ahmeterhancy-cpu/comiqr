@@ -95,6 +95,9 @@ Route::prefix('sessions/{qrToken}')->group(function () {
 // --- Payment webhooks (M5, docs/06 §6.4) — public, signature-verified ---
 Route::post('payments/webhook/{gateway}', [PaymentController::class, 'webhook']);
 
+// --- 3D Secure browser return (Tiko UrlOk/UrlFail) — verify + confirm + redirect ---
+Route::match(['get', 'post'], 'payments/return/{gateway}', [PaymentController::class, 'paymentReturn']);
+
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);

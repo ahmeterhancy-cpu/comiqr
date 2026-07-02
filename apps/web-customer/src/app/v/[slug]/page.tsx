@@ -30,5 +30,18 @@ export default async function VenueMenuPage({ params }: { params: Promise<{ slug
     empty: t('empty'),
   };
 
-  return <MenuView menu={menu} labels={labels} />;
+  return (
+    <>
+      <MenuView menu={menu} labels={labels} />
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-5 py-3 backdrop-blur">
+        <a
+          href={`/order/${slug}`}
+          className="mx-auto block max-w-2xl rounded-xl bg-brand-500 py-3 text-center text-sm font-semibold text-white"
+          style={{ color: '#ffffff' }}
+        >
+          Paket Servis Sipariş Ver
+        </a>
+      </div>
+    </>
+  );
 }

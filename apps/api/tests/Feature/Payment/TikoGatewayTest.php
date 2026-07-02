@@ -8,6 +8,7 @@ use App\Payments\TikoGateway;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
+use function Pest\Laravel\post;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
@@ -92,6 +93,31 @@ it('confirms the payment on a verified Tiko callback', function () {
 
     expect($payment->fresh()->status)->toBe('paid');
     expect($payment->fresh()->order->payment_status)->toBe('paid');
+});
+
+it('confirms and redirects to the result page on a valid 3DS return', function () {
+    $g = tikoGateway();
+    config(['payments.result_url' => 'https://cust.example/order-result']);
+    $payment = tikoPayment(100);
+    $g->initiate($payment);
+    $ref = $payment->fresh()->gateway_ref;
+
+    $payload = ['MerchantId' => 'M1', 'OrderId' => $ref, 'Amount' => '100.00', 'Currency' => 'TRY', 'Installment' => '0', 'TransId' => 'TR1', 'Status' => '200'];
+    $payload['Hash'] = $g->hash('M1'.$ref.'100.00'.'TRY'.'0'.'TR1');
+
+    $res = post('/v1/payments/return/tiko', $payload);
+    $res->assertRedirect();
+    expect($res->headers->get('Location'))->toContain('status=paid');
+    expect($payment->fresh()->status)->toBe('paid');
+});
+
+it('redirects with failed status on an invalid 3DS return', function () {
+    tikoGateway();
+    config(['payments.result_url' => 'https://cust.example/order-result']);
+
+    $res = post('/v1/payments/return/tiko', ['OrderId' => 'X', 'Status' => '200', 'Hash' => 'forged']);
+    $res->assertRedirect();
+    expect($res->headers->get('Location'))->toContain('status=failed');
 });
 
 it('rejects a Tiko callback with an invalid signature (403)', function () {
