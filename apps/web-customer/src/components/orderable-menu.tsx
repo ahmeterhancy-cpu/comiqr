@@ -370,18 +370,18 @@ function ProductRow({ product, cartQty, onSet, allergenMap, fmt, t, mt }: any) {
             </div>
           )}
 
-          <div className="mt-3.5">
+          <div className="mt-3.5 flex justify-end">
             {cartQty === 0 ? (
               <button
                 onClick={() => onSet(1, variantId, unitPrice)}
-                className="rounded-xl bg-brand-50 px-4 py-1.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100"
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-95"
               >
-                + {t('add')}
+                <span className="text-base leading-none">+</span> {t('add')}
               </button>
             ) : (
-              <div className="inline-flex items-center gap-1 rounded-xl bg-brand-50 p-1">
+              <div className="inline-flex items-center gap-2 rounded-full bg-brand-500 p-1 pr-1 shadow-sm">
                 <Step onClick={() => onSet(cartQty - 1, variantId, unitPrice)}>−</Step>
-                <span className="min-w-6 text-center text-sm font-bold text-brand-700">{cartQty}</span>
+                <span className="min-w-5 text-center text-sm font-bold text-white">{cartQty}</span>
                 <Step onClick={() => onSet(cartQty + 1, variantId, unitPrice)}>+</Step>
               </div>
             )}
