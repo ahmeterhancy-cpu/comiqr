@@ -13,20 +13,20 @@ class AllergenSeeder extends Seeder
     public function run(): void
     {
         $allergens = [
-            ['code' => 'gluten', 'name' => 'Gluten', 'icon' => 'wheat'],
-            ['code' => 'crustaceans', 'name' => 'Kabuklu Deniz Ürünleri', 'icon' => 'shrimp'],
-            ['code' => 'eggs', 'name' => 'Yumurta', 'icon' => 'egg'],
-            ['code' => 'fish', 'name' => 'Balık', 'icon' => 'fish'],
-            ['code' => 'peanuts', 'name' => 'Yer Fıstığı', 'icon' => 'peanut'],
-            ['code' => 'soybeans', 'name' => 'Soya', 'icon' => 'soy'],
-            ['code' => 'milk', 'name' => 'Süt', 'icon' => 'milk'],
-            ['code' => 'nuts', 'name' => 'Sert Kabuklu Yemişler', 'icon' => 'nut'],
-            ['code' => 'celery', 'name' => 'Kereviz', 'icon' => 'celery'],
-            ['code' => 'mustard', 'name' => 'Hardal', 'icon' => 'mustard'],
-            ['code' => 'sesame', 'name' => 'Susam', 'icon' => 'sesame'],
-            ['code' => 'sulphites', 'name' => 'Sülfitler', 'icon' => 'sulphite'],
-            ['code' => 'lupin', 'name' => 'Acı Bakla', 'icon' => 'lupin'],
-            ['code' => 'molluscs', 'name' => 'Yumuşakçalar', 'icon' => 'mollusc'],
+            ['code' => 'gluten', 'name' => 'Gluten', 'icon' => '🌾'],
+            ['code' => 'crustaceans', 'name' => 'Kabuklu Deniz Ürünleri', 'icon' => '🦐'],
+            ['code' => 'eggs', 'name' => 'Yumurta', 'icon' => '🥚'],
+            ['code' => 'fish', 'name' => 'Balık', 'icon' => '🐟'],
+            ['code' => 'peanuts', 'name' => 'Yer Fıstığı', 'icon' => '🥜'],
+            ['code' => 'soybeans', 'name' => 'Soya', 'icon' => '🫘'],
+            ['code' => 'milk', 'name' => 'Süt', 'icon' => '🥛'],
+            ['code' => 'nuts', 'name' => 'Sert Kabuklu Yemişler', 'icon' => '🌰'],
+            ['code' => 'celery', 'name' => 'Kereviz', 'icon' => '🥬'],
+            ['code' => 'mustard', 'name' => 'Hardal', 'icon' => '🟡'],
+            ['code' => 'sesame', 'name' => 'Susam', 'icon' => '🥯'],
+            ['code' => 'sulphites', 'name' => 'Sülfitler', 'icon' => '🍷'],
+            ['code' => 'lupin', 'name' => 'Acı Bakla', 'icon' => '🌼'],
+            ['code' => 'molluscs', 'name' => 'Yumuşakçalar', 'icon' => '🦪'],
         ];
 
         foreach ($allergens as $allergen) {
