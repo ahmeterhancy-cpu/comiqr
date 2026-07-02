@@ -9,6 +9,17 @@
     "loading": "Menü yükleniyor…",
     "notFound": "Menü bulunamadı",
     "notFoundBody": "Bu QR kodu geçersiz ya da oturum kapanmış olabilir.",
-    "comingSoon": "Menü görüntüleme Faz 1'de aktifleşecek."
+    "comingSoon": "Menü görüntüleme Faz 1'de aktifleşecek.",
+    "kcal": "kcal",
+    "protein": "Protein",
+    "carb": "Karb.",
+    "fat": "Yağ",
+    "contains": "İçerir",
+    "traces": "İz miktarda içerebilir",
+    "vegan": "Vegan",
+    "vegetarian": "Vejetaryen",
+    "glutenFree": "Glutensiz",
+    "estimated": "Besin değerleri tahminidir",
+    "empty": "Bu menüde henüz ürün yok."
   }
 }

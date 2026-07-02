@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
+use App\Models\Allergen;
 use App\Models\Category;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
@@ -41,6 +42,8 @@ class MenuController extends Controller
                     'locale_default' => $tenant->locale_default,
                     'currency' => $tenant->currency,
                 ],
+                // Allergen reference so the client can label ids from the summary.
+                'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
                 'categories' => CategoryResource::collection($categories),
             ],
         ]);

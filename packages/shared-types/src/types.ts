@@ -90,3 +90,63 @@ export interface SlugAvailability {
   available: boolean;
   reserved: boolean;
 }
+
+// --- Menu (M1) + nutrition (M2) ---
+
+export interface NutritionInfo {
+  kcal: number;
+  macros: { protein_g: number; carb_g: number; fat_g: number };
+  detail: { saturated_fat_g: number; sugar_g: number; fiber_g: number; sodium_mg: number };
+  allergens: { contains: number[]; traces: number[] };
+  diet: { vegan: boolean; vegetarian: boolean; gluten_free: boolean };
+  is_stale: boolean;
+  computed_at: string | null;
+}
+
+export interface MenuVariant {
+  id: number;
+  name: string;
+  price_delta: string | number;
+  is_default: boolean;
+}
+
+export interface MenuProduct {
+  id: number;
+  category_id: number;
+  name: string;
+  description: string | null;
+  price: string | number;
+  images: string[];
+  video: string | null;
+  is_active: boolean;
+  sort: number;
+  prep_minutes: number | null;
+  tags: string[];
+  calories_display: boolean;
+  variants: MenuVariant[];
+  nutrition: NutritionInfo | null;
+}
+
+export interface MenuCategory {
+  id: number;
+  parent_id: number | null;
+  branch_id: number | null;
+  name: string;
+  sort: number;
+  is_active: boolean;
+  image_path: string | null;
+  products: MenuProduct[];
+}
+
+export interface AllergenRef {
+  id: number;
+  code: string;
+  name: string;
+  icon: string | null;
+}
+
+export interface Menu {
+  venue: { name: string; locale_default: Locale; currency: string };
+  allergens: AllergenRef[];
+  categories: MenuCategory[];
+}

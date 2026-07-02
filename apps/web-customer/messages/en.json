@@ -9,6 +9,17 @@
     "loading": "Loading menu…",
     "notFound": "Menu not found",
     "notFoundBody": "This QR code may be invalid or the session has ended.",
-    "comingSoon": "Menu viewing becomes active in Faz 1."
+    "comingSoon": "Menu viewing becomes active in Faz 1.",
+    "kcal": "kcal",
+    "protein": "Protein",
+    "carb": "Carb",
+    "fat": "Fat",
+    "contains": "Contains",
+    "traces": "May contain traces",
+    "vegan": "Vegan",
+    "vegetarian": "Vegetarian",
+    "glutenFree": "Gluten-free",
+    "estimated": "Nutrition values are estimates",
+    "empty": "This menu has no items yet."
   }
 }

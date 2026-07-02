@@ -6,6 +6,7 @@ import type {
   ApiEnvelope,
   AuthSession,
   LoginPayload,
+  Menu,
   MeResult,
   RegisterTenantPayload,
   RegisterTenantResult,
@@ -108,6 +109,12 @@ export class ApiClient {
 
   slugAvailable(slug: string): Promise<SlugAvailability> {
     return this.request(`/auth/slug-available/${encodeURIComponent(slug)}`);
+  }
+
+  /** Public menu (M1/M4). Tenant is taken from the instance (X-Tenant) or slug arg. */
+  menu(slug?: string): Promise<Menu> {
+    const query = slug ? `?tenant=${encodeURIComponent(slug)}` : '';
+    return this.request(`/menu${query}`);
   }
 
   // --- Tenant (docs/06 §6.1) ---
