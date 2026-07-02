@@ -16,9 +16,12 @@ class Order extends Model
     /** @use HasFactory<\Database\Factories\OrderFactory> */
     use BelongsToTenant, HasFactory;
 
+    public const TYPES = ['dine_in', 'delivery', 'takeaway'];
+
     protected $fillable = [
-        'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'status', 'payment_status',
-        'subtotal', 'discount_total', 'tip_total', 'tax_total', 'grand_total', 'note', 'placed_at',
+        'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'type', 'status', 'payment_status',
+        'subtotal', 'discount_total', 'tip_total', 'tax_total', 'grand_total', 'note',
+        'contact_phone', 'address', 'placed_at',
     ];
 
     protected function casts(): array

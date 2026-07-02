@@ -138,6 +138,11 @@ export class ApiClient {
     return this.request(`/discover${q ? `?q=${encodeURIComponent(q)}` : ''}`);
   }
 
+  /** Package-service (delivery/takeaway) order for a venue by slug (M20). */
+  venueOrder(slug: string, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/venues/${encodeURIComponent(slug)}/orders`, { method: 'POST', body: JSON.stringify(body) });
+  }
+
   // --- Tenant (docs/06 §6.1) ---
   getTenant(): Promise<Tenant> {
     return this.request('/tenant');

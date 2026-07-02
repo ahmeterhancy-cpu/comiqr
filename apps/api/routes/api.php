@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DiscoveryController;
 use App\Http\Controllers\Api\KdsController;
+use App\Http\Controllers\Api\MarketplaceOrderController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
@@ -65,6 +66,9 @@ Route::get('media/{path}', function (string $path) {
 
 // --- Public consumer discovery portal (M20) — central, tenant-less ---
 Route::get('discover', [DiscoveryController::class, 'index'])->middleware('throttle:120,1');
+
+// --- Marketplace / menu package-service ordering (M20) — venue by slug ---
+Route::post('venues/{slug}/orders', [MarketplaceOrderController::class, 'place'])->middleware('throttle:30,1');
 
 // --- Public menu (M1/M4) — tenant resolved from host / X-Tenant (docs/06 §6.2) ---
 Route::middleware('tenant')->group(function () {

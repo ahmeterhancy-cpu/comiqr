@@ -47,6 +47,39 @@ class OrderService
     }
 
     /**
+     * Place a package-service order not bound to a table (marketplace/menu web
+     * checkout, M20). type = delivery|takeaway; delivery carries a contact phone
+     * + address. Pricing/stock work exactly like a dine-in order.
+     *
+     * @param  array<int,array<string,mixed>>  $items
+     * @param  array{name?:string,phone?:string,address?:string}  $contact
+     */
+    public function placeDirect(\App\Models\Branch $branch, array $items, string $type, array $contact = [], ?string $note = null, ?\App\Models\Customer $customer = null): Order
+    {
+        return DB::transaction(function () use ($branch, $items, $type, $contact, $note, $customer) {
+            $order = Order::create([
+                'branch_id' => $branch->id,
+                'table_session_id' => null,
+                'customer_id' => $customer?->id,
+                'source' => 'web',
+                'type' => $type,
+                'status' => 'pending',
+                'payment_status' => 'unpaid',
+                'note' => $note,
+                'contact_phone' => $contact['phone'] ?? null,
+                'address' => $type === 'delivery' ? ($contact['address'] ?? null) : null,
+                'placed_at' => now(),
+            ]);
+
+            $this->addLines($order, $items);
+            $order->recalculateTotals();
+            $this->stock->deductForOrder($order);
+
+            return $order->load('items');
+        });
+    }
+
+    /**
      * @param  array<int,array<string,mixed>>  $items
      */
     public function addItems(Order $order, array $items): Order
