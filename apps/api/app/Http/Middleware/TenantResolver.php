@@ -47,7 +47,9 @@ class TenantResolver
 
     protected function resolve(Request $request): ?Tenant
     {
-        if ($slug = $request->header('X-Tenant')) {
+        // 1) X-Tenant header (native apps / dev), 2) ?tenant= query (browser dev /
+        // deep links) — the public menu is public data, so a slug lookup is safe.
+        if ($slug = ($request->header('X-Tenant') ?: $request->query('tenant'))) {
             return Tenant::query()->where('slug', $slug)->first();
         }
 
