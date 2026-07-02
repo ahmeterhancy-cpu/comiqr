@@ -28,12 +28,17 @@ export default function RestaurantsPage() {
   const { api, ready } = useApi();
   const router = useRouter();
   const [tenants, setTenants] = useState<any[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
   const [detail, setDetail] = useState<any | null>(null);
   const [q, setQ] = useState('');
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
-  const load = useCallback(async () => setTenants(await api.superTenants()), [api]);
+  const load = useCallback(async () => {
+    const [ts, pl] = await Promise.all([api.superTenants(), api.superPlans()]);
+    setTenants(ts);
+    setPlans(pl);
+  }, [api]);
   useEffect(() => {
     if (ready) load();
   }, [ready, load]);
@@ -100,6 +105,7 @@ export default function RestaurantsPage() {
               </li>
             ))}
           </ul>
+          <SubscriptionStarter tenantId={detail.id} plans={plans} api={api} />
         </Panel>
       )}
 
@@ -250,6 +256,66 @@ function Metric({ label, value }: { label: string; value: any }) {
     <div className="rounded-lg bg-canvas p-2.5">
       <div className="text-xs text-muted">{label}</div>
       <div className="text-lg font-semibold text-ink">{value}</div>
+    </div>
+  );
+}
+
+function SubscriptionStarter({ tenantId, plans, api }: { tenantId: number; plans: any[]; api: any }) {
+  const paid = plans.filter((p) => Number(p.price_monthly) > 0);
+  const [planId, setPlanId] = useState<string>('');
+  const [cycle, setCycle] = useState('monthly');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  if (paid.length === 0) return null;
+
+  async function start() {
+    if (!planId) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await api.superStartSubscription(tenantId, { plan_id: Number(planId), billing_cycle: cycle });
+      setMsg(`✓ Tiko aboneliği oluşturuldu (${res.subscription.status}). Sahibine SMS onay linki gönderildi.`);
+    } catch {
+      setMsg('Abonelik başlatılamadı (Tiko kimlik bilgileri / sahip telefonu gerekli).');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-line bg-canvas p-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Tiko aboneliği başlat (SaaS)</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={planId}
+          onChange={(e) => setPlanId(e.target.value)}
+          className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+        >
+          <option value="">Plan seç…</option>
+          {paid.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} ({p.price_monthly} {p.currency}/ay)
+            </option>
+          ))}
+        </select>
+        <select
+          value={cycle}
+          onChange={(e) => setCycle(e.target.value)}
+          className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+        >
+          <option value="monthly">Aylık</option>
+          <option value="yearly">Yıllık</option>
+        </select>
+        <button
+          onClick={start}
+          disabled={busy || !planId}
+          className="rounded-md border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 disabled:opacity-40"
+        >
+          {busy ? '…' : 'Aboneliği başlat'}
+        </button>
+      </div>
+      {msg && <p className="mt-2 text-xs text-muted">{msg}</p>}
     </div>
   );
 }

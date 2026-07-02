@@ -13,6 +13,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Payments\TikoGateway;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -304,6 +305,71 @@ class SuperadminController extends Controller
         ]);
 
         return response()->json(['data' => $data]);
+    }
+
+    /**
+     * POST /superadmin/tenants/{id}/subscription — start Tiko recurring billing
+     * for a tenant's plan (SaaS subscription). Tiko SMS-links the owner to
+     * authorise the mandate; we store the recurring id as pending until then.
+     */
+    public function startSubscription(Request $request, string $id): JsonResponse
+    {
+        $tenant = Tenant::findOrFail($id);
+        $data = $request->validate([
+            'plan_id' => ['required', Rule::exists('plans', 'id')],
+            'billing_cycle' => ['nullable', Rule::in(['monthly', 'yearly'])],
+        ]);
+
+        $plan = Plan::findOrFail($data['plan_id']);
+        $cycle = $data['billing_cycle'] ?? 'monthly';
+        $amount = (float) ($cycle === 'yearly' ? $plan->price_yearly : $plan->price_monthly);
+        abort_if($amount <= 0, 422, 'Bu plan için tekrarlı tahsil edilecek tutar yok (fiyat 0).');
+
+        $owner = User::query()->where('tenant_id', $tenant->id)->where('role', Role::Owner->value)->first();
+        abort_if($owner === null || empty($owner->phone), 422, 'İşletme sahibinin telefon numarası yok — tekrarlı ödeme başlatılamaz.');
+
+        $tiko = new TikoGateway((array) config('payments.gateways.tiko'));
+        $result = $tiko->createRecurring([
+            'customer_name' => $owner->name,
+            'customer_phone' => $owner->phone,
+            'amount' => $amount,
+            'currency' => $plan->currency,
+            'first_collection_date' => now()->addDay()->format('Y-m-d\TH:i:s'),
+            'frequency' => $cycle === 'yearly' ? 'Yearly' : 'Monthly',
+            'end_condition' => 'Never',
+            'plan_name' => $plan->name,
+            'message_template' => 'ComiQR aboneliğiniz için: {{Link}}',
+        ]);
+
+        abort_if((string) ($result['Status'] ?? '') !== '200', 422, 'Tiko tekrarlı ödeme oluşturulamadı.');
+
+        $recurringId = (string) ($result['Result']['Id'] ?? '');
+
+        $subscription = Subscription::updateOrCreate(
+            ['tenant_id' => $tenant->id],
+            ['plan_id' => $plan->id, 'status' => 'pending_authorization', 'billing_cycle' => $cycle, 'gateway_ref' => $recurringId],
+        );
+        $tenant->update(['plan_id' => $plan->id]);
+
+        AuditLog::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $request->user()->id,
+            'action' => 'superadmin.subscription_started',
+            'subject_type' => Subscription::class,
+            'subject_id' => $subscription->id,
+            'meta_json' => ['plan' => $plan->code, 'cycle' => $cycle, 'amount' => $amount, 'tiko_id' => $recurringId],
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json(['data' => [
+            'subscription' => [
+                'plan' => $plan->name,
+                'status' => $subscription->status,
+                'billing_cycle' => $subscription->billing_cycle,
+                'gateway_ref' => $subscription->gateway_ref,
+            ],
+            'tiko' => $result['Result'] ?? null,
+        ]]);
     }
 
     /** DELETE /superadmin/tenants/{id} — soft-delete a tenant (recoverable). */

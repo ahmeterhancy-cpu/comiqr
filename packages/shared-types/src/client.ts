@@ -355,6 +355,9 @@ export class ApiClient {
   superDeleteTenant(id: number): Promise<any> {
     return this.request(`/superadmin/tenants/${id}`, { method: 'DELETE' });
   }
+  superStartSubscription(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/superadmin/tenants/${id}/subscription`, { method: 'POST', body: JSON.stringify(body) });
+  }
   superImpersonate(id: number): Promise<{ token: string; tenant: any; user: any }> {
     return this.request(`/superadmin/tenants/${id}/impersonate`, { method: 'POST' });
   }
