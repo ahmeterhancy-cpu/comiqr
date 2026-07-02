@@ -44,6 +44,18 @@ export default function MenuPage() {
     await api.updateProduct(p.id, { is_active: !p.is_active });
     load();
   }
+  async function uploadImage(p: any, file: File) {
+    setBusy(p.id);
+    try {
+      await api.uploadProductImage(p.id, file);
+      load();
+    } catch {
+      setNotice('Görsel yüklenemedi.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function aiCopy(p: any) {
     setBusy(p.id);
     setNotice(null);
@@ -83,15 +95,32 @@ export default function MenuPage() {
                 .map((p) => (
                   <li key={p.id} className="py-2.5">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <span className="font-medium text-ink">{p.name}</span>
-                        {p.nutrition && (
-                          <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">
-                            {Math.round(p.nutrition.kcal)} kcal
-                          </span>
+                      <div className="flex min-w-0 items-center gap-3">
+                        {p.images?.[0] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.images[0]} alt={p.name} className="h-10 w-10 rounded-lg object-cover" />
+                        ) : (
+                          <span className="grid h-10 w-10 place-items-center rounded-lg bg-canvas text-xs text-muted">—</span>
                         )}
+                        <div className="min-w-0">
+                          <span className="font-medium text-ink">{p.name}</span>
+                          {p.nutrition && (
+                            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">
+                              {Math.round(p.nutrition.kcal)} kcal
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <label className="cursor-pointer rounded-md border border-line px-2 py-0.5 text-xs font-medium text-muted">
+                          Görsel
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => e.target.files?.[0] && uploadImage(p, e.target.files[0])}
+                          />
+                        </label>
                         <span className="text-sm font-semibold text-ink">₺{Number(p.price).toFixed(0)}</span>
                         <button
                           onClick={() => toggleProduct(p)}

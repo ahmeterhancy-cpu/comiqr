@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
 use App\Http\Controllers\Api\Admin\ProductController;
+use App\Http\Controllers\Api\Admin\ProductMediaController;
 use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\StockController;
 use App\Http\Controllers\Api\Admin\TableController;
@@ -48,6 +49,13 @@ Route::get('auth/slug-available/{slug}', function (string $slug, SlugGenerator $
         'reserved' => $slugs->isReserved($slug),
     ]]);
 })->middleware('throttle:60,1');
+
+// --- Public media (product images) ---
+Route::get('media/{path}', function (string $path) {
+    abort_unless(\Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);
+
+    return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
+})->where('path', '.*');
 
 // --- Public menu (M1/M4) — tenant resolved from host / X-Tenant (docs/06 §6.2) ---
 Route::middleware('tenant')->group(function () {
@@ -98,6 +106,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
             Route::apiResource('admin/products', ProductController::class)
                 ->only(['index', 'show', 'store', 'update', 'destroy']);
+            Route::post('admin/products/{product}/media', [ProductMediaController::class, 'upload']);
+            Route::delete('admin/products/{product}/media', [ProductMediaController::class, 'destroy']);
 
             Route::apiResource('admin/ingredients', IngredientController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
