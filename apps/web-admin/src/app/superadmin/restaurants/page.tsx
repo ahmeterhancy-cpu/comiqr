@@ -59,6 +59,10 @@ export default function RestaurantsPage() {
     await api.superUpdateTenant(t.id, { status });
     load();
   }
+  async function changePlan(t: any, planId: number) {
+    await api.superUpdateTenant(t.id, { plan_id: planId });
+    load();
+  }
   async function impersonate(t: any) {
     const res = await api.superImpersonate(t.id);
     startImpersonation(); // remember the superadmin session so we can return
@@ -176,7 +180,21 @@ export default function RestaurantsPage() {
                     </div>
                   </td>
                   <td className="text-muted">{t.owner_name ?? '—'}</td>
-                  <td className="text-muted">{t.plan ?? '—'}</td>
+                  <td>
+                    <select
+                      value={t.plan_id ?? ''}
+                      onChange={(e) => e.target.value && changePlan(t, Number(e.target.value))}
+                      className="rounded-md border border-line bg-white px-2 py-1 text-sm text-ink"
+                      title="Planı değiştir"
+                    >
+                      {!t.plan_id && <option value="">—</option>}
+                      {plans.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="max-w-[220px] truncate text-muted" title={t.address ?? ''}>
                     {t.address ?? '—'}
                   </td>
