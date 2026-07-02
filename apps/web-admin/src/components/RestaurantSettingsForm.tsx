@@ -1,0 +1,163 @@
+'use client';
+
+import { useState } from 'react';
+import { Button, Card, Input } from '@/components/ui';
+
+type Settings = Record<string, any>;
+
+/**
+ * Restaurant profile/settings form — shared by the owner's own panel (/settings)
+ * and the superadmin "manage restaurant" page. onSave receives the PATCH payload
+ * { name, settings_json }.
+ */
+export function RestaurantSettingsForm({
+  initialName,
+  initialSettings,
+  currency,
+  onSave,
+}: {
+  initialName: string;
+  initialSettings?: Settings;
+  currency?: string;
+  onSave: (payload: Record<string, unknown>) => Promise<unknown>;
+}) {
+  const s = initialSettings ?? {};
+  const [name, setName] = useState(initialName ?? '');
+  const [subTitle, setSubTitle] = useState<string>(s.sub_title ?? '');
+  const [timing, setTiming] = useState<string>(s.timing ?? '');
+  const [description, setDescription] = useState<string>(s.description ?? '');
+  const [address, setAddress] = useState<string>(s.address ?? '');
+  const [callWaiter, setCallWaiter] = useState<boolean>(s.allow_call_waiter ?? true);
+  const [onTable, setOnTable] = useState<boolean>(s.allow_on_table_order ?? true);
+  const [takeaway, setTakeaway] = useState<boolean>(s.allow_takeaway ?? true);
+  const [delivery, setDelivery] = useState<boolean>(s.allow_delivery ?? true);
+  const [deliveryCharge, setDeliveryCharge] = useState<string>(String(s.delivery_charge ?? 0));
+  const [notify, setNotify] = useState<boolean>(s.order_notification ?? true);
+  const [online, setOnline] = useState<boolean>(s.allow_online_payment ?? true);
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setSaved(false);
+    setError(null);
+    try {
+      await onSave({
+        name: name.trim(),
+        settings_json: {
+          sub_title: subTitle.trim() || null,
+          timing: timing.trim() || null,
+          description: description.trim() || null,
+          address: address.trim() || null,
+          allow_call_waiter: callWaiter,
+          allow_on_table_order: onTable,
+          allow_takeaway: takeaway,
+          allow_delivery: delivery,
+          delivery_charge: Number(deliveryCharge || 0),
+          order_notification: notify,
+          allow_online_payment: online,
+        },
+      });
+      setSaved(true);
+    } catch {
+      setError('Kaydedilemedi.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <h3 className="mb-3 text-sm font-semibold text-ink">Restoran Bilgileri</h3>
+        <div className="space-y-3">
+          <Field label="Restoran Adı">
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Alt Başlık">
+              <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
+            </Field>
+            <Field label="Çalışma Saatleri">
+              <Input value={timing} onChange={(e) => setTiming(e.target.value)} placeholder="09:00 - 23:00" />
+            </Field>
+          </div>
+          <Field label="Açıklama">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+            />
+          </Field>
+          <Field label="Adres">
+            <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="İşletme adresi" />
+          </Field>
+        </div>
+      </Card>
+
+      <Card>
+        <h3 className="mb-3 text-sm font-semibold text-ink">Sipariş & Ödeme</h3>
+        <div className="divide-y divide-line">
+          <YesNo label="Garson çağırma (masada)" value={callWaiter} onChange={setCallWaiter} />
+          <YesNo label="Masada sipariş" value={onTable} onChange={setOnTable} />
+          <YesNo label="Gel-al siparişi" value={takeaway} onChange={setTakeaway} />
+          <YesNo label="Teslimat siparişi" value={delivery} onChange={setDelivery} />
+          {delivery && (
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-sm text-ink">Teslimat Ücreti{currency ? ` (${currency})` : ''}</span>
+              <Input
+                type="number"
+                className="w-28 text-right"
+                value={deliveryCharge}
+                onChange={(e) => setDeliveryCharge(e.target.value)}
+              />
+            </div>
+          )}
+          <YesNo label="Yeni sipariş bildirimi" value={notify} onChange={setNotify} />
+          <YesNo label="Online ödeme (Tiko)" value={online} onChange={setOnline} />
+        </div>
+      </Card>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={save} disabled={busy}>
+          {busy ? 'Kaydediliyor…' : 'Kaydet'}
+        </Button>
+        {saved && <span className="text-sm font-medium text-emerald-700">✓ Kaydedildi</span>}
+        {error && <span className="text-sm text-red-600">{error}</span>}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function YesNo({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <span className="text-sm text-ink">{label}</span>
+      <div className="inline-flex overflow-hidden rounded-lg border border-line">
+        {[true, false].map((v) => (
+          <button
+            key={String(v)}
+            type="button"
+            onClick={() => onChange(v)}
+            className={`px-3 py-1 text-xs font-semibold ${
+              value === v ? (v ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-white text-muted'
+            }`}
+          >
+            {v ? 'Evet' : 'Hayır'}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

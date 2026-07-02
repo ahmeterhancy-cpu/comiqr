@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Panel } from '@/components/superadmin-ui';
 import { Input } from '@/components/ui';
@@ -201,6 +202,12 @@ export default function RestaurantsPage() {
                   <td className="text-xs text-muted">{relativeTime(t.created_at)}</td>
                   <td className="py-3">
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <Link
+                        href={`/superadmin/restaurants/${t.id}`}
+                        className="inline-flex items-center rounded-md border border-line bg-white px-2.5 py-1 text-xs font-medium text-ink transition hover:bg-canvas"
+                      >
+                        Yönet
+                      </Link>
                       <button
                         onClick={() => impersonate(t)}
                         className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
