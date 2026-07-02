@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
  */
 class OrderService
 {
+    public function __construct(protected StockService $stock) {}
+
     /**
      * @param  array<int,array{product_id:int,variant_id?:int|null,quantity:int,modifiers?:array<int,int>,note?:string}>  $items
      */
@@ -36,6 +38,9 @@ class OrderService
 
             $this->addLines($order, $items);
             $order->recalculateTotals();
+
+            // Deduct ingredient stock via each item's recipe (Faz 2, docs/03 §3.6).
+            $this->stock->deductForOrder($order);
 
             return $order->load('items');
         });

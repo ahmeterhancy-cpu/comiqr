@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\RecipeController;
+use App\Http\Controllers\Api\Admin\StockController;
 use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\KdsController;
@@ -95,6 +96,10 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('admin/products/{product}/recipe', [RecipeController::class, 'update']);
             Route::get('admin/products/{product}/nutrition', [RecipeController::class, 'nutrition']);
             Route::post('admin/products/{product}/nutrition/recompute', [RecipeController::class, 'recompute']);
+
+            // Inventory / stock (Faz 2, M18)
+            Route::post('admin/stock-movements', [StockController::class, 'move']);
+            Route::get('admin/inventory/low-stock', [StockController::class, 'lowStock']);
 
             // QR & tables (M3)
             Route::apiResource('admin/dining-areas', DiningAreaController::class)
