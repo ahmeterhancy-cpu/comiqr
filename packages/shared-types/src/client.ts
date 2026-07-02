@@ -226,6 +226,20 @@ export class ApiClient {
     return this.request('/admin/analytics/overview');
   }
 
+  // --- Superadmin (M12) ---
+  superTenants(): Promise<any[]> {
+    return this.request('/superadmin/tenants');
+  }
+  superUpdateTenant(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/superadmin/tenants/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  superImpersonate(id: number): Promise<{ token: string; tenant: any; user: any }> {
+    return this.request(`/superadmin/tenants/${id}/impersonate`, { method: 'POST' });
+  }
+  superAuditLogs(): Promise<any[]> {
+    return this.request('/superadmin/audit-logs');
+  }
+
   // --- KDS / live orders (M6, docs/06 §6.7) ---
   kdsOrders(branchId: number, station?: number): Promise<any[]> {
     return this.request(`/kds/${branchId}/orders${station ? `?station=${station}` : ''}`);

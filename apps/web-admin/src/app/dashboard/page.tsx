@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { Card } from '@/components/ui';
@@ -8,17 +9,23 @@ import { useApi } from '@/lib/useApi';
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
+  const router = useRouter();
   const { api, me, ready } = useApi();
   const [stats, setStats] = useState<any | null>(null);
   const [gated, setGated] = useState(false);
 
   useEffect(() => {
     if (!ready) return;
+    // Superadmins have no tenant — send them to the platform console.
+    if (me?.user.role === 'superadmin') {
+      router.replace('/superadmin');
+      return;
+    }
     api
       .analyticsOverview()
       .then(setStats)
       .catch(() => setGated(true));
-  }, [ready, api]);
+  }, [ready, me, router, api]);
 
   if (!ready || !me) {
     return <div className="grid min-h-screen place-items-center text-sm text-muted">…</div>;

@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\SessionController;
+use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\WaiterController;
 use App\Support\Tenancy\SlugGenerator;
@@ -87,6 +88,14 @@ Route::post('payments/webhook/{gateway}', [PaymentController::class, 'webhook'])
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::post('auth/2fa/verify', [AuthController::class, 'verifyTwoFactor']);
+
+    // --- Platform superadmin (M12, docs/06 §6.11) — no tenant context ---
+    Route::middleware('superadmin')->prefix('superadmin')->group(function () {
+        Route::get('tenants', [SuperadminController::class, 'tenants']);
+        Route::patch('tenants/{id}', [SuperadminController::class, 'updateTenant']);
+        Route::post('tenants/{id}/impersonate', [SuperadminController::class, 'impersonate']);
+        Route::get('audit-logs', [SuperadminController::class, 'auditLogs']);
+    });
 
     // Tenant-scoped: binds the active tenant from the signed-in user.
     Route::middleware('tenant.user')->group(function () {

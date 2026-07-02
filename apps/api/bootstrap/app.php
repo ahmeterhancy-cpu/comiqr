@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.user' => \App\Http\Middleware\SetTenantFromUser::class,
             'role' => \App\Http\Middleware\EnsureRole::class,
             'plan' => \App\Http\Middleware\EnsurePlanFeature::class,
+            'superadmin' => \App\Http\Middleware\EnsureSuperadmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
