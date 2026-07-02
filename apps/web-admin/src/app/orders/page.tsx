@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AdminShell } from '@/components/AdminShell';
 import { Card } from '@/components/ui';
+import { getActiveBranchId } from '@/lib/branch';
 import { useApi } from '@/lib/useApi';
 
 const NEXT: Record<string, { label: string; to?: string; bump?: boolean }> = {
@@ -31,7 +32,7 @@ export default function OrdersPage() {
   useEffect(() => {
     if (!ready) return;
     api.adminBranches().then((branches) => {
-      const bid = branches[0]?.id ?? null;
+      const bid = getActiveBranchId() ?? branches[0]?.id ?? null;
       setBranchId(bid);
       if (bid) refresh(bid);
     });

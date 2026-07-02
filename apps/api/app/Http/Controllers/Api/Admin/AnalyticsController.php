@@ -23,24 +23,28 @@ class AnalyticsController extends Controller
     {
         $to = $request->date('to') ?? now();
         $from = $request->date('from') ?? now()->copy()->subDays(30);
+        $branchId = $request->integer('branch_id') ?: null;
 
-        $orders = Order::whereBetween('placed_at', [$from, $to]);
-        $orderCount = (clone $orders)->count();
+        $branchFilter = fn ($q) => $branchId ? $q->where('branch_id', $branchId) : $q;
+
+        $orderCount = $branchFilter(Order::whereBetween('placed_at', [$from, $to]))->count();
 
         $revenue = (float) Payment::where('status', 'paid')
             ->whereBetween('created_at', [$from, $to])
+            ->when($branchId, fn ($q) => $q->whereHas('order', fn ($o) => $o->where('branch_id', $branchId)))
             ->sum('amount');
 
-        $paidOrders = Order::where('payment_status', 'paid')
-            ->whereBetween('placed_at', [$from, $to])
-            ->count();
+        $paidOrders = $branchFilter(
+            Order::where('payment_status', 'paid')->whereBetween('placed_at', [$from, $to]),
+        )->count();
 
-        $scans = MenuView::whereBetween('viewed_at', [$from, $to])->count();
+        $scans = $branchFilter(MenuView::whereBetween('viewed_at', [$from, $to]))->count();
 
         $topProducts = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             // Raw join bypasses the global scope — constrain to the tenant explicitly.
             ->where('orders.tenant_id', $this->tenants->id())
+            ->when($branchId, fn ($q) => $q->where('orders.branch_id', $branchId))
             ->whereBetween('orders.placed_at', [$from, $to])
             ->join('products', 'products.id', '=', 'order_items.product_id')
             ->selectRaw('products.id, products.name, SUM(order_items.quantity) as qty, SUM(order_items.line_total) as revenue')

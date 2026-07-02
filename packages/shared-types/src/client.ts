@@ -189,6 +189,15 @@ export class ApiClient {
   adminBranches(): Promise<any[]> {
     return this.request('/admin/branches');
   }
+  createBranch(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/branches', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateBranch(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/branches/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteBranch(id: number): Promise<any> {
+    return this.request(`/admin/branches/${id}`, { method: 'DELETE' });
+  }
   adminAllergens(): Promise<any[]> {
     return this.request('/admin/allergens');
   }
@@ -222,8 +231,8 @@ export class ApiClient {
   }
 
   // --- Admin: analytics (M9) ---
-  analyticsOverview(): Promise<any> {
-    return this.request('/admin/analytics/overview');
+  analyticsOverview(branchId?: number): Promise<any> {
+    return this.request(`/admin/analytics/overview${branchId ? `?branch_id=${branchId}` : ''}`);
   }
 
   // --- Superadmin (M12) ---

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { Card } from '@/components/ui';
+import { getActiveBranchId } from '@/lib/branch';
 import { useApi } from '@/lib/useApi';
 
 export default function DashboardPage() {
@@ -22,7 +23,7 @@ export default function DashboardPage() {
       return;
     }
     api
-      .analyticsOverview()
+      .analyticsOverview(getActiveBranchId() ?? undefined)
       .then(setStats)
       .catch(() => setGated(true));
   }, [ready, me, router, api]);

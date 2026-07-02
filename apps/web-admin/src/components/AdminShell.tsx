@@ -1,11 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Brand, Button } from './ui';
 import { APP_NAME, createApi } from '@/lib/api';
 import { clearSession, getToken } from '@/lib/auth';
+import { getActiveBranchId, setActiveBranchId } from '@/lib/branch';
 
 const NAV = [
   { key: 'dashboard', href: '/dashboard' },
@@ -13,6 +15,7 @@ const NAV = [
   { key: 'ingredients', href: '/ingredients' },
   { key: 'orders', href: '/orders' },
   { key: 'tables', href: '/tables' },
+  { key: 'branches', href: '/branches' },
   { key: 'customers', href: '/customers' },
   { key: 'coupons', href: '/coupons' },
 ] as const;
@@ -21,6 +24,26 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
   const nav = useTranslations('nav');
   const pathname = usePathname();
   const router = useRouter();
+  const [branches, setBranches] = useState<any[]>([]);
+  const [activeBranch, setActive] = useState<number | null>(null);
+
+  useEffect(() => {
+    createApi(getToken())
+      .adminBranches()
+      .then((bs) => {
+        setBranches(bs);
+        const current = getActiveBranchId() ?? bs[0]?.id ?? null;
+        if (current) setActiveBranchId(current);
+        setActive(current);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  function switchBranch(id: number) {
+    setActiveBranchId(id);
+    setActive(id);
+    window.location.reload();
+  }
 
   function logout() {
     createApi(getToken()).logout().catch(() => undefined);
@@ -32,7 +55,22 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
     <div className="grid min-h-screen grid-cols-[15rem_1fr] max-lg:grid-cols-1">
       <aside className="hidden flex-col border-r border-line bg-surface p-5 lg:flex">
         <Brand name={APP_NAME} />
-        <nav className="mt-8 space-y-1">
+
+        {branches.length > 1 && (
+          <select
+            value={activeBranch ?? ''}
+            onChange={(e) => switchBranch(Number(e.target.value))}
+            className="mt-5 w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink"
+          >
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <nav className="mt-6 space-y-1">
           {NAV.map((it) => {
             const active = pathname === it.href;
             return (
