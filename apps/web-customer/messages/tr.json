@@ -11,6 +11,7 @@
     "notFoundBody": "Bu QR kodu geçersiz ya da oturum kapanmış olabilir.",
     "comingSoon": "Menü görüntüleme Faz 1'de aktifleşecek.",
     "kcal": "kcal",
+    "size": "Boyut",
     "protein": "Protein",
     "carb": "Karb.",
     "fat": "Yağ",
@@ -24,6 +25,7 @@
   },
   "order": {
     "add": "Ekle",
+    "all": "Tümü",
     "cart": "Sepet",
     "placeOrder": "Sipariş Ver",
     "placing": "Gönderiliyor…",

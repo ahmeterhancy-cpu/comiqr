@@ -64,6 +64,8 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const [reviewing, setReviewing] = useState(false);
   const [service, setService] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeCat, setActiveCat] = useState<number | null>(null);
+  const [sheetProduct, setSheetProduct] = useState<MenuProduct | null>(null);
 
   const lines = Object.values(cart);
   const total = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
@@ -231,7 +233,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         <div className="relative flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Menü</p>
-            <h1 className="mt-1 font-display text-3xl font-semibold leading-tight">{menu.venue.name}</h1>
+            <h1 className="mt-1 text-2xl font-bold leading-tight">{menu.venue.name}</h1>
             {(menu.venue.reviews_count ?? 0) > 0 && (
               <p className="mt-1 text-xs font-medium text-white/80">
                 ⭐ {menu.venue.rating} · {menu.venue.reviews_count} değerlendirme
@@ -272,17 +274,16 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         </div>
       </header>
 
-      {/* Sticky category nav */}
+      {/* Sticky category filter tabs */}
       {categories.length > 1 && (
         <nav className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-5 py-3 backdrop-blur">
+          <TabPill active={activeCat === null} onClick={() => setActiveCat(null)}>
+            {t('all')}
+          </TabPill>
           {categories.map((c) => (
-            <a
-              key={c.id}
-              href={`#cat-${c.id}`}
-              className="whitespace-nowrap rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-medium text-muted transition hover:border-brand-500 hover:text-brand-600"
-            >
+            <TabPill key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
               {c.name}
-            </a>
+            </TabPill>
           ))}
         </nav>
       )}
@@ -315,24 +316,15 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         />
       )}
 
-      {categories.map((c) => (
-        <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-16 px-5 pt-8">
-          <div className="mb-4 flex items-center gap-3">
-            <h2 className="font-display text-xl font-semibold text-ink">{c.name}</h2>
+      {(activeCat ? categories.filter((c) => c.id === activeCat) : categories).map((c) => (
+        <section key={c.id} className="px-5 pt-6">
+          <div className="mb-3 flex items-center gap-3">
+            <h2 className="text-lg font-bold text-ink">{c.name}</h2>
             <span className="h-px flex-1 bg-line" />
           </div>
-          <div className="space-y-3.5">
+          <div className="space-y-2.5">
             {c.products.map((p) => (
-              <ProductRow
-                key={p.id}
-                product={p}
-                qtyFor={qtyFor}
-                onSet={guardedSet}
-                allergenMap={allergenMap}
-                fmt={fmt}
-                t={t}
-                mt={mt}
-              />
+              <ProductRow key={p.id} product={p} qtyFor={qtyFor} onSet={guardedSet} onOpen={setSheetProduct} fmt={fmt} mt={mt} />
             ))}
           </div>
         </section>
@@ -392,7 +384,35 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           </div>
         </div>
       )}
+
+      {sheetProduct && (
+        <ProductSheet
+          product={sheetProduct}
+          allergenMap={allergenMap}
+          fmt={fmt}
+          t={t}
+          mt={mt}
+          onClose={() => setSheetProduct(null)}
+          onAdd={(sel: any) => {
+            guardedSet(sel, qtyFor(sel.product.id, sel.variantId, sel.modifierIds) + 1);
+            setSheetProduct(null);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function TabPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+        active ? 'bg-brand-500 text-white shadow-sm' : 'border border-line bg-surface text-muted hover:border-brand-300'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -502,23 +522,80 @@ function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg,
   );
 }
 
-function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
-  const [detail, setDetail] = useState(false);
+function ProductRow({ product, qtyFor, onSet, onOpen, fmt, mt }: any) {
+  const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
+  const n = product.nutrition;
+  const baseQty = qtyFor(product.id, undefined, []);
+  const base = () => ({
+    product,
+    variantId: undefined,
+    variantName: undefined,
+    modifierIds: [],
+    modifierNames: [],
+    unitPrice: Number(product.price),
+  });
+
+  return (
+    <article className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-2.5 shadow-[var(--shadow-card)]">
+      <button onClick={() => onOpen(product)} className="shrink-0" aria-label={product.name}>
+        {product.images?.[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.images[0]} alt={product.name} className="h-16 w-16 rounded-xl object-cover" />
+        ) : (
+          <div className="grid h-16 w-16 place-items-center rounded-xl bg-canvas text-[10px] font-medium text-muted">
+            {product.name.slice(0, 2)}
+          </div>
+        )}
+      </button>
+      <button onClick={() => onOpen(product)} className="min-w-0 flex-1 text-left">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="truncate text-sm font-semibold text-ink">
+            {product.name}
+            {product.age_restricted && (
+              <span className="ml-1.5 rounded bg-red-100 px-1 py-0.5 text-[10px] font-bold text-red-700">18+</span>
+            )}
+          </h3>
+          <span className="shrink-0 text-sm font-bold text-brand-600">{fmt.format(Number(product.price))}</span>
+        </div>
+        {product.description && <p className="mt-0.5 line-clamp-1 text-xs text-muted">{product.description}</p>}
+        {n && (
+          <p className="mt-1 text-[11px] font-medium text-[color:var(--color-amber)]">
+            {Math.round(n.kcal)} {mt('kcal')}
+          </p>
+        )}
+      </button>
+      {hasOptions || baseQty === 0 ? (
+        <button
+          onClick={() => (hasOptions ? onOpen(product) : onSet(base(), 1))}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-500 text-xl font-bold leading-none text-white shadow-sm transition hover:bg-brand-600 active:scale-95"
+          aria-label="+"
+        >
+          +
+        </button>
+      ) : (
+        <div className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-500 p-1 shadow-sm">
+          <Step onClick={() => onSet(base(), baseQty - 1)}>−</Step>
+          <span className="min-w-4 text-center text-sm font-bold text-white">{baseQty}</span>
+          <Step onClick={() => onSet(base(), baseQty + 1)}>+</Step>
+        </div>
+      )}
+    </article>
+  );
+}
+
+/** Bottom sheet: full product detail — nutrition, variants, modifiers — then add. */
+function ProductSheet({ product, allergenMap, fmt, t, mt, onClose, onAdd }: any) {
   const variants = product.variants ?? [];
   const groups: MenuModifierGroup[] = product.modifier_groups ?? [];
-
   const [variantId, setVariantId] = useState<number | undefined>(
     variants.find((v: any) => v.is_default)?.id ?? variants[0]?.id,
   );
-  // groupId -> selected modifier ids
   const [selected, setSelected] = useState<Record<number, number[]>>({});
+  const [detail, setDetail] = useState(false);
 
   const n = product.nutrition;
   const contains = (n?.allergens.contains ?? []).map((id: number) => allergenMap.get(id)?.name).filter(Boolean);
-
   const variant = variants.find((v: any) => v.id === variantId);
-
-  // Flatten current modifier selection in group order for a stable, priced line.
   const chosen = groups.flatMap((g) =>
     (selected[g.id] ?? []).map((id) => g.modifiers.find((m) => m.id === id)).filter(Boolean),
   ) as { id: number; name: string; price_delta: string | number }[];
@@ -526,64 +603,49 @@ function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
   const modifierNames = chosen.map((m) => m.name);
   const modTotal = chosen.reduce((s, m) => s + Number(m.price_delta), 0);
   const unitPrice = Number(product.price) + Number(variant?.price_delta ?? 0) + modTotal;
-
   const missingRequired = groups.some((g) => {
     const min = g.is_required ? Math.max(1, g.min_select) : g.min_select;
     return (selected[g.id] ?? []).length < min;
-  });
-
-  const cartQty = qtyFor(product.id, variantId, modifierIds);
-
-  const selection = () => ({
-    product,
-    variantId,
-    variantName: variant?.name,
-    modifierIds,
-    modifierNames,
-    unitPrice,
   });
 
   function toggleModifier(g: MenuModifierGroup, id: number) {
     setSelected((prev) => {
       const cur = prev[g.id] ?? [];
       let next: number[];
-      if (g.max_select <= 1) {
-        // Single choice: re-selecting clears it only when the group is optional.
-        next = cur.includes(id) ? (g.is_required ? cur : []) : [id];
-      } else if (cur.includes(id)) {
-        next = cur.filter((x) => x !== id);
-      } else if (cur.length < g.max_select) {
-        next = [...cur, id];
-      } else {
-        next = cur; // at the cap — ignore extra taps
-      }
+      if (g.max_select <= 1) next = cur.includes(id) ? (g.is_required ? cur : []) : [id];
+      else if (cur.includes(id)) next = cur.filter((x) => x !== id);
+      else if (cur.length < g.max_select) next = [...cur, id];
+      else next = cur;
       return { ...prev, [g.id]: next };
     });
   }
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
-      <div className="flex gap-4 p-4">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+      <div
+        className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-surface sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {product.images?.[0] && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.images[0]} alt={product.name} className="h-24 w-24 shrink-0 rounded-xl object-cover" />
+          <img src={product.images[0]} alt={product.name} className="h-44 w-full object-cover" />
         )}
-        <div className="min-w-0 flex-1">
+        <div className="p-5">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="font-display text-lg font-semibold leading-snug text-ink">
+            <h3 className="text-lg font-semibold text-ink">
               {product.name}
               {product.age_restricted && (
-                <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 align-middle text-xs font-bold text-red-700">
-                  18+
-                </span>
+                <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 align-middle text-xs font-bold text-red-700">18+</span>
               )}
             </h3>
-            <div className="shrink-0 font-display text-lg font-bold text-brand-600">{fmt.format(unitPrice)}</div>
+            <button onClick={onClose} className="shrink-0 text-2xl leading-none text-muted">
+              ×
+            </button>
           </div>
           {product.description && <p className="mt-1 text-sm leading-relaxed text-muted">{product.description}</p>}
 
           {n && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="rounded-full bg-amber-bg px-2.5 py-0.5 text-xs font-semibold text-[color:var(--color-amber)]">
                 {Math.round(n.kcal)} {mt('kcal')}
               </span>
@@ -615,26 +677,27 @@ function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
           )}
 
           {variants.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {variants.map((v: any) => (
-                <button
-                  key={v.id}
-                  onClick={() => setVariantId(v.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                    v.id === variantId
-                      ? 'bg-brand-500 text-white'
-                      : 'border border-line bg-surface text-muted hover:border-brand-500'
-                  }`}
-                >
-                  {v.name}
-                  {Number(v.price_delta) ? ` +${fmt.format(Number(v.price_delta))}` : ''}
-                </button>
-              ))}
+            <div className="mt-4">
+              <p className="mb-1.5 text-xs font-semibold text-ink">{mt('size')}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {variants.map((v: any) => (
+                  <button
+                    key={v.id}
+                    onClick={() => setVariantId(v.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                      v.id === variantId ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted hover:border-brand-500'
+                    }`}
+                  >
+                    {v.name}
+                    {Number(v.price_delta) ? ` +${fmt.format(Number(v.price_delta))}` : ''}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
           {groups.map((g) => (
-            <div key={g.id} className="mt-3">
+            <div key={g.id} className="mt-4">
               <div className="mb-1.5 flex items-center gap-2">
                 <span className="text-xs font-semibold text-ink">{g.name}</span>
                 {g.is_required ? (
@@ -642,9 +705,7 @@ function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
                     {t('required')}
                   </span>
                 ) : (
-                  <span className="text-[10px] text-muted">
-                    {g.max_select > 1 ? t('upTo', { count: g.max_select }) : t('optional')}
-                  </span>
+                  <span className="text-[10px] text-muted">{g.max_select > 1 ? t('upTo', { count: g.max_select }) : t('optional')}</span>
                 )}
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -655,9 +716,7 @@ function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
                       key={m.id}
                       onClick={() => toggleModifier(g, m.id)}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                        on
-                          ? 'bg-brand-500 text-white'
-                          : 'border border-line bg-surface text-muted hover:border-brand-500'
+                        on ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted hover:border-brand-500'
                       }`}
                     >
                       {g.max_select <= 1 && on ? '● ' : ''}
@@ -670,29 +729,16 @@ function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
             </div>
           ))}
 
-          <div className="mt-3.5 flex items-center justify-end gap-3">
-            {missingRequired && cartQty === 0 && (
-              <span className="text-[11px] text-muted">{t('chooseRequired')}</span>
-            )}
-            {cartQty === 0 ? (
-              <button
-                onClick={() => onSet(selection(), 1)}
-                disabled={missingRequired}
-                className="inline-flex items-center gap-1.5 rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <span className="text-base leading-none">+</span> {t('add')}
-              </button>
-            ) : (
-              <div className="inline-flex items-center gap-2 rounded-full bg-brand-500 p-1 pr-1 shadow-sm">
-                <Step onClick={() => onSet(selection(), cartQty - 1)}>−</Step>
-                <span className="min-w-5 text-center text-sm font-bold text-white">{cartQty}</span>
-                <Step onClick={() => onSet(selection(), cartQty + 1)}>+</Step>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => onAdd({ product, variantId, variantName: variant?.name, modifierIds, modifierNames, unitPrice })}
+            disabled={missingRequired}
+            className="mt-5 w-full rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {missingRequired ? t('chooseRequired') : `${t('add')} · ${fmt.format(unitPrice)}`}
+          </button>
         </div>
       </div>
-    </article>
+    </div>
   );
 }
 
