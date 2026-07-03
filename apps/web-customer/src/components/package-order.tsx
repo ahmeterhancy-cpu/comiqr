@@ -121,7 +121,7 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
 
   return (
     <div className="mx-auto max-w-2xl pb-32">
-      <header className="relative overflow-hidden bg-brand-600 px-6 pb-6 pt-8 text-white">
+      <header className="relative overflow-hidden bg-[color:var(--color-navy)] px-6 pb-6 pt-8 text-white">
         {menu.venue.cover && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={menu.venue.cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />

@@ -1,32 +1,33 @@
 @import 'tailwindcss';
 
 /*
-  ComiQR customer PWA — a warm, editorial restaurant menu. Deliberately NOT the
-  generic card-grid look: a characterful display serif (Fraunces) for names and
-  headings, a refined terracotta/cream palette, soft depth. Light and premium.
+  ComiQR customer PWA — a clean, modern ordering menu: deep navy headers, a fresh
+  teal accent, crisp white cards on a cool light canvas. Light and premium.
 */
 @theme {
-  --color-brand-50: #fbeee7;
-  --color-brand-100: #f6dccd;
-  --color-brand-500: #c15a34;
-  --color-brand-600: #a94a28;
-  --color-brand-700: #8a3d21;
+  --color-brand-50: #e9faf7;
+  --color-brand-100: #c6f1ea;
+  --color-brand-500: #14b8a6; /* teal accent */
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
 
-  --color-ink: #26201c;
-  --color-muted: #8a7c72;
-  --color-line: #ece2d6;
+  --color-navy: #14284a; /* header / dark surfaces */
+
+  --color-ink: #17253f; /* navy headings + body text */
+  --color-muted: #6b7789;
+  --color-line: #e6eaf0;
   --color-surface: #ffffff;
-  --color-canvas: #faf5ee;
+  --color-canvas: #f3f5f9;
 
-  --color-sage: #4e7c5b;
-  --color-sage-bg: #e8f1ea;
-  --color-amber: #9a6a1e;
-  --color-amber-bg: #f6ecd9;
+  --color-sage: #0f9d76;
+  --color-sage-bg: #e2f5ee;
+  --color-amber: #b45309;
+  --color-amber-bg: #fdf0da;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: var(--font-fraunces), 'Georgia', 'Times New Roman', serif;
 
-  --shadow-card: 0 1px 2px rgba(38, 32, 28, 0.04), 0 8px 24px rgba(38, 32, 28, 0.05);
+  --shadow-card: 0 1px 2px rgba(20, 40, 74, 0.05), 0 10px 28px rgba(20, 40, 74, 0.06);
 }
 
 html,
@@ -40,7 +41,7 @@ body {
   border-color: var(--color-line);
 }
 
-/* Subtle grain-free warm vignette at the top for depth. */
+/* Subtle cool vignette at the top for depth. */
 body {
-  background-image: radial-gradient(120% 60% at 50% -10%, rgba(193, 90, 52, 0.06), transparent 60%);
+  background-image: radial-gradient(120% 60% at 50% -10%, rgba(20, 184, 166, 0.07), transparent 60%);
 }

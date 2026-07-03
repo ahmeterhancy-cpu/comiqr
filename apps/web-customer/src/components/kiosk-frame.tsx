@@ -11,7 +11,7 @@ import type { Menu } from '@comiqr/shared-types';
 export function KioskFrame({ menu, qrToken, tableCode }: { menu: Menu; qrToken: string; tableCode?: string }) {
   return (
     <div className="min-h-screen bg-canvas">
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-brand-600 px-6 py-3 text-white">
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-[color:var(--color-navy)] px-6 py-3 text-white">
         <span className="font-display text-lg font-semibold" style={{ color: '#ffffff' }}>
           Self-Servis Sipariş
         </span>

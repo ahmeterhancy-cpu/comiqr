@@ -35,7 +35,7 @@ export default function DiscoverPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-16">
-      <header className="relative overflow-hidden bg-brand-600 px-6 pb-8 pt-10 text-white" style={{ marginInline: '-1.25rem' }}>
+      <header className="relative overflow-hidden bg-[color:var(--color-navy)] px-6 pb-8 pt-10 text-white" style={{ marginInline: '-1.25rem' }}>
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
         <p className="relative text-xs font-medium uppercase tracking-[0.25em] text-white/70">Keşfet</p>
         <h1 className="relative mt-1 font-display text-3xl font-semibold">Yakındaki lezzetler</h1>

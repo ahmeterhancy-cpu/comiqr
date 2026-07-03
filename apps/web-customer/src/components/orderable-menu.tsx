@@ -224,7 +224,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
     <div className="mx-auto max-w-2xl pb-32">
       {/* Editorial header */}
       <header
-        className="relative overflow-hidden bg-brand-600 px-6 pb-7 pt-8 text-white"
+        className="relative overflow-hidden bg-[color:var(--color-navy)] px-6 pb-7 pt-8 text-white"
         style={menu.venue.brand_color ? { backgroundColor: menu.venue.brand_color } : undefined}
       >
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
@@ -578,7 +578,7 @@ function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
                 </span>
               )}
             </h3>
-            <div className="shrink-0 font-display text-lg font-semibold text-ink">{fmt.format(unitPrice)}</div>
+            <div className="shrink-0 font-display text-lg font-bold text-brand-600">{fmt.format(unitPrice)}</div>
           </div>
           {product.description && <p className="mt-1 text-sm leading-relaxed text-muted">{product.description}</p>}
 
