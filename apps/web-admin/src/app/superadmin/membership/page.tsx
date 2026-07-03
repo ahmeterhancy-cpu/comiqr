@@ -7,6 +7,13 @@ import { useApi } from '@/lib/useApi';
 
 const CUR: Record<string, string> = { TRY: '₺', EUR: '€', USD: '$', GBP: '£' };
 
+const VERTICAL_LABELS: Record<string, string> = {
+  restaurant: '🍽️ Restoran',
+  hotel: '🛏️ Otel',
+  beach: '⛱️ Plaj',
+  bar: '🍹 Bar',
+};
+
 const FEATURES: [string, string][] = [
   ['menu', 'QR Menü'],
   ['qr', 'QR & Masa'],
@@ -22,6 +29,8 @@ const FEATURES: [string, string][] = [
   ['pos_integration', 'POS entegrasyonu'],
   ['loyalty', 'Sadakat / CRM'],
   ['multi_branch', 'Çok şube'],
+  ['happy_hour', 'Happy Hour (bar)'],
+  ['folio', 'Oda/Şezlong folyosu'],
   ['white_label', 'White-label'],
   ['custom_integration', 'Özel entegrasyon'],
   ['sla', 'SLA'],
@@ -175,6 +184,17 @@ function PlanCard({ p, api, onChanged }: { p: any; api: any; onChanged: () => vo
         ))}
         {enabled.length === 0 && <li className="text-muted">—</li>}
       </ul>
+
+      <div className="mt-3 border-t border-line pt-3">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted">İşletme türleri</span>
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {(p.features?.verticals ?? ['restaurant']).map((v: string) => (
+            <span key={v} className="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">
+              {VERTICAL_LABELS[v] ?? v}
+            </span>
+          ))}
+        </div>
+      </div>
 
       <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-line pt-3 text-xs">
         {LIMITS.map(([k, label]) => (

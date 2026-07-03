@@ -12,6 +12,7 @@ import type {
   LoginPayload,
   Menu,
   MeResult,
+  PlanOption,
   RegisterTenantPayload,
   RegisterTenantResult,
   SlugAvailability,
@@ -102,6 +103,11 @@ export class ApiClient {
 
   login(payload: LoginPayload): Promise<AuthSession> {
     return this.request('/auth/login', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  /** Public SaaS plans for the onboarding plan picker (code/price/verticals). */
+  plans(): Promise<PlanOption[]> {
+    return this.request('/plans');
   }
 
   logout(): Promise<{ message: string }> {

@@ -66,6 +66,21 @@ Route::get('media/{path}', function (string $path) {
     return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
 })->where('path', '.*');
 
+// --- Public SaaS plans (onboarding plan picker) — code/price/verticals ---
+Route::get('plans', function () {
+    return response()->json(['data' => \App\Models\Plan::where('is_active', true)->orderBy('sort')->get()
+        ->map(fn ($p) => [
+            'code' => $p->code,
+            'name' => $p->name,
+            'price_monthly' => $p->price_monthly,
+            'price_yearly' => $p->price_yearly,
+            'currency' => $p->currency,
+            'verticals' => data_get($p->features_json, 'verticals', ['restaurant']),
+            'features' => $p->features_json,
+            'limits' => $p->limits_json,
+        ])]);
+})->middleware('throttle:60,1');
+
 // --- Public consumer discovery portal (M20) — central, tenant-less ---
 Route::get('discover', [DiscoveryController::class, 'index'])->middleware('throttle:120,1');
 

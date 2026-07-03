@@ -25,6 +25,7 @@ class PlanSeeder extends Seeder
                     'menu' => true, 'qr' => true, 'nutrition_display' => true,
                     'ordering' => false, 'payments' => false, 'kds' => false,
                     'analytics' => false, 'ai' => false,
+                    'verticals' => ['restaurant'],
                 ],
             ],
             [
@@ -38,6 +39,8 @@ class PlanSeeder extends Seeder
                     'menu' => true, 'qr' => true, 'nutrition_display' => true, 'nutrition_full' => true,
                     'ordering' => true, 'payments' => true, 'kds' => true, 'waiter_app' => true,
                     'analytics' => true, 'ai' => true,
+                    'happy_hour' => true,
+                    'verticals' => ['restaurant', 'bar'],
                 ],
             ],
             [
@@ -52,6 +55,8 @@ class PlanSeeder extends Seeder
                     'ordering' => true, 'payments' => true, 'kds' => true, 'waiter_app' => true,
                     'analytics' => true, 'ai' => true, 'ai_advanced' => true,
                     'pos_integration' => true, 'loyalty' => true, 'multi_branch' => true,
+                    'happy_hour' => true, 'folio' => true,
+                    'verticals' => ['restaurant', 'bar', 'hotel', 'beach'],
                 ],
             ],
             [
@@ -67,6 +72,8 @@ class PlanSeeder extends Seeder
                     'analytics' => true, 'ai' => true, 'ai_advanced' => true,
                     'pos_integration' => true, 'loyalty' => true, 'multi_branch' => true,
                     'white_label' => true, 'custom_integration' => true, 'sla' => true,
+                    'happy_hour' => true, 'folio' => true,
+                    'verticals' => ['restaurant', 'bar', 'hotel', 'beach'],
                 ],
             ],
         ];

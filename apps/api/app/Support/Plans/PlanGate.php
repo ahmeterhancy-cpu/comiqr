@@ -3,6 +3,7 @@
 namespace App\Support\Plans;
 
 use App\Models\Tenant;
+use App\Support\Restaurant\RestaurantSettings;
 
 /**
  * Plan feature/limit gating (M12, docs/01 §1.6). Semantics:
@@ -20,6 +21,28 @@ class PlanGate
         }
 
         return (bool) data_get($tenant->plan->features_json, $feature, false);
+    }
+
+    /**
+     * Business verticals this tenant's plan unlocks (M12, Faz 3). No plan →
+     * unrestricted; a plan with no `verticals` list → restaurant only.
+     *
+     * @return list<string>
+     */
+    public static function allowedVerticals(Tenant $tenant): array
+    {
+        if ($tenant->plan === null) {
+            return RestaurantSettings::VERTICALS;
+        }
+
+        $verticals = data_get($tenant->plan->features_json, 'verticals');
+
+        return is_array($verticals) && $verticals !== [] ? array_values($verticals) : ['restaurant'];
+    }
+
+    public static function allowsVertical(Tenant $tenant, string $vertical): bool
+    {
+        return in_array($vertical, self::allowedVerticals($tenant), true);
     }
 
     /** Numeric limit for a key, or null when unlimited / no plan. */

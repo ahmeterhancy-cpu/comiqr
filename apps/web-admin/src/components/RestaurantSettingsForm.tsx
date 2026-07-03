@@ -30,6 +30,7 @@ export function RestaurantSettingsForm({
   initialSettings,
   currency,
   slug,
+  allowedVerticals,
   onSave,
   onUpload,
 }: {
@@ -37,6 +38,8 @@ export function RestaurantSettingsForm({
   initialSettings?: Settings;
   currency?: string;
   slug?: string;
+  /** Verticals the tenant's plan unlocks; others are locked. Undefined → all allowed (superadmin). */
+  allowedVerticals?: string[];
   onSave: (payload: Record<string, unknown>) => Promise<unknown>;
   onUpload?: (type: 'logo' | 'cover', file: File) => Promise<{ url: string }>;
 }) {
@@ -126,19 +129,31 @@ export function RestaurantSettingsForm({
           </Field>
           <Field label="İşletme Türü">
             <div className="grid gap-2 sm:grid-cols-2">
-              {VERTICALS.map(([val, label, hint]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setVertical(val)}
-                  className={`rounded-lg border px-3 py-2 text-left transition ${
-                    vertical === val ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : 'border-line hover:border-brand-300'
-                  }`}
-                >
-                  <span className="block text-sm font-semibold text-ink">{label}</span>
-                  <span className="mt-0.5 block text-[11px] leading-tight text-muted">{hint}</span>
-                </button>
-              ))}
+              {VERTICALS.map(([val, label, hint]) => {
+                const locked = allowedVerticals ? !allowedVerticals.includes(val) : false;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    disabled={locked}
+                    onClick={() => setVertical(val)}
+                    title={locked ? 'Bu tür planınızda yok — yükseltin' : undefined}
+                    className={`rounded-lg border px-3 py-2 text-left transition ${
+                      vertical === val
+                        ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200'
+                        : locked
+                          ? 'cursor-not-allowed border-line bg-canvas opacity-50'
+                          : 'border-line hover:border-brand-300'
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-ink">
+                      {label}
+                      {locked ? ' 🔒' : ''}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] leading-tight text-muted">{hint}</span>
+                  </button>
+                );
+              })}
             </div>
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">

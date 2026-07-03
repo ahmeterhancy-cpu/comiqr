@@ -73,6 +73,19 @@ export interface RegisterTenantPayload {
   locale?: Locale;
   currency?: string;
   timezone?: string;
+  plan?: string;
+  vertical?: string;
+}
+
+export interface PlanOption {
+  code: string;
+  name: string;
+  price_monthly: number | string;
+  price_yearly: number | string;
+  currency: string;
+  verticals: string[];
+  features: Record<string, unknown>;
+  limits: Record<string, number>;
 }
 
 export interface LoginPayload {

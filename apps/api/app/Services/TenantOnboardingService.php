@@ -30,7 +30,7 @@ class TenantOnboardingService
     ) {}
 
     /**
-     * @param  array{business_name:string,owner_name:string,email:string,password:string,phone?:string,slug?:string,locale?:string,currency?:string,timezone?:string}  $data
+     * @param  array{business_name:string,owner_name:string,email:string,password:string,phone?:string,slug?:string,locale?:string,currency?:string,timezone?:string,plan?:string,vertical?:string}  $data
      * @return array{tenant: Tenant, owner: User}
      */
     public function register(array $data, ?string $ip = null): array
@@ -39,21 +39,31 @@ class TenantOnboardingService
             ? $this->slugs->fromDesired($data['slug'])
             : $this->slugs->fromName($data['business_name']);
 
-        $freePlan = Plan::query()->where('code', 'free')->first();
+        // The business picks a plan + vertical at sign-up; default to Free/restaurant.
+        $plan = Plan::query()->where('code', $data['plan'] ?? 'free')->first()
+            ?? Plan::query()->where('code', 'free')->first();
 
-        return DB::transaction(function () use ($data, $slug, $freePlan, $ip) {
+        $allowed = is_array(data_get($plan?->features_json, 'verticals'))
+            ? data_get($plan->features_json, 'verticals')
+            : ['restaurant'];
+        $vertical = in_array($data['vertical'] ?? 'restaurant', $allowed, true)
+            ? ($data['vertical'] ?? 'restaurant')
+            : 'restaurant';
+
+        return DB::transaction(function () use ($data, $slug, $plan, $vertical, $ip) {
             $tenant = Tenant::create([
                 'name' => $data['business_name'],
                 'slug' => $slug,
-                'plan_id' => $freePlan?->id,
+                'plan_id' => $plan?->id,
                 'status' => 'trialing',
                 'locale_default' => $data['locale'] ?? config('app.locale', 'tr'),
                 'currency' => $data['currency'] ?? 'EUR',
                 'timezone' => $data['timezone'] ?? 'Asia/Nicosia',
+                'settings_json' => ['vertical' => $vertical],
                 'trial_ends_at' => now()->addDays(14),
             ]);
 
-            [$owner, $branch] = $this->tenants->runAs($tenant, function () use ($tenant, $data, $freePlan) {
+            [$owner, $branch] = $this->tenants->runAs($tenant, function () use ($tenant, $data, $plan) {
                 $branch = Branch::create([
                     'name' => $data['business_name'],
                     'timezone' => $tenant->timezone,
@@ -69,9 +79,9 @@ class TenantOnboardingService
                     'email_verified_at' => now(),
                 ]);
 
-                if ($freePlan) {
+                if ($plan) {
                     Subscription::create([
-                        'plan_id' => $freePlan->id,
+                        'plan_id' => $plan->id,
                         'status' => 'trialing',
                         'billing_cycle' => 'monthly',
                         'current_period_end' => $tenant->trial_ends_at,

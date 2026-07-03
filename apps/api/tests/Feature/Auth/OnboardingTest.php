@@ -1,12 +1,16 @@
 <?php
 
+use App\Enums\Role;
 use App\Models\Branch;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 
 use function Pest\Laravel\getJson;
+use function Pest\Laravel\patchJson;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
@@ -85,4 +89,55 @@ it('lets the freshly onboarded owner read their own account', function () {
         ->assertOk()
         ->assertJsonPath('data.user.email', 'lina@example.com')
         ->assertJsonPath('data.tenant.slug', 'sunset-bar');
+});
+
+it('registers with the chosen plan and business vertical', function () {
+    $res = postJson('/v1/auth/register-tenant', [
+        'business_name' => 'Deniz Kizi Otel',
+        'owner_name' => 'Ece',
+        'email' => 'ece@example.com',
+        'password' => 'Str0ng-Passw0rd!',
+        'password_confirmation' => 'Str0ng-Passw0rd!',
+        'plan' => 'business',
+        'vertical' => 'hotel',
+    ])->assertCreated();
+
+    $tenant = Tenant::firstWhere('slug', $res->json('data.tenant.slug'));
+    expect($tenant->plan->code)->toBe('business')
+        ->and($tenant->settings_json['vertical'])->toBe('hotel');
+});
+
+it('rejects a vertical the chosen plan does not unlock', function () {
+    postJson('/v1/auth/register-tenant', [
+        'business_name' => 'Butce Otel',
+        'owner_name' => 'Can',
+        'email' => 'can@example.com',
+        'password' => 'Str0ng-Passw0rd!',
+        'password_confirmation' => 'Str0ng-Passw0rd!',
+        'plan' => 'free',
+        'vertical' => 'hotel',
+    ])->assertStatus(422)->assertJsonValidationErrors('vertical');
+});
+
+it('exposes public plans with their verticals for the picker', function () {
+    getJson('/v1/plans')
+        ->assertOk()
+        ->assertJsonPath('data.0.code', 'free')
+        ->assertJsonPath('data.0.verticals', ['restaurant']);
+});
+
+it('blocks an owner from switching to a vertical their plan excludes', function () {
+    $tenant = Tenant::factory()->create(['plan_id' => Plan::firstWhere('code', 'free')->id]);
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Manager)->create());
+
+    patchJson('/v1/tenant', ['settings_json' => ['vertical' => 'hotel']])
+        ->assertStatus(422)->assertJsonValidationErrors('settings_json.vertical');
+});
+
+it('lets an owner switch to a vertical their plan includes', function () {
+    $tenant = Tenant::factory()->create(['plan_id' => Plan::firstWhere('code', 'business')->id]);
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Manager)->create());
+
+    patchJson('/v1/tenant', ['settings_json' => ['vertical' => 'hotel']])
+        ->assertOk()->assertJsonPath('data.settings.vertical', 'hotel');
 });

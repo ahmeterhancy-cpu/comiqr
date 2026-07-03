@@ -21,6 +21,7 @@ export default function SettingsPage() {
           initialSettings={tenant.settings}
           currency={tenant.currency}
           slug={tenant.slug}
+          allowedVerticals={tenant.plan?.features?.verticals}
           onSave={(payload) => api.updateTenant(payload as any)}
           onUpload={(type, file) => api.uploadRestaurantMedia(type, file)}
         />
