@@ -17,6 +17,7 @@ const NAV = [
   { key: 'tables', href: '/tables' },
   { key: 'branches', href: '/branches' },
   { key: 'customers', href: '/customers' },
+  { key: 'reviews', href: '/reviews' },
   { key: 'coupons', href: '/coupons' },
   { key: 'campaigns', href: '/campaigns' },
   { key: 'integrations', href: '/integrations' },

@@ -189,6 +189,8 @@ export interface MenuVenue {
   theme?: 'classic' | 'flipbook' | 'modern';
   vertical?: 'restaurant' | 'hotel' | 'bar' | 'beach';
   happy_hour?: { active: boolean; percent: number };
+  rating?: number;
+  reviews_count?: number;
 }
 
 export interface MenuTable {
@@ -245,5 +247,32 @@ export interface DiscoverVenue {
   name: string;
   currency: string;
   product_count: number;
+  rating?: number;
+  reviews_count?: number;
   samples: { name: string; image: string | null }[];
+}
+
+// --- Reviews + reputation (Faz 3) ---
+
+export interface Review {
+  id: number;
+  order_id: number;
+  rating: number;
+  comment: string | null;
+  reply: string | null;
+  status: 'published' | 'hidden';
+  created_at: string;
+}
+
+export interface Reputation {
+  average: number;
+  count: number;
+  distribution: Record<number, number>;
+}
+
+export interface PublicReview {
+  rating: number;
+  comment: string | null;
+  reply: string | null;
+  created_at: string;
 }

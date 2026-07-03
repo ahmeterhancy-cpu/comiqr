@@ -60,7 +60,12 @@ export default function DiscoverPage() {
               <div className="p-4">
                 <div className="flex items-baseline justify-between gap-2">
                   <h2 className="font-display text-lg font-semibold text-ink">{v.name}</h2>
-                  <span className="shrink-0 text-xs text-muted">{v.product_count} ürün</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {(v.reviews_count ?? 0) > 0 && (
+                      <span className="mr-2 font-semibold text-amber-500">★ {v.rating}</span>
+                    )}
+                    {v.product_count} ürün
+                  </span>
                 </div>
                 {v.samples.length > 0 && (
                   <p className="mt-1.5 line-clamp-2 text-sm text-muted">

@@ -58,6 +58,10 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const [paid, setPaid] = useState(false);
   const [chargedRoom, setChargedRoom] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewing, setReviewing] = useState(false);
   const [service, setService] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -197,6 +201,23 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
     }
   }
 
+  async function submitReview() {
+    if (!rating || !order) return;
+    setReviewing(true);
+    try {
+      await api.submitReview(qrToken, order.id, {
+        rating,
+        comment: reviewComment || undefined,
+        customer: phone ? { phone } : undefined,
+      });
+      setReviewed(true);
+    } catch {
+      /* ignore */
+    } finally {
+      setReviewing(false);
+    }
+  }
+
   const categories = menu.categories.filter((c) => c.products.length > 0);
 
   return (
@@ -208,6 +229,11 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Menü</p>
             <h1 className="mt-1 font-display text-3xl font-semibold leading-tight">{menu.venue.name}</h1>
+            {(menu.venue.reviews_count ?? 0) > 0 && (
+              <p className="mt-1 text-xs font-medium text-white/80">
+                ⭐ {menu.venue.rating} · {menu.venue.reviews_count} değerlendirme
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
@@ -276,6 +302,13 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           chargedRoom={chargedRoom}
           chargeLabel={chargeLabel}
           chargedLabel={chargedLabel}
+          reviewed={reviewed || order.reviewed}
+          rating={rating}
+          setRating={setRating}
+          reviewComment={reviewComment}
+          setReviewComment={setReviewComment}
+          submitReview={submitReview}
+          reviewing={reviewing}
         />
       )}
 
@@ -356,7 +389,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   );
 }
 
-function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg, applyCoupon, pay, paying, paid, canRoomCharge, chargeToRoom, chargedRoom, chargeLabel, chargedLabel }: any) {
+function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg, applyCoupon, pay, paying, paid, canRoomCharge, chargeToRoom, chargedRoom, chargeLabel, chargedLabel, reviewed, rating, setRating, reviewComment, setReviewComment, submitReview, reviewing }: any) {
   const items = order.items ?? [];
   return (
     <div className="mx-5 mt-5 overflow-hidden rounded-2xl border border-sage/30 bg-sage-bg">
@@ -420,6 +453,44 @@ function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg,
           )}
         </div>
       )}
+
+      {(paid || chargedRoom || order.status === 'served') &&
+        (reviewed ? (
+          <p className="border-t border-sage/20 bg-white/60 px-5 py-4 text-sm font-medium text-[color:var(--color-sage)]">
+            ⭐ {t('reviewThanks')}
+          </p>
+        ) : (
+          <div className="space-y-2 border-t border-sage/20 bg-white/60 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t('rateOrder')}</p>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setRating(s)}
+                  aria-label={`${s}`}
+                  className={`text-2xl leading-none transition ${s <= rating ? 'text-amber-400' : 'text-line'}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              placeholder={t('reviewPlaceholder')}
+              rows={2}
+              className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500"
+            />
+            <button
+              onClick={submitReview}
+              disabled={reviewing || !rating}
+              className="w-full rounded-xl bg-brand-500 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
+            >
+              {reviewing ? '…' : t('submitReview')}
+            </button>
+          </div>
+        ))}
     </div>
   );
 }

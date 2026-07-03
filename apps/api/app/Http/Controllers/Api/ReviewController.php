@@ -47,7 +47,13 @@ class ReviewController extends Controller
         abort_if($model->review !== null, 422, 'Bu sipariş zaten değerlendirildi.');
 
         $customer = $model->customer ?: $this->loyalty->identify($request->input('customer', []));
-        $review = $this->reviews->submit($model, $data['rating'], $data['comment'] ?? null, $customer);
+
+        try {
+            $review = $this->reviews->submit($model, $data['rating'], $data['comment'] ?? null, $customer);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+            // Lost a race with a concurrent submit — still one review per order.
+            abort(422, 'Bu sipariş zaten değerlendirildi.');
+        }
 
         return response()->json(['data' => new ReviewResource($review)], 201);
     }

@@ -13,7 +13,10 @@ import type {
   Menu,
   MeResult,
   PlanOption,
+  PublicReview,
   RegisterTenantPayload,
+  Reputation,
+  Review,
   RegisterTenantResult,
   SlugAvailability,
   Tenant,
@@ -162,6 +165,23 @@ export class ApiClient {
     return this.request(`/sessions/${encodeURIComponent(qrToken)}/orders/${orderId}/charge-to-room`, { method: 'POST' });
   }
 
+  /** Leave a review (rating + comment) for an order — one per order (Faz 3). */
+  submitReview(
+    qrToken: string,
+    orderId: number,
+    body: { rating: number; comment?: string; customer?: { phone?: string; name?: string } },
+  ): Promise<Review> {
+    return this.request(`/sessions/${encodeURIComponent(qrToken)}/orders/${orderId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  /** Public recent reviews + reputation for a venue (Faz 3). */
+  venueReviews(slug: string): Promise<{ reviews: PublicReview[]; reputation: Reputation }> {
+    return this.request(`/venues/${encodeURIComponent(slug)}/reviews`);
+  }
+
   // --- Tenant (docs/06 §6.1) ---
   getTenant(): Promise<Tenant> {
     return this.request('/tenant');
@@ -285,6 +305,17 @@ export class ApiClient {
   }
   settleRoom(tableId: number): Promise<{ table_id: number; settled_count: number; settled_total: number }> {
     return this.request(`/admin/hotel/rooms/${tableId}/settle`, { method: 'POST' });
+  }
+
+  // --- Reviews (Faz 3) — list + reputation, reply, moderate ---
+  adminReviews(): Promise<{ reviews: Review[]; reputation: Reputation }> {
+    return this.request('/admin/reviews');
+  }
+  replyReview(id: number, reply: string): Promise<Review> {
+    return this.request(`/admin/reviews/${id}/reply`, { method: 'POST', body: JSON.stringify({ reply }) });
+  }
+  setReviewStatus(id: number, status: 'published' | 'hidden'): Promise<Review> {
+    return this.request(`/admin/reviews/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
   }
 
   adminBranches(): Promise<any[]> {
