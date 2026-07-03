@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductTranslation;
+use App\Models\Review;
 use App\Services\AiService;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,7 +19,10 @@ use Illuminate\Validation\Rule;
  */
 class AiController extends Controller
 {
-    public function __construct(protected AiService $ai) {}
+    public function __construct(
+        protected AiService $ai,
+        protected TenantManager $tenants,
+    ) {}
 
     /** POST /admin/ai/product-copy — generate an appetising description. */
     public function productCopy(Request $request): JsonResponse
@@ -67,6 +73,61 @@ class AiController extends Controller
         }
 
         return response()->json(['data' => ['locale' => $data['locale'], 'translated' => $count]]);
+    }
+
+    /** POST /admin/ai/menu-insights — menu-engineering advice from sales + margin. */
+    public function menuInsights(Request $request): JsonResponse
+    {
+        $this->ensureConfigured();
+
+        $branchId = $request->integer('branch_id') ?: null;
+
+        $sales = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.tenant_id', $this->tenants->id())
+            ->when($branchId, fn ($q) => $q->where('orders.branch_id', $branchId))
+            ->where('orders.placed_at', '>=', now()->subDays(30))
+            ->selectRaw('order_items.product_id, SUM(order_items.quantity) as qty, SUM(order_items.line_total) as revenue')
+            ->groupBy('order_items.product_id')
+            ->orderByDesc('qty')
+            ->limit(25)
+            ->get();
+
+        abort_if($sales->isEmpty(), 422, 'Son 30 günde yeterli satış verisi yok.');
+
+        $products = Product::whereIn('id', $sales->pluck('product_id'))->with('nutritionSummary')->get()->keyBy('id');
+
+        $items = $sales->map(fn ($s) => [
+            'name' => $products[$s->product_id]?->name ?? "#{$s->product_id}",
+            'qty' => (int) $s->qty,
+            'revenue' => round((float) $s->revenue, 2),
+            'margin' => round((float) ($products[$s->product_id]?->price ?? 0)
+                - (float) ($products[$s->product_id]?->nutritionSummary->cost_per_portion ?? 0), 2),
+        ])->all();
+
+        $insights = $this->ai->menuInsights($items, $this->tenants->get()?->currency ?? 'TRY');
+
+        return response()->json(['data' => ['insights' => $insights, 'products' => count($items)]]);
+    }
+
+    /** POST /admin/ai/review-summary — sentiment + themes + action items. */
+    public function reviewSummary(): JsonResponse
+    {
+        $this->ensureConfigured();
+
+        $reviews = Review::query()
+            ->where('status', 'published')
+            ->latest()
+            ->limit(100)
+            ->get(['rating', 'comment']);
+
+        abort_if($reviews->isEmpty(), 422, 'Henüz özetlenecek değerlendirme yok.');
+
+        $summary = $this->ai->reviewSummary(
+            $reviews->map(fn ($r) => ['rating' => (int) $r->rating, 'comment' => $r->comment])->all(),
+        );
+
+        return response()->json(['data' => ['summary' => $summary, 'reviews' => $reviews->count()]]);
     }
 
     private function ensureConfigured(): void

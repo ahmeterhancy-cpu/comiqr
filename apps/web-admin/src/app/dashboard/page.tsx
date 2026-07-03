@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
+import { AiAdvisorCard } from '@/components/AiAdvisorCard';
 import { Card } from '@/components/ui';
 import { getActiveBranchId } from '@/lib/branch';
 import { useApi } from '@/lib/useApi';
@@ -89,6 +90,8 @@ export default function DashboardPage() {
       )}
 
       {heatmap?.products?.length > 0 && <MenuHeatmap heatmap={heatmap} currency={currency} />}
+
+      <AiAdvisorCard />
 
       <Card>
         <h2 className="text-lg font-semibold text-ink">{t('nextSteps')}</h2>

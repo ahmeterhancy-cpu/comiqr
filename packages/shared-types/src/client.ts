@@ -392,6 +392,16 @@ export class ApiClient {
       body: JSON.stringify({ locale, product_ids: productIds }),
     });
   }
+  // AI ileri (Faz 3) — advisor
+  aiMenuInsights(branchId?: number): Promise<{ insights: string; products: number }> {
+    return this.request('/admin/ai/menu-insights', {
+      method: 'POST',
+      body: JSON.stringify(branchId ? { branch_id: branchId } : {}),
+    });
+  }
+  aiReviewSummary(): Promise<{ summary: string; reviews: number }> {
+    return this.request('/admin/ai/review-summary', { method: 'POST' });
+  }
 
   // --- Admin: analytics (M9) ---
   analyticsOverview(branchId?: number): Promise<any> {

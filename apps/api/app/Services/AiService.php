@@ -59,4 +59,47 @@ class AiService
 
         return ['name' => trim($name), 'description' => $description ? trim($description) : null];
     }
+
+    /**
+     * Menu-engineering advice from per-item sales + margin (AI ileri, Faz 3).
+     *
+     * @param  array<int,array{name:string,qty:int,revenue:float,margin:float}>  $items
+     */
+    public function menuInsights(array $items, string $currency = 'TRY', string $locale = 'tr'): string
+    {
+        $language = self::LOCALE_NAMES[$locale] ?? 'Turkish';
+
+        $system = "You are a restaurant menu-engineering consultant. From per-item sales volume and "
+            ."unit margin, give 3-6 concise, concrete, actionable recommendations in {$language} "
+            .'(promote/reprice/reposition/remove). Short bullet points, no preamble.';
+
+        $lines = array_map(
+            fn (array $i) => "- {$i['name']}: {$i['qty']} adet, ciro {$i['revenue']} {$currency}, birim marj {$i['margin']} {$currency}",
+            $items,
+        );
+        $prompt = "Menu performance (last 30 days):\n".implode("\n", $lines);
+
+        return $this->ai->complete($system, $prompt);
+    }
+
+    /**
+     * Summarise recent customer reviews: sentiment, themes, action items (Faz 3).
+     *
+     * @param  array<int,array{rating:int,comment:?string}>  $reviews
+     */
+    public function reviewSummary(array $reviews, string $locale = 'tr'): string
+    {
+        $language = self::LOCALE_NAMES[$locale] ?? 'Turkish';
+
+        $system = "You analyse restaurant customer reviews. In {$language}, give: overall sentiment, "
+            .'top positive themes, top complaints, and 2-3 concrete action items. Concise, bullet points.';
+
+        $lines = array_map(
+            fn (array $r) => "[{$r['rating']}/5] ".trim((string) ($r['comment'] ?? '')),
+            array_slice($reviews, 0, 100),
+        );
+        $prompt = "Reviews:\n".implode("\n", $lines);
+
+        return $this->ai->complete($system, $prompt);
+    }
 }

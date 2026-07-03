@@ -225,6 +225,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/ai/translate-menu', [AiController::class, 'translateMenu'])->middleware('throttle:10,1');
         });
 
+        // --- AI ileri (Faz 3) — advisor: menu insights + review summary ---
+        Route::middleware(['role:manager', 'plan:ai_advanced'])->group(function () {
+            Route::post('admin/ai/menu-insights', [AiController::class, 'menuInsights'])->middleware('throttle:10,1');
+            Route::post('admin/ai/review-summary', [AiController::class, 'reviewSummary'])->middleware('throttle:10,1');
+        });
+
         // --- CRM / loyalty / coupons (M8) — manager+ ---
         Route::middleware('role:manager')->group(function () {
             Route::get('admin/customers', [CustomerController::class, 'index']);
