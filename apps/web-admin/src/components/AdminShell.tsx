@@ -14,6 +14,7 @@ const NAV = [
   { key: 'menu', href: '/menu' },
   { key: 'ingredients', href: '/ingredients' },
   { key: 'orders', href: '/orders' },
+  { key: 'pos', href: '/pos' },
   { key: 'tables', href: '/tables' },
   { key: 'branches', href: '/branches' },
   { key: 'customers', href: '/customers' },

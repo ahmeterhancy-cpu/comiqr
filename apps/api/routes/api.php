@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Admin\ModifierGroupController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
 use App\Http\Controllers\Api\Admin\RestaurantMediaController;
+use App\Http\Controllers\Api\Admin\PosController;
 use App\Http\Controllers\Api\Admin\ProductVariantController;
 use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\StockController;
@@ -211,6 +212,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('admin/reviews', [ReviewController::class, 'index']);
             Route::post('admin/reviews/{review}/reply', [ReviewController::class, 'reply']);
             Route::post('admin/reviews/{review}/status', [ReviewController::class, 'setStatus']);
+        });
+
+        // --- Staff POS (Faz 3) — waiter+, ordering plan; create + settle at counter ---
+        Route::middleware(['role:waiter', 'plan:ordering'])->group(function () {
+            Route::post('admin/pos/orders', [PosController::class, 'order'])->middleware('throttle:120,1');
+            Route::post('admin/pos/orders/{order}/pay', [PosController::class, 'pay'])->middleware('throttle:120,1');
         });
 
         // --- Analytics (M9) — manager+, plan-gated ---

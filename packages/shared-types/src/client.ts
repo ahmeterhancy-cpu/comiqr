@@ -318,6 +318,14 @@ export class ApiClient {
     return this.request(`/admin/reviews/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
   }
 
+  // --- Staff POS (Faz 3) — waiter creates + settles an order at the counter ---
+  posOrder(body: { table_id?: number; branch_id?: number; items: unknown[]; note?: string }): Promise<any> {
+    return this.request('/admin/pos/orders', { method: 'POST', body: JSON.stringify(body) });
+  }
+  posPay(orderId: number, gateway: 'cash' | 'card'): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/pay`, { method: 'POST', body: JSON.stringify({ gateway }) });
+  }
+
   adminBranches(): Promise<any[]> {
     return this.request('/admin/branches');
   }
