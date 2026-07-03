@@ -38,6 +38,7 @@ class OrderService
 
             $this->addLines($order, $items);
             $order->recalculateTotals();
+            $this->applyHappyHour($order);
 
             // Deduct ingredient stock via each item's recipe (Faz 2, docs/03 §3.6).
             $this->stock->deductForOrder($order);
@@ -74,6 +75,7 @@ class OrderService
 
             $this->addLines($order, $items);
             $order->recalculateTotals();
+            $this->applyHappyHour($order);
             $this->stock->deductForOrder($order);
 
             return $order->load('items');
@@ -91,6 +93,28 @@ class OrderService
         });
 
         return $order->load('items');
+    }
+
+    /**
+     * Apply the tenant's happy-hour discount (bar vertical, Faz 3) as a server
+     * authoritative order discount when an order is placed within the window.
+     * Applied at placement only; a later coupon (applyCoupon) replaces it.
+     */
+    protected function applyHappyHour(Order $order): void
+    {
+        $settings = app(\App\Support\Tenancy\TenantManager::class)->get()?->settings_json;
+        $percent = \App\Support\Restaurant\HappyHour::percent($settings);
+        if ($percent <= 0) {
+            return;
+        }
+
+        $discount = round((float) $order->subtotal * $percent / 100, 2);
+        if ($discount <= 0) {
+            return;
+        }
+
+        $order->update(['discount_total' => $discount]);
+        $order->recalculateTotals();
     }
 
     /**

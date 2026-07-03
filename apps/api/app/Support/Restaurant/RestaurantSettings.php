@@ -31,6 +31,12 @@ class RestaurantSettings
             'settings_json.theme' => ['sometimes', Rule::in(self::THEMES)],
             'settings_json.logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'settings_json.cover' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            // Bar vertical — happy-hour discount window.
+            'settings_json.happy_hour' => ['sometimes', 'nullable', 'array'],
+            'settings_json.happy_hour.enabled' => ['sometimes', 'boolean'],
+            'settings_json.happy_hour.start' => ['sometimes', 'nullable', 'date_format:H:i'],
+            'settings_json.happy_hour.end' => ['sometimes', 'nullable', 'date_format:H:i'],
+            'settings_json.happy_hour.percent' => ['sometimes', 'numeric', 'min:0', 'max:90'],
         ];
     }
 

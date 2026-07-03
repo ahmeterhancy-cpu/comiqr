@@ -57,6 +57,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
   const [chargedRoom, setChargedRoom] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [service, setService] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +72,11 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
     ['hotel', 'beach'].includes(menu.venue.vertical ?? '') && (areaType === 'room' || areaType === 'sunbed');
   const chargeLabel = areaType === 'sunbed' ? t('chargeSunbed') : t('chargeRoom');
   const chargedLabel = areaType === 'sunbed' ? t('chargedSunbed') : t('chargedRoom');
+
+  // Bar happy hour: server discounts the order authoritatively; mirror it in the
+  // cart preview so the shown total matches what will be charged.
+  const hhPercent = menu.venue.happy_hour?.active ? Number(menu.venue.happy_hour.percent) : 0;
+  const discountedTotal = total * (1 - hhPercent / 100);
 
   // Live order tracking: poll the order until every item is served (KDS
   // advances item status → OrderItemStatusChanged also broadcasts over Reverb).
@@ -99,6 +105,15 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
       else n[key] = { ...sel, key, qty };
       return n;
     });
+  }
+
+  // Age-gate 18+ (alcohol) items once per session before they enter the cart.
+  function guardedSet(sel: Omit<CartLine, 'key' | 'qty'>, qty: number) {
+    if (qty > 0 && sel.product.age_restricted && !ageConfirmed) {
+      if (!window.confirm(t('ageConfirm'))) return;
+      setAgeConfirmed(true);
+    }
+    setLineQty(sel, qty);
   }
 
   function switchLocale(l: string) {
@@ -220,6 +235,11 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
             {t('requestBill')}
           </button>
           {service && <span className="text-xs font-medium text-white/90">✓ {service}</span>}
+          {hhPercent > 0 && (
+            <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-bold text-amber-950">
+              🍹 {t('happyHour')} −%{hhPercent}
+            </span>
+          )}
         </div>
       </header>
 
@@ -271,7 +291,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
                 key={p.id}
                 product={p}
                 qtyFor={qtyFor}
-                onSet={setLineQty}
+                onSet={guardedSet}
                 allergenMap={allergenMap}
                 fmt={fmt}
                 t={t}
@@ -311,7 +331,14 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm text-muted">
                 {count} {t('cart').toLowerCase()} ·{' '}
-                <b className="font-display text-base text-ink">{fmt.format(total)}</b>
+                {hhPercent > 0 ? (
+                  <>
+                    <span className="mr-1 text-xs line-through">{fmt.format(total)}</span>
+                    <b className="font-display text-base text-ink">{fmt.format(discountedTotal)}</b>
+                  </>
+                ) : (
+                  <b className="font-display text-base text-ink">{fmt.format(total)}</b>
+                )}
               </div>
               <button
                 onClick={placeOrder}
@@ -465,7 +492,14 @@ function ProductRow({ product, qtyFor, onSet, allergenMap, fmt, t, mt }: any) {
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="font-display text-lg font-semibold leading-snug text-ink">{product.name}</h3>
+            <h3 className="font-display text-lg font-semibold leading-snug text-ink">
+              {product.name}
+              {product.age_restricted && (
+                <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 align-middle text-xs font-bold text-red-700">
+                  18+
+                </span>
+              )}
+            </h3>
             <div className="shrink-0 font-display text-lg font-semibold text-ink">{fmt.format(unitPrice)}</div>
           </div>
           {product.description && <p className="mt-1 text-sm leading-relaxed text-muted">{product.description}</p>}

@@ -26,6 +26,7 @@ class ProductResource extends JsonResource
             'images' => $this->image_paths_json ?? [],
             'video' => $this->video_path,
             'is_active' => $this->is_active,
+            'age_restricted' => (bool) $this->age_restricted,
             'sort' => $this->sort,
             'prep_minutes' => $this->prep_minutes,
             'tags' => $this->tags_json ?? [],

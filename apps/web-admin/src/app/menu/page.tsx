@@ -47,6 +47,10 @@ export default function MenuPage() {
     await api.updateProduct(p.id, { is_active: !p.is_active });
     load();
   }
+  async function toggleAge(p: any) {
+    await api.updateProduct(p.id, { age_restricted: !p.age_restricted });
+    load();
+  }
   async function uploadImage(p: any, file: File) {
     setBusy(p.id);
     try {
@@ -132,6 +136,15 @@ export default function MenuPage() {
                           }`}
                         >
                           {p.is_active ? 'Aktif' : 'Pasif'}
+                        </button>
+                        <button
+                          onClick={() => toggleAge(p)}
+                          title="18+ (alkol) — bar yaş sınırı"
+                          className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                            p.age_restricted ? 'bg-red-100 text-red-700' : 'bg-canvas text-muted'
+                          }`}
+                        >
+                          18+
                         </button>
                         <button
                           onClick={() => setExpanded(expanded === p.id ? null : p.id)}

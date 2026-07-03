@@ -75,6 +75,7 @@ class ProductController extends Controller
             'image_paths_json' => ['nullable', 'array'],
             'video_path' => ['nullable', 'string'],
             'is_active' => ['boolean'],
+            'age_restricted' => ['boolean'],
             'sort' => ['nullable', 'integer', 'min:0'],
             'prep_minutes' => ['nullable', 'integer', 'min:0'],
             'calories_display' => ['boolean'],

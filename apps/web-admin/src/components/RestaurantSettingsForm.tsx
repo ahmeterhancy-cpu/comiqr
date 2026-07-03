@@ -58,6 +58,11 @@ export function RestaurantSettingsForm({
   const [deliveryCharge, setDeliveryCharge] = useState<string>(String(s.delivery_charge ?? 0));
   const [notify, setNotify] = useState<boolean>(s.order_notification ?? true);
   const [online, setOnline] = useState<boolean>(s.allow_online_payment ?? true);
+  const hh = s.happy_hour ?? {};
+  const [hhEnabled, setHhEnabled] = useState<boolean>(hh.enabled ?? false);
+  const [hhStart, setHhStart] = useState<string>(hh.start ?? '22:00');
+  const [hhEnd, setHhEnd] = useState<string>(hh.end ?? '00:00');
+  const [hhPercent, setHhPercent] = useState<string>(String(hh.percent ?? 20));
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +90,7 @@ export function RestaurantSettingsForm({
           theme,
           logo,
           cover,
+          happy_hour: { enabled: hhEnabled, start: hhStart, end: hhEnd, percent: Number(hhPercent || 0) },
         },
       });
       setSaved(true);
@@ -228,6 +234,32 @@ export function RestaurantSettingsForm({
           <YesNo label="Online ödeme (Tiko)" value={online} onChange={setOnline} />
         </div>
       </Card>
+
+      {vertical === 'bar' && (
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-ink">Happy Hour</h3>
+            <span className="text-xs text-muted">Bar</span>
+          </div>
+          <YesNo label="Happy Hour indirimi" value={hhEnabled} onChange={setHhEnabled} />
+          {hhEnabled && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <Field label="Başlangıç">
+                <Input type="time" value={hhStart} onChange={(e) => setHhStart(e.target.value)} />
+              </Field>
+              <Field label="Bitiş">
+                <Input type="time" value={hhEnd} onChange={(e) => setHhEnd(e.target.value)} />
+              </Field>
+              <Field label="İndirim (%)">
+                <Input type="number" value={hhPercent} onChange={(e) => setHhPercent(e.target.value)} />
+              </Field>
+            </div>
+          )}
+          <p className="mt-2 text-xs text-muted">
+            Bu saat aralığında verilen siparişlere otomatik indirim uygulanır (gece yarısını geçen aralık desteklenir, ör. 22:00–02:00).
+          </p>
+        </Card>
+      )}
 
       <div className="flex items-center gap-3">
         <Button onClick={save} disabled={busy}>

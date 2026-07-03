@@ -135,6 +135,7 @@ export interface MenuProduct {
   images: string[];
   video: string | null;
   is_active: boolean;
+  age_restricted?: boolean;
   sort: number;
   prep_minutes: number | null;
   tags: string[];
@@ -173,7 +174,8 @@ export interface MenuVenue {
   logo?: string | null;
   cover?: string | null;
   theme?: 'classic' | 'flipbook' | 'modern';
-  vertical?: 'restaurant' | 'hotel' | 'bar';
+  vertical?: 'restaurant' | 'hotel' | 'bar' | 'beach';
+  happy_hour?: { active: boolean; percent: number };
 }
 
 export interface MenuTable {

@@ -124,6 +124,10 @@ class MenuController extends Controller
                 'cover' => $settings['cover'] ?? null,
                 'theme' => $settings['theme'] ?? 'classic',
                 'vertical' => \App\Support\Restaurant\RestaurantSettings::vertical($settings),
+                'happy_hour' => [
+                    'active' => \App\Support\Restaurant\HappyHour::active($settings),
+                    'percent' => \App\Support\Restaurant\HappyHour::percent($settings),
+                ],
             ],
             'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
             'categories' => CategoryResource::collection($categories)->resolve(),

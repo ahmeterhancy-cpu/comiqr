@@ -25,7 +25,7 @@ class Product extends Model
 
     protected $fillable = [
         'tenant_id', 'category_id', 'name', 'description', 'price',
-        'image_paths_json', 'video_path', 'is_active', 'sort', 'prep_minutes',
+        'image_paths_json', 'video_path', 'is_active', 'age_restricted', 'sort', 'prep_minutes',
         'calories_display', 'tags_json', 'external_pos_id',
     ];
 
@@ -36,6 +36,7 @@ class Product extends Model
             'image_paths_json' => 'array',
             'tags_json' => 'array',
             'is_active' => 'boolean',
+            'age_restricted' => 'boolean',
             'calories_display' => 'boolean',
         ];
     }
