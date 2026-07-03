@@ -6,6 +6,7 @@ import type {
   ApiEnvelope,
   AuthSession,
   DiscoverVenue,
+  HotelFolioRoom,
   LoginPayload,
   Menu,
   MeResult,
@@ -148,6 +149,11 @@ export class ApiClient {
     return this.request(`/venues/${encodeURIComponent(slug)}/cards?phone=${encodeURIComponent(phone)}`);
   }
 
+  /** Hotel: defer an order onto the room's folio instead of paying now (Faz 3). */
+  chargeToRoom(qrToken: string, orderId: number): Promise<any> {
+    return this.request(`/sessions/${encodeURIComponent(qrToken)}/orders/${orderId}/charge-to-room`, { method: 'POST' });
+  }
+
   // --- Tenant (docs/06 §6.1) ---
   getTenant(): Promise<Tenant> {
     return this.request('/tenant');
@@ -249,6 +255,14 @@ export class ApiClient {
   }
   bulkTables(body: Record<string, unknown>): Promise<any[]> {
     return this.request('/admin/tables/bulk', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  // --- Hotel vertical (Faz 3) — front-desk room folio + check-out settle ---
+  hotelFolio(branchId?: number): Promise<HotelFolioRoom[]> {
+    return this.request(`/admin/hotel/folio${branchId ? `?branch_id=${branchId}` : ''}`);
+  }
+  settleRoom(tableId: number): Promise<{ table_id: number; settled_count: number; settled_total: number }> {
+    return this.request(`/admin/hotel/rooms/${tableId}/settle`, { method: 'POST' });
   }
 
   adminBranches(): Promise<any[]> {

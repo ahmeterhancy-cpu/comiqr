@@ -19,7 +19,7 @@ class Order extends Model
     public const TYPES = ['dine_in', 'delivery', 'takeaway'];
 
     protected $fillable = [
-        'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'type', 'status', 'payment_status',
+        'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'type', 'charged_to_room', 'status', 'payment_status',
         'subtotal', 'discount_total', 'tip_total', 'tax_total', 'delivery_fee', 'grand_total', 'note',
         'contact_phone', 'address', 'placed_at',
     ];
@@ -27,6 +27,7 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'charged_to_room' => 'boolean',
             'subtotal' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'tip_total' => 'decimal:2',

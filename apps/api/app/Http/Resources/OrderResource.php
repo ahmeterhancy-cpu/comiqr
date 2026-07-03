@@ -16,6 +16,7 @@ class OrderResource extends JsonResource
             'table_session_id' => $this->table_session_id,
             'source' => $this->source,
             'type' => $this->type,
+            'charged_to_room' => (bool) $this->charged_to_room,
             'contact_phone' => $this->contact_phone,
             'address' => $this->address,
             'status' => $this->status,

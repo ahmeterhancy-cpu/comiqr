@@ -16,6 +16,7 @@ class RestaurantSettings
     public static function rules(): array
     {
         return [
+            'settings_json.vertical' => ['sometimes', Rule::in(self::VERTICALS)],
             'settings_json.sub_title' => ['sometimes', 'nullable', 'string', 'max:120'],
             'settings_json.timing' => ['sometimes', 'nullable', 'string', 'max:120'],
             'settings_json.description' => ['sometimes', 'nullable', 'string', 'max:2000'],
@@ -35,10 +36,26 @@ class RestaurantSettings
 
     public const THEMES = ['classic', 'flipbook', 'modern'];
 
+    /** Business verticals (Faz 3). Restaurant is the default behaviour. */
+    public const VERTICALS = ['restaurant', 'hotel', 'bar'];
+
     /** Is a feature allowed for this settings blob (missing → allowed)? */
     public static function allows(?array $settings, string $key): bool
     {
         return (bool) ($settings[$key] ?? true);
+    }
+
+    /** The tenant's business vertical (missing → restaurant). */
+    public static function vertical(?array $settings): string
+    {
+        $v = $settings['vertical'] ?? 'restaurant';
+
+        return in_array($v, self::VERTICALS, true) ? $v : 'restaurant';
+    }
+
+    public static function isHotel(?array $settings): bool
+    {
+        return self::vertical($settings) === 'hotel';
     }
 
     public static function deliveryCharge(?array $settings): float

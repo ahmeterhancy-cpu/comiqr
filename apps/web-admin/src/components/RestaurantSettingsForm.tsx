@@ -16,6 +16,12 @@ const THEMES: [string, string][] = [
   ['modern', 'Modern'],
 ];
 
+const VERTICALS: [string, string, string][] = [
+  ['restaurant', 'Restoran / Kafe', 'Masa siparişi, gel-al, teslimat'],
+  ['hotel', 'Otel', 'Oda servisi + odaya yansıt (folyo)'],
+  ['bar', 'Bar / Pub', 'Adisyon akışı'],
+];
+
 const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
 
 export function RestaurantSettingsForm({
@@ -35,6 +41,7 @@ export function RestaurantSettingsForm({
 }) {
   const s = initialSettings ?? {};
   const [name, setName] = useState(initialName ?? '');
+  const [vertical, setVertical] = useState<string>(s.vertical ?? 'restaurant');
   const [theme, setTheme] = useState<string>(s.theme ?? 'classic');
   const [logo, setLogo] = useState<string | null>(s.logo ?? null);
   const [cover, setCover] = useState<string | null>(s.cover ?? null);
@@ -62,6 +69,7 @@ export function RestaurantSettingsForm({
       await onSave({
         name: name.trim(),
         settings_json: {
+          vertical,
           sub_title: subTitle.trim() || null,
           timing: timing.trim() || null,
           description: description.trim() || null,
@@ -108,6 +116,23 @@ export function RestaurantSettingsForm({
         <div className="space-y-3">
           <Field label="Restoran Adı">
             <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="İşletme Türü">
+            <div className="grid gap-2 sm:grid-cols-3">
+              {VERTICALS.map(([val, label, hint]) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setVertical(val)}
+                  className={`rounded-lg border px-3 py-2 text-left transition ${
+                    vertical === val ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : 'border-line hover:border-brand-300'
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-ink">{label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-tight text-muted">{hint}</span>
+                </button>
+              ))}
+            </div>
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Alt Başlık">

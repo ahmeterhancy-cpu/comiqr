@@ -173,12 +173,40 @@ export interface MenuVenue {
   logo?: string | null;
   cover?: string | null;
   theme?: 'classic' | 'flipbook' | 'modern';
+  vertical?: 'restaurant' | 'hotel' | 'bar';
+}
+
+export interface MenuTable {
+  id: number;
+  code: string;
+  qr_token: string;
+  is_room?: boolean;
 }
 
 export interface Menu {
   venue: MenuVenue;
   allergens: AllergenRef[];
   categories: MenuCategory[];
+  /** Present only on the QR-token menu entry (GET /menu/{qrToken}). */
+  table?: MenuTable;
+}
+
+// --- Hotel vertical (Faz 3) — front-desk room folio ---
+
+export interface HotelFolioOrder {
+  id: number;
+  grand_total: number;
+  items_count: number;
+  placed_at: string | null;
+}
+
+export interface HotelFolioRoom {
+  table_id: number;
+  code: string;
+  area: string | null;
+  order_count: number;
+  total: number;
+  orders: HotelFolioOrder[];
 }
 
 // --- Consumer discovery portal (M20) ---

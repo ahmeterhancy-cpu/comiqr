@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Admin\StockController;
 use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DiscoveryController;
+use App\Http\Controllers\Api\HotelController;
 use App\Http\Controllers\Api\KdsController;
 use App\Http\Controllers\Api\MarketplaceOrderController;
 use App\Http\Controllers\Api\MenuController;
@@ -91,6 +92,7 @@ Route::prefix('sessions/{qrToken}')->group(function () {
     Route::get('orders/{order}', [OrderController::class, 'show']);
     Route::post('orders/{order}/items', [OrderController::class, 'addItems'])->middleware('throttle:60,1');
     Route::post('orders/{order}/apply-coupon', [OrderController::class, 'applyCoupon'])->middleware('throttle:20,1');
+    Route::post('orders/{order}/charge-to-room', [OrderController::class, 'chargeToRoom'])->middleware('throttle:20,1');
     Route::post('orders/{order}/pay', [PaymentController::class, 'pay'])->middleware('throttle:30,1');
 });
 
@@ -182,6 +184,10 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/tables/{table}/regenerate-token', [TableController::class, 'regenerate']);
             Route::apiResource('admin/tables', TableController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+
+            // Hotel vertical (Faz 3) — room folio + check-out settle.
+            Route::get('admin/hotel/folio', [HotelController::class, 'folio']);
+            Route::post('admin/hotel/rooms/{table}/settle', [HotelController::class, 'settle']);
         });
 
         // --- Analytics (M9) — manager+, plan-gated ---

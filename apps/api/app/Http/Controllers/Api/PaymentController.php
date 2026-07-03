@@ -42,6 +42,8 @@ class PaymentController extends Controller
 
         $model = $this->orderForToken($qrToken, $order);
         abort_if($model->payment_status === 'paid', 422, 'Order already paid.');
+        // Charged to the room folio → settled at check-out, not by the guest here.
+        abort_if((bool) $model->charged_to_room, 422, 'Bu sipariş odaya yansıtıldı; çıkışta tahsil edilecek.');
 
         ['payment' => $payment, 'session' => $session] = $this->payments->initiate(
             $model,

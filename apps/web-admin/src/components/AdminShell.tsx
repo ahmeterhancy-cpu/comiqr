@@ -31,6 +31,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
   const [activeBranch, setActive] = useState<number | null>(null);
   const [impersonating, setImpersonating] = useState(false);
   const [currentName, setCurrentName] = useState<string>('');
+  const [vertical, setVertical] = useState<string>('restaurant');
 
   useEffect(() => {
     setImpersonating(!!getImpersonator());
@@ -53,10 +54,24 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
       .catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    createApi(getToken())
+      .getTenant()
+      .then((t: any) => setVertical(t?.settings?.vertical ?? 'restaurant'))
+      .catch(() => undefined);
+  }, []);
+
   function switchBranch(id: number) {
     setActiveBranchId(id);
     setActive(id);
     window.location.reload();
+  }
+
+  // Hotel tenants get a front-desk "Room Folio" entry before Settings.
+  const navItems: { key: string; href: string }[] = NAV.map((n) => ({ key: n.key, href: n.href }));
+  if (vertical === 'hotel') {
+    const at = navItems.findIndex((i) => i.href === '/settings');
+    navItems.splice(at < 0 ? navItems.length : at, 0, { key: 'hotel', href: '/hotel' });
   }
 
   function logout() {
@@ -85,7 +100,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
         )}
 
         <nav className="mt-6 space-y-1">
-          {NAV.map((it) => {
+          {navItems.map((it) => {
             const active = pathname === it.href;
             return (
               <Link

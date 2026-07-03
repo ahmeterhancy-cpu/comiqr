@@ -73,11 +73,14 @@ class MenuController extends Controller
         $this->tenants->set($tenant);
         app()->setLocale(request()->query('locale', $tenant->locale_default ?? config('app.locale')));
 
+        $table->loadMissing('diningArea');
+
         $data = $this->buildMenu($tenant, $table->branch_id);
         $data['table'] = [
             'id' => $table->id,
             'code' => $table->code,
             'qr_token' => $table->qr_token,
+            'is_room' => $table->diningArea?->type === 'room',
         ];
 
         return response()->json(['data' => $data]);
@@ -119,6 +122,7 @@ class MenuController extends Controller
                 'logo' => $settings['logo'] ?? null,
                 'cover' => $settings['cover'] ?? null,
                 'theme' => $settings['theme'] ?? 'classic',
+                'vertical' => \App\Support\Restaurant\RestaurantSettings::vertical($settings),
             ],
             'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
             'categories' => CategoryResource::collection($categories)->resolve(),

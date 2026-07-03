@@ -41,6 +41,8 @@
     "couponApplied": "Discount applied",
     "couponError": "Invalid code",
     "pay": "Pay",
+    "chargeRoom": "Charge to Room",
+    "chargedRoom": "Charged to your room — settled at check-out",
     "paying": "Paying…",
     "paid": "Paid, thank you!",
     "detail": "Nutrition detail",

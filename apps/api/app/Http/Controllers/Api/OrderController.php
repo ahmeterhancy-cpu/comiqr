@@ -94,6 +94,34 @@ class OrderController extends Controller
         return response()->json(['data' => new OrderResource($model->fresh('items'))]);
     }
 
+    /**
+     * POST /sessions/{qrToken}/orders/{order}/charge-to-room — defer payment onto
+     * the room's folio (hotel vertical, Faz 3). Only for hotel tenants and only
+     * for QRs that belong to a room-type dining area. The order stays unpaid; the
+     * front desk settles the folio at check-out.
+     */
+    public function chargeToRoom(string $qrToken, string $order): JsonResponse
+    {
+        [$table, $tenant] = $this->resolveByToken($qrToken);
+
+        abort_unless(
+            \App\Support\Restaurant\RestaurantSettings::isHotel($tenant->settings_json),
+            422,
+            'Odaya yansıtma yalnızca otel işletmelerinde kullanılabilir.',
+        );
+
+        $table->loadMissing('diningArea');
+        abort_unless($table->diningArea?->type === 'room', 422, 'Bu QR bir odaya ait değil.');
+
+        $model = Order::with('tableSession')->find($order);
+        abort_if($model === null || $model->tableSession?->table_id !== $table->id, 404, 'Order not found.');
+        abort_if($model->payment_status !== 'unpaid', 422, 'Ödenmiş sipariş odaya yansıtılamaz.');
+
+        $model->update(['charged_to_room' => true]);
+
+        return response()->json(['data' => new OrderResource($model->fresh('items'))]);
+    }
+
     /** POST /sessions/{qrToken}/orders/{order}/items — multi-round: add items. */
     public function addItems(Request $request, string $qrToken, string $order): JsonResponse
     {
