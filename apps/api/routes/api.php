@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\MarketplaceOrderController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\TenantController;
@@ -87,6 +88,7 @@ Route::get('discover', [DiscoveryController::class, 'index'])->middleware('throt
 // --- Marketplace / menu package-service ordering (M20) — venue by slug ---
 Route::post('venues/{slug}/orders', [MarketplaceOrderController::class, 'place'])->middleware('throttle:30,1');
 Route::get('venues/{slug}/cards', [MarketplaceOrderController::class, 'cards'])->middleware('throttle:60,1');
+Route::get('venues/{slug}/reviews', [ReviewController::class, 'venueReviews'])->middleware('throttle:120,1');
 
 // --- Public menu (M1/M4) — tenant resolved from host / X-Tenant (docs/06 §6.2) ---
 Route::middleware('tenant')->group(function () {
@@ -108,6 +110,7 @@ Route::prefix('sessions/{qrToken}')->group(function () {
     Route::post('orders/{order}/items', [OrderController::class, 'addItems'])->middleware('throttle:60,1');
     Route::post('orders/{order}/apply-coupon', [OrderController::class, 'applyCoupon'])->middleware('throttle:20,1');
     Route::post('orders/{order}/charge-to-room', [OrderController::class, 'chargeToRoom'])->middleware('throttle:20,1');
+    Route::post('orders/{order}/review', [ReviewController::class, 'store'])->middleware('throttle:20,1');
     Route::post('orders/{order}/pay', [PaymentController::class, 'pay'])->middleware('throttle:30,1');
 });
 
@@ -203,6 +206,11 @@ Route::middleware('auth:sanctum')->group(function () {
             // Hotel vertical (Faz 3) — room folio + check-out settle.
             Route::get('admin/hotel/folio', [HotelController::class, 'folio']);
             Route::post('admin/hotel/rooms/{table}/settle', [HotelController::class, 'settle']);
+
+            // Reviews (Faz 3) — list + reputation, reply, moderate.
+            Route::get('admin/reviews', [ReviewController::class, 'index']);
+            Route::post('admin/reviews/{review}/reply', [ReviewController::class, 'reply']);
+            Route::post('admin/reviews/{review}/status', [ReviewController::class, 'setStatus']);
         });
 
         // --- Analytics (M9) — manager+, plan-gated ---

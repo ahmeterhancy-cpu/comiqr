@@ -21,6 +21,7 @@ class OrderResource extends JsonResource
             'address' => $this->address,
             'status' => $this->status,
             'payment_status' => $this->payment_status,
+            'reviewed' => $this->whenLoaded('review', fn () => $this->review !== null),
             'subtotal' => $this->subtotal,
             'discount_total' => $this->discount_total,
             'tip_total' => $this->tip_total,

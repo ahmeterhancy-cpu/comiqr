@@ -60,7 +60,7 @@ class OrderController extends Controller
         $session = $table->openSession()->first();
 
         $orders = $session
-            ? Order::where('table_session_id', $session->id)->with('items')->latest('placed_at')->get()
+            ? Order::where('table_session_id', $session->id)->with(['items', 'review'])->latest('placed_at')->get()
             : collect();
 
         return response()->json(['data' => OrderResource::collection($orders)]);
@@ -71,7 +71,7 @@ class OrderController extends Controller
     {
         $model = $this->orderForToken($qrToken, $order);
 
-        return response()->json(['data' => new OrderResource($model->load('items'))]);
+        return response()->json(['data' => new OrderResource($model->load('items', 'review'))]);
     }
 
     /** POST /sessions/{qrToken}/orders/{order}/apply-coupon */

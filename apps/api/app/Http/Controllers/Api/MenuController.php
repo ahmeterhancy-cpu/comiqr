@@ -26,7 +26,10 @@ class MenuController extends Controller
 {
     use ResolvesQrToken;
 
-    public function __construct(protected TenantManager $tenants) {}
+    public function __construct(
+        protected TenantManager $tenants,
+        protected \App\Services\ReviewService $reviews,
+    ) {}
 
     /** POST /menu/{qrToken}/view — record a menu/product impression (M9). */
     public function logView(Request $request, string $qrToken): JsonResponse
@@ -110,10 +113,13 @@ class MenuController extends Controller
             ->get();
 
         $settings = $tenant->settings_json ?? [];
+        $rep = $this->reviews->reputation($tenant->id);
 
         return [
             'venue' => [
                 'name' => $tenant->name,
+                'rating' => $rep['average'],
+                'reviews_count' => $rep['count'],
                 'locale_default' => $tenant->locale_default,
                 'currency' => $tenant->currency,
                 'sub_title' => $settings['sub_title'] ?? null,

@@ -95,6 +95,28 @@ class LoyaltyService
         });
     }
 
+    /** Bonus points for leaving a review (Faz 3). Called once per order review. */
+    public function awardReviewPoints(Customer $customer, int $orderId, int $points = 20): ?LoyaltyTransaction
+    {
+        $account = LoyaltyAccount::where('customer_id', $customer->id)->first();
+        if (! $account || $points <= 0) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($account, $orderId, $points) {
+            $account->increment('points_balance', $points);
+
+            return LoyaltyTransaction::create([
+                'loyalty_account_id' => $account->id,
+                'type' => 'earn',
+                'points' => $points,
+                'order_id' => $orderId,
+                'meta_json' => ['reason' => 'review'],
+                'created_at' => now(),
+            ]);
+        });
+    }
+
     /** Redeem points; returns false if the balance is insufficient. */
     public function redeem(LoyaltyAccount $account, int $points, ?int $orderId = null): bool
     {

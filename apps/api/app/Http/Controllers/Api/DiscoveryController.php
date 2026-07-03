@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
  */
 class DiscoveryController extends Controller
 {
+    public function __construct(protected \App\Services\ReviewService $reviews) {}
+
     public function index(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
@@ -34,8 +36,9 @@ class DiscoveryController extends Controller
             ->get(['id', 'tenant_id', 'name', 'image_paths_json']);
 
         $byTenant = $products->groupBy('tenant_id');
+        $rep = $this->reviews->reputationFor($tenants->pluck('id')->all());
 
-        $data = $tenants->map(function (Tenant $tenant) use ($byTenant) {
+        $data = $tenants->map(function (Tenant $tenant) use ($byTenant, $rep) {
             $items = $byTenant->get($tenant->id, collect());
 
             return [
@@ -43,6 +46,8 @@ class DiscoveryController extends Controller
                 'name' => $tenant->name,
                 'currency' => $tenant->currency,
                 'product_count' => $items->count(),
+                'rating' => $rep[$tenant->id]['average'] ?? 0,
+                'reviews_count' => $rep[$tenant->id]['count'] ?? 0,
                 'samples' => $items->take(3)->map(fn (Product $p) => [
                     'name' => $p->name,
                     'image' => $p->image_paths_json[0] ?? null,
