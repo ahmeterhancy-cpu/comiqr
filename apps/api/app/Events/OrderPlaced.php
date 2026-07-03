@@ -28,6 +28,11 @@ class OrderPlaced implements ShouldBroadcast
         ];
     }
 
+    public function broadcastAs(): string
+    {
+        return 'OrderPlaced';
+    }
+
     public function broadcastWith(): array
     {
         return [

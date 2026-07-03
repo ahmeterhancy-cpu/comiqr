@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@comiqr/shared-types": "workspace:*",
+    "laravel-echo": "^2.3.7",
     "next": "^16.0.0",
     "next-intl": "^4.0.0",
+    "pusher-js": "^8.5.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

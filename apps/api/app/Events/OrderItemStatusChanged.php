@@ -36,6 +36,11 @@ class OrderItemStatusChanged implements ShouldBroadcast
         return $channels;
     }
 
+    public function broadcastAs(): string
+    {
+        return 'OrderItemStatusChanged';
+    }
+
     public function broadcastWith(): array
     {
         return [

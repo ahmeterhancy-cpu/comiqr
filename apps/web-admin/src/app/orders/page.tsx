@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AdminShell } from '@/components/AdminShell';
 import { Card } from '@/components/ui';
 import { getActiveBranchId } from '@/lib/branch';
+import { createEcho } from '@/lib/echo';
 import { useApi } from '@/lib/useApi';
 
 const NEXT: Record<string, { label: string; to?: string; bump?: boolean }> = {
@@ -38,11 +39,36 @@ export default function OrdersPage() {
     });
   }, [ready, api, refresh]);
 
+  // Polling — reliable fallback when the Reverb WS server isn't reachable.
   useEffect(() => {
     if (!branchId) return;
     timer.current = setInterval(() => refresh(branchId), 4000);
     return () => {
       if (timer.current) clearInterval(timer.current);
+    };
+  }, [branchId, refresh]);
+
+  // Live push via Reverb — instant KDS updates on new orders / status changes.
+  useEffect(() => {
+    if (!branchId) return;
+    const echo = createEcho();
+    if (!echo) return;
+    const name = `branch.${branchId}.orders`;
+    const onEvent = () => refresh(branchId);
+    try {
+      const channel = echo.private(name);
+      channel.listen('.OrderPlaced', onEvent);
+      channel.listen('.OrderItemStatusChanged', onEvent);
+    } catch {
+      /* WS unavailable — polling covers it */
+    }
+    return () => {
+      try {
+        echo.leave(name);
+        echo.disconnect();
+      } catch {
+        /* ignore */
+      }
     };
   }, [branchId, refresh]);
 
