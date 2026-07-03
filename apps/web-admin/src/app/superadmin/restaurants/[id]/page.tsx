@@ -28,6 +28,7 @@ export default function ManageRestaurantPage() {
             initialName={detail.name}
             initialSettings={detail.settings}
             currency={detail.currency}
+            slug={detail.slug}
             onSave={(payload) => api.superUpdateRestaurant(id, payload)}
           />
         </Panel>

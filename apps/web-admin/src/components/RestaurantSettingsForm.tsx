@@ -16,16 +16,20 @@ const THEMES: [string, string][] = [
   ['modern', 'Modern'],
 ];
 
+const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
+
 export function RestaurantSettingsForm({
   initialName,
   initialSettings,
   currency,
+  slug,
   onSave,
   onUpload,
 }: {
   initialName: string;
   initialSettings?: Settings;
   currency?: string;
+  slug?: string;
   onSave: (payload: Record<string, unknown>) => Promise<unknown>;
   onUpload?: (type: 'logo' | 'cover', file: File) => Promise<{ url: string }>;
 }) {
@@ -128,21 +132,44 @@ export function RestaurantSettingsForm({
       </Card>
 
       <Card>
-        <h3 className="mb-3 text-sm font-semibold text-ink">Görünüm & Tema</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-ink">Görünüm & Tema</h3>
+          <span className="text-xs text-muted">Menü düzeni</span>
+        </div>
         <div className="mb-4 grid grid-cols-3 gap-2">
           {THEMES.map(([val, label]) => (
-            <button
+            <div
               key={val}
-              type="button"
-              onClick={() => setTheme(val)}
-              className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
-                theme === val ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-muted'
+              className={`rounded-xl border p-3 text-center ${
+                theme === val ? 'border-brand-500 bg-brand-50' : 'border-line'
               }`}
             >
-              {label}
-            </button>
+              <button
+                type="button"
+                onClick={() => setTheme(val)}
+                className={`block w-full text-sm font-semibold ${theme === val ? 'text-brand-700' : 'text-muted'}`}
+              >
+                {theme === val ? '● ' : ''}
+                {label}
+              </button>
+              {slug && (
+                <a
+                  href={`${CUSTOMER_URL}/v/${slug}?theme=${val}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1.5 inline-block text-[11px] font-medium text-brand-600 hover:underline"
+                >
+                  Önizle ↗
+                </a>
+              )}
+            </div>
           ))}
         </div>
+        {slug && (
+          <p className="mb-4 text-xs text-muted">
+            "Önizle" her temayı yeni sekmede menünüzde açar. Beğendiğinizi seçip <b>Kaydet</b>'e basın.
+          </p>
+        )}
         {onUpload && (
           <div className="grid gap-4 sm:grid-cols-2">
             <ImageUpload label="Logo" url={logo} busy={uploading === 'logo'} onPick={(f) => upload('logo', f)} />

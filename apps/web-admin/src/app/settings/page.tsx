@@ -20,6 +20,7 @@ export default function SettingsPage() {
           initialName={tenant.name}
           initialSettings={tenant.settings}
           currency={tenant.currency}
+          slug={tenant.slug}
           onSave={(payload) => api.updateTenant(payload as any)}
           onUpload={(type, file) => api.uploadRestaurantMedia(type, file)}
         />
