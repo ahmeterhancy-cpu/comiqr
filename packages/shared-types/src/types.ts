@@ -209,6 +209,18 @@ export interface HotelFolioRoom {
   orders: HotelFolioOrder[];
 }
 
+// --- Dining areas / tables (M3) ---
+
+export type AreaType = 'table' | 'room' | 'sunbed' | 'stand';
+
+export interface DiningArea {
+  id: number;
+  branch_id: number | null;
+  name: string;
+  type: AreaType;
+  tables_count?: number;
+}
+
 // --- Consumer discovery portal (M20) ---
 
 export interface DiscoverVenue {

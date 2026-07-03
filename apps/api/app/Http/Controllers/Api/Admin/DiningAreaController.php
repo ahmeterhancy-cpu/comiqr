@@ -16,7 +16,7 @@ class DiningAreaController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(['data' => DiningArea::orderBy('name')->get()]);
+        return response()->json(['data' => DiningArea::withCount('tables')->orderBy('name')->get()]);
     }
 
     public function store(Request $request): JsonResponse

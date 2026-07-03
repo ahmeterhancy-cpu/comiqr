@@ -8,6 +8,13 @@ import { Input } from '@/components/ui';
 import { setSession, startImpersonation } from '@/lib/auth';
 import { useApi } from '@/lib/useApi';
 
+const VERTICAL_LABEL: Record<string, string> = {
+  restaurant: 'Restoran',
+  hotel: 'Otel',
+  bar: 'Bar',
+  beach: 'Plaj Kulübü',
+};
+
 function relativeTime(iso?: string): string {
   if (!iso) return '';
   const rtf = new Intl.RelativeTimeFormat('tr', { numeric: 'auto' });
@@ -94,6 +101,9 @@ export default function RestaurantsPage() {
         >
           <p className="text-xs text-muted">
             {detail.slug} · {detail.plan ?? '—'} · {detail.status}
+            {detail.settings?.vertical && detail.settings.vertical !== 'restaurant'
+              ? ` · ${VERTICAL_LABEL[detail.settings.vertical] ?? detail.settings.vertical}`
+              : ''}
           </p>
           <div className="mt-3 grid grid-cols-3 gap-3">
             <Metric label="Kullanıcı" value={detail.counts.users} />
@@ -172,6 +182,11 @@ export default function RestaurantsPage() {
                           {t.name}
                         </button>
                         <span className="text-xs text-muted">#{t.slug}</span>
+                        {t.vertical && t.vertical !== 'restaurant' && (
+                          <span className="ml-1 rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+                            {VERTICAL_LABEL[t.vertical] ?? t.vertical}
+                          </span>
+                        )}
                         {t.status === 'suspended' && (
                           <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
                             askıda

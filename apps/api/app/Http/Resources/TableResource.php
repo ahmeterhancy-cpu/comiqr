@@ -15,6 +15,11 @@ class TableResource extends JsonResource
             'id' => $this->id,
             'branch_id' => $this->branch_id,
             'dining_area_id' => $this->dining_area_id,
+            'area' => $this->whenLoaded('diningArea', fn () => $this->diningArea ? [
+                'id' => $this->diningArea->id,
+                'name' => $this->diningArea->name,
+                'type' => $this->diningArea->type,
+            ] : null),
             'code' => $this->code,
             'qr_token' => $this->qr_token,
             // Path the QR should encode on the customer PWA.

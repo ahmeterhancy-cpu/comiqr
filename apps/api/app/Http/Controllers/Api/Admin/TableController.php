@@ -21,7 +21,7 @@ class TableController extends Controller
     {
         $tables = Table::query()
             ->when($request->filled('branch_id'), fn ($q) => $q->where('branch_id', $request->integer('branch_id')))
-            ->with('sessions')
+            ->with(['sessions', 'diningArea:id,name,type'])
             ->orderBy('code')
             ->get();
 

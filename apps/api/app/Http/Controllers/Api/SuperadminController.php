@@ -300,6 +300,7 @@ class SuperadminController extends Controller
             'plan_id' => $t->plan_id,
             'owner_name' => $owners[$t->id] ?? null,
             'address' => $t->settings_json['address'] ?? null,
+            'vertical' => \App\Support\Restaurant\RestaurantSettings::vertical($t->settings_json),
             'users' => $t->users_count,
             'branches' => $t->branches_count,
             'trial_ends_at' => $t->trial_ends_at,

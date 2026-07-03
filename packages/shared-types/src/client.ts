@@ -4,7 +4,9 @@
  */
 import type {
   ApiEnvelope,
+  AreaType,
   AuthSession,
+  DiningArea,
   DiscoverVenue,
   HotelFolioRoom,
   LoginPayload,
@@ -255,6 +257,20 @@ export class ApiClient {
   }
   bulkTables(body: Record<string, unknown>): Promise<any[]> {
     return this.request('/admin/tables/bulk', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  // --- Dining areas (M3) — group tables/rooms/sunbeds/stands ---
+  adminDiningAreas(): Promise<DiningArea[]> {
+    return this.request('/admin/dining-areas');
+  }
+  createDiningArea(body: { name: string; type?: AreaType; branch_id?: number }): Promise<DiningArea> {
+    return this.request('/admin/dining-areas', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateDiningArea(id: number, body: Record<string, unknown>): Promise<DiningArea> {
+    return this.request(`/admin/dining-areas/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteDiningArea(id: number): Promise<{ deleted: boolean }> {
+    return this.request(`/admin/dining-areas/${id}`, { method: 'DELETE' });
   }
 
   // --- Hotel vertical (Faz 3) — front-desk room folio + check-out settle ---
