@@ -191,6 +191,8 @@ export interface MenuVenue {
   happy_hour?: { active: boolean; percent: number };
   rating?: number;
   reviews_count?: number;
+  brand_color?: string | null;
+  powered_by?: boolean;
 }
 
 export interface MenuTable {

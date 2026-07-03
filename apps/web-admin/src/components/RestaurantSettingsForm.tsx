@@ -31,6 +31,7 @@ export function RestaurantSettingsForm({
   currency,
   slug,
   allowedVerticals,
+  whiteLabel,
   onSave,
   onUpload,
 }: {
@@ -40,6 +41,8 @@ export function RestaurantSettingsForm({
   slug?: string;
   /** Verticals the tenant's plan unlocks; others are locked. Undefined → all allowed (superadmin). */
   allowedVerticals?: string[];
+  /** Plan unlocks white-label (brand color + hide "Powered by"). */
+  whiteLabel?: boolean;
   onSave: (payload: Record<string, unknown>) => Promise<unknown>;
   onUpload?: (type: 'logo' | 'cover', file: File) => Promise<{ url: string }>;
 }) {
@@ -66,6 +69,8 @@ export function RestaurantSettingsForm({
   const [hhStart, setHhStart] = useState<string>(hh.start ?? '22:00');
   const [hhEnd, setHhEnd] = useState<string>(hh.end ?? '00:00');
   const [hhPercent, setHhPercent] = useState<string>(String(hh.percent ?? 20));
+  const [brandColor, setBrandColor] = useState<string>(s.brand_color ?? '#c1502e');
+  const [hidePoweredBy, setHidePoweredBy] = useState<boolean>(s.hide_powered_by ?? false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +99,7 @@ export function RestaurantSettingsForm({
           logo,
           cover,
           happy_hour: { enabled: hhEnabled, start: hhStart, end: hhEnd, percent: Number(hhPercent || 0) },
+          ...(whiteLabel ? { brand_color: brandColor, hide_powered_by: hidePoweredBy } : {}),
         },
       });
       setSaved(true);
@@ -273,6 +279,29 @@ export function RestaurantSettingsForm({
           <p className="mt-2 text-xs text-muted">
             Bu saat aralığında verilen siparişlere otomatik indirim uygulanır (gece yarısını geçen aralık desteklenir, ör. 22:00–02:00).
           </p>
+        </Card>
+      )}
+
+      {whiteLabel && (
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-ink">White-label</h3>
+            <span className="text-xs text-muted">Enterprise</span>
+          </div>
+          <div className="space-y-3">
+            <Field label="Marka rengi (menü başlığı)">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={brandColor}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  className="h-9 w-12 cursor-pointer rounded border border-line bg-white"
+                />
+                <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} className="w-32" />
+              </div>
+            </Field>
+            <YesNo label="“Powered by ComiQR” yazısını gizle" value={hidePoweredBy} onChange={setHidePoweredBy} />
+          </div>
         </Card>
       )}
 

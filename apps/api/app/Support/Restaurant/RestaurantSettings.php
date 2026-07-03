@@ -31,6 +31,9 @@ class RestaurantSettings
             'settings_json.theme' => ['sometimes', Rule::in(self::THEMES)],
             'settings_json.logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'settings_json.cover' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            // White-label (Faz 3) — only applied when the plan unlocks `white_label`.
+            'settings_json.brand_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'settings_json.hide_powered_by' => ['sometimes', 'boolean'],
             // Bar vertical — happy-hour discount window.
             'settings_json.happy_hour' => ['sometimes', 'nullable', 'array'],
             'settings_json.happy_hour.enabled' => ['sometimes', 'boolean'],

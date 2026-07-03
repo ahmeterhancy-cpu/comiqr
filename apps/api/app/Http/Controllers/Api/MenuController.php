@@ -114,12 +114,16 @@ class MenuController extends Controller
 
         $settings = $tenant->settings_json ?? [];
         $rep = $this->reviews->reputation($tenant->id);
+        // White-label branding only takes effect on plans that unlock it (Faz 3).
+        $whiteLabel = \App\Support\Plans\PlanGate::allows($tenant, 'white_label');
 
         return [
             'venue' => [
                 'name' => $tenant->name,
                 'rating' => $rep['average'],
                 'reviews_count' => $rep['count'],
+                'brand_color' => $whiteLabel ? ($settings['brand_color'] ?? null) : null,
+                'powered_by' => ! ($whiteLabel && ($settings['hide_powered_by'] ?? false)),
                 'locale_default' => $tenant->locale_default,
                 'currency' => $tenant->currency,
                 'sub_title' => $settings['sub_title'] ?? null,

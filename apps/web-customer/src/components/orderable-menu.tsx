@@ -223,7 +223,10 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   return (
     <div className="mx-auto max-w-2xl pb-32">
       {/* Editorial header */}
-      <header className="relative overflow-hidden bg-brand-600 px-6 pb-7 pt-8 text-white">
+      <header
+        className="relative overflow-hidden bg-brand-600 px-6 pb-7 pt-8 text-white"
+        style={menu.venue.brand_color ? { backgroundColor: menu.venue.brand_color } : undefined}
+      >
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
         <div className="relative flex items-start justify-between gap-3">
           <div>
@@ -334,6 +337,10 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           </div>
         </section>
       ))}
+
+      {menu.venue.powered_by !== false && (
+        <p className="mt-8 text-center text-xs text-muted">Powered by ComiQR</p>
+      )}
 
       {/* Cart bar */}
       {count > 0 && (
