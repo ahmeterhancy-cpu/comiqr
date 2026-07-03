@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * A realistic TRNC demo venue with a menu, recipes and computed nutrition, so
@@ -77,9 +78,23 @@ class DemoMenuSeeder extends Seeder
                 [$kiyma, 220, 'g'], [$bulgur, 120, 'g'], [$ekmek, 60, 'g'],
             ]);
 
-            $this->product($tatlilar, 'Cevizli Baklava', 120, ['tags_json' => ['new']], [
+            $baklava = $this->product($tatlilar, 'Cevizli Baklava', 120, ['tags_json' => ['new']], [
                 [$baklavaHamur, 90, 'g'], [$ceviz, 40, 'g'],
             ]);
+
+            // --- Branding + product photos (placeholder SVGs) so all 3 menu themes
+            //     (classic/flipbook/modern) render fully. ---
+            $tenant->update(['settings_json' => array_merge($tenant->settings_json ?? [], [
+                'logo' => $this->placeholder('demo/logo.svg', 'GM', '#c1502e', 240, 240),
+                'cover' => $this->placeholder('demo/cover.svg', 'Girne Meze Bahçesi', '#8a3d22', 1200, 480),
+                'sub_title' => 'Girne Meze & Mangal',
+                'timing' => '11:00 - 23:00',
+                'description' => "Kıbrıs'ın en taze mezeleri, mangalda hellim ve közde şeftali kebabı. Deniz manzarasında keyifli bir sofra sizi bekliyor.",
+                'address' => 'Sahil Yolu No:12, Girne / KKTC',
+            ])]);
+            $hellimIzgara->update(['image_paths_json' => [$this->placeholder('demo/p-hellim.svg', 'Hellim Izgara', '#d98c5f')]]);
+            $seftali->update(['image_paths_json' => [$this->placeholder('demo/p-kebap.svg', 'Şeftali Kebabı', '#a0522d')]]);
+            $baklava->update(['image_paths_json' => [$this->placeholder('demo/p-baklava.svg', 'Cevizli Baklava', '#b8763a')]]);
 
             // --- Modifier groups (M1) — optional extras + a required doneness choice ---
             $extras = $this->modifierGroup('Ekstra Malzeme', ['min_select' => 0, 'max_select' => 3, 'is_required' => false], [
@@ -100,6 +115,20 @@ class DemoMenuSeeder extends Seeder
             Product::whereHas('recipe')->pluck('id')
                 ->each(fn ($id) => RecomputeNutrition::dispatch($tenant->id, $id));
         });
+    }
+
+    /** Write a simple labelled SVG to the public disk and return its media URL. */
+    private function placeholder(string $path, string $label, string $bg, int $w = 800, int $h = 600): string
+    {
+        $font = max(18, (int) ($w / max(6, mb_strlen($label) * 0.7)));
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'">'
+            .'<rect width="100%" height="100%" fill="'.$bg.'"/>'
+            .'<text x="50%" y="50%" font-family="Georgia, serif" font-size="'.$font.'" fill="#ffffff" '
+            .'text-anchor="middle" dominant-baseline="middle">'.htmlspecialchars($label, ENT_QUOTES).'</text></svg>';
+
+        Storage::disk('public')->put($path, $svg);
+
+        return url('/v1/media/'.$path);
     }
 
     private function ingredient(string $name, array $attrs, array $allergens): Ingredient
