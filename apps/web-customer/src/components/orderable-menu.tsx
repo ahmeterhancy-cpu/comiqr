@@ -64,8 +64,13 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const total = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const count = lines.reduce((s, l) => s + l.qty, 0);
 
-  // Hotel room service: guests in a room can defer payment onto the room folio.
-  const canRoomCharge = menu.venue.vertical === 'hotel' && menu.table?.is_room === true;
+  // Room/sunbed service: guests can defer payment onto the location's folio
+  // (hotel rooms, beach-club sunbeds). Label adapts to the area type.
+  const areaType = menu.table?.area_type;
+  const canRoomCharge =
+    ['hotel', 'beach'].includes(menu.venue.vertical ?? '') && (areaType === 'room' || areaType === 'sunbed');
+  const chargeLabel = areaType === 'sunbed' ? t('chargeSunbed') : t('chargeRoom');
+  const chargedLabel = areaType === 'sunbed' ? t('chargedSunbed') : t('chargedRoom');
 
   // Live order tracking: poll the order until every item is served (KDS
   // advances item status → OrderItemStatusChanged also broadcasts over Reverb).
@@ -249,6 +254,8 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           canRoomCharge={canRoomCharge}
           chargeToRoom={chargeToRoom}
           chargedRoom={chargedRoom}
+          chargeLabel={chargeLabel}
+          chargedLabel={chargedLabel}
         />
       )}
 
@@ -322,7 +329,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   );
 }
 
-function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg, applyCoupon, pay, paying, paid, canRoomCharge, chargeToRoom, chargedRoom }: any) {
+function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg, applyCoupon, pay, paying, paid, canRoomCharge, chargeToRoom, chargedRoom, chargeLabel, chargedLabel }: any) {
   const items = order.items ?? [];
   return (
     <div className="mx-5 mt-5 overflow-hidden rounded-2xl border border-sage/30 bg-sage-bg">
@@ -353,7 +360,7 @@ function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg,
       {paid ? (
         <p className="px-5 pb-4 font-semibold text-[color:var(--color-sage)]">✓ {t('paid')}</p>
       ) : chargedRoom ? (
-        <p className="px-5 pb-4 font-semibold text-[color:var(--color-sage)]">🛏️ {t('chargedRoom')}</p>
+        <p className="px-5 pb-4 font-semibold text-[color:var(--color-sage)]">🧾 {chargedLabel}</p>
       ) : (
         <div className="space-y-2 border-t border-sage/20 bg-white/60 px-5 py-4">
           <div className="flex gap-2">
@@ -381,7 +388,7 @@ function OrderPanel({ order, fmt, t, productNames, coupon, setCoupon, couponMsg,
               disabled={paying}
               className="w-full rounded-xl border border-brand-500 bg-white py-3 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 disabled:opacity-60"
             >
-              🛏️ {t('chargeRoom')}
+              🧾 {chargeLabel}
             </button>
           )}
         </div>

@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Table;
 use App\Models\TableSession;
 use App\Services\PaymentService;
+use App\Support\Restaurant\RestaurantSettings;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class HotelController extends Controller
         $branchId = $request->integer('branch_id') ?: null;
 
         $rooms = Table::query()
-            ->whereHas('diningArea', fn ($q) => $q->where('type', 'room'))
+            ->whereHas('diningArea', fn ($q) => $q->whereIn('type', RestaurantSettings::FOLIO_AREA_TYPES))
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->with('diningArea:id,name,type')
             ->get();
@@ -63,6 +64,7 @@ class HotelController extends Controller
                     'table_id' => $room->id,
                     'code' => $room->code,
                     'area' => $room->diningArea?->name,
+                    'area_type' => $room->diningArea?->type,
                     'order_count' => $roomOrders->count(),
                     'total' => round((float) $roomOrders->sum(fn ($o) => (float) $o->grand_total), 2),
                     'orders' => $roomOrders
@@ -91,7 +93,7 @@ class HotelController extends Controller
         $this->requireTenant();
 
         $room = Table::query()
-            ->whereHas('diningArea', fn ($q) => $q->where('type', 'room'))
+            ->whereHas('diningArea', fn ($q) => $q->whereIn('type', RestaurantSettings::FOLIO_AREA_TYPES))
             ->findOrFail($table);
 
         return DB::transaction(function () use ($room) {

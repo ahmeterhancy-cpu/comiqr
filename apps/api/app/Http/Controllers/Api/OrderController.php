@@ -96,22 +96,26 @@ class OrderController extends Controller
 
     /**
      * POST /sessions/{qrToken}/orders/{order}/charge-to-room — defer payment onto
-     * the room's folio (hotel vertical, Faz 3). Only for hotel tenants and only
-     * for QRs that belong to a room-type dining area. The order stays unpaid; the
-     * front desk settles the folio at check-out.
+     * the location's folio (Faz 3). Only for folio verticals (hotel/beach) and
+     * only for folio areas (room/sunbed). The order stays unpaid; the front desk
+     * settles the folio at check-out.
      */
     public function chargeToRoom(string $qrToken, string $order): JsonResponse
     {
         [$table, $tenant] = $this->resolveByToken($qrToken);
 
         abort_unless(
-            \App\Support\Restaurant\RestaurantSettings::isHotel($tenant->settings_json),
+            \App\Support\Restaurant\RestaurantSettings::foliosEnabled($tenant->settings_json),
             422,
-            'Odaya yansıtma yalnızca otel işletmelerinde kullanılabilir.',
+            'Folyoya yansıtma yalnızca otel/plaj işletmelerinde kullanılabilir.',
         );
 
         $table->loadMissing('diningArea');
-        abort_unless($table->diningArea?->type === 'room', 422, 'Bu QR bir odaya ait değil.');
+        abort_unless(
+            in_array($table->diningArea?->type, \App\Support\Restaurant\RestaurantSettings::FOLIO_AREA_TYPES, true),
+            422,
+            'Bu QR folyoya uygun bir alan (oda/şezlong) değil.',
+        );
 
         $model = Order::with('tableSession')->find($order);
         abort_if($model === null || $model->tableSession?->table_id !== $table->id, 404, 'Order not found.');

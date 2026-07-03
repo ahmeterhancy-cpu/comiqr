@@ -19,6 +19,7 @@ const THEMES: [string, string][] = [
 const VERTICALS: [string, string, string][] = [
   ['restaurant', 'Restoran / Kafe', 'Masa siparişi, gel-al, teslimat'],
   ['hotel', 'Otel', 'Oda servisi + odaya yansıt (folyo)'],
+  ['beach', 'Plaj Kulübü', 'Şezlong servisi + şezlonga yansıt (folyo)'],
   ['bar', 'Bar / Pub', 'Adisyon akışı'],
 ];
 
@@ -118,7 +119,7 @@ export function RestaurantSettingsForm({
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           <Field label="İşletme Türü">
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2">
               {VERTICALS.map(([val, label, hint]) => (
                 <button
                   key={val}

@@ -37,7 +37,10 @@ class RestaurantSettings
     public const THEMES = ['classic', 'flipbook', 'modern'];
 
     /** Business verticals (Faz 3). Restaurant is the default behaviour. */
-    public const VERTICALS = ['restaurant', 'hotel', 'bar'];
+    public const VERTICALS = ['restaurant', 'hotel', 'bar', 'beach'];
+
+    /** Dining-area types that support a deferred "charge to folio" (room / sunbed). */
+    public const FOLIO_AREA_TYPES = ['room', 'sunbed'];
 
     /** Is a feature allowed for this settings blob (missing → allowed)? */
     public static function allows(?array $settings, string $key): bool
@@ -56,6 +59,15 @@ class RestaurantSettings
     public static function isHotel(?array $settings): bool
     {
         return self::vertical($settings) === 'hotel';
+    }
+
+    /**
+     * Verticals that defer payment onto a folio settled at check-out — a hotel's
+     * rooms or a beach club's sunbeds. Restaurant/bar collect per order.
+     */
+    public static function foliosEnabled(?array $settings): bool
+    {
+        return in_array(self::vertical($settings), ['hotel', 'beach'], true);
     }
 
     public static function deliveryCharge(?array $settings): float

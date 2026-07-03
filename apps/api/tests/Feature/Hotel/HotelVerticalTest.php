@@ -155,3 +155,38 @@ it('leaves a non-folio unpaid order and its session intact after settle', functi
     expect(Order::find($b)->payment_status)->toBe('unpaid');
     expect(TableSession::where('table_id', $table->id)->where('status', 'open')->count())->toBe(1);
 });
+
+it('supports the beach-club sunbed folio end-to-end (charge + list + settle)', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = seedVenue('beach', 'sunbed');
+
+    getJson("/v1/menu/{$table->qr_token}")
+        ->assertOk()
+        ->assertJsonPath('data.venue.vertical', 'beach')
+        ->assertJsonPath('data.table.area_type', 'sunbed')
+        ->assertJsonPath('data.table.is_room', false);
+
+    $orderId = placeRoomOrder($table, $product);
+    postJson("/v1/sessions/{$table->qr_token}/orders/{$orderId}/charge-to-room")
+        ->assertOk()
+        ->assertJsonPath('data.charged_to_room', true);
+
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Manager)->create());
+
+    getJson('/v1/admin/hotel/folio')
+        ->assertOk()
+        ->assertJsonPath('data.0.area_type', 'sunbed')
+        ->assertJsonPath('data.0.total', 200);
+
+    postJson("/v1/admin/hotel/rooms/{$table->id}/settle")
+        ->assertOk()
+        ->assertJsonPath('data.settled_count', 1);
+
+    expect(Order::find($orderId)->payment_status)->toBe('paid');
+});
+
+it('rejects charge-to-folio for a non-folio area even in a folio vertical', function () {
+    ['product' => $product, 'table' => $table] = seedVenue('beach', 'table');
+    $orderId = placeRoomOrder($table, $product);
+
+    postJson("/v1/sessions/{$table->qr_token}/orders/{$orderId}/charge-to-room")->assertStatus(422);
+});

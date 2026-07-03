@@ -7,10 +7,16 @@ import { Button, Card } from '@/components/ui';
 import { getActiveBranchId } from '@/lib/branch';
 import { useApi } from '@/lib/useApi';
 
+const SPOT: Record<string, { icon: string; noun: string }> = {
+  room: { icon: '🛏️', noun: 'Oda' },
+  sunbed: { icon: '⛱️', noun: 'Şezlong' },
+};
+const spot = (t?: string | null) => SPOT[t ?? ''] ?? { icon: '📍', noun: '' };
+
 /**
- * Hotel front-desk room folio (Faz 3). Lists rooms with open "charge to room"
- * orders and settles a room at check-out (paid as cash, session closed). Only
- * reachable for hotel-vertical tenants (AdminShell adds the nav entry).
+ * Front-desk folio (Faz 3). Lists spots (hotel rooms / beach sunbeds) with open
+ * "charge to folio" orders and settles one at check-out (paid as cash, session
+ * closed). Reachable for hotel + beach verticals (AdminShell adds the nav entry).
  */
 export default function HotelFolioPage() {
   const { api, me, ready } = useApi();
@@ -38,7 +44,8 @@ export default function HotelFolioPage() {
   }, [ready, refresh]);
 
   async function settle(room: HotelFolioRoom) {
-    if (!window.confirm(`Oda ${room.code}: folyo ${money(room.total, currency)} nakit tahsil edilip oturum kapatılsın mı?`)) return;
+    const s = spot(room.area_type);
+    if (!window.confirm(`${s.noun} ${room.code}: folyo ${money(room.total, currency)} nakit tahsil edilip oturum kapatılsın mı?`)) return;
     setSettling(room.table_id);
     try {
       await api.settleRoom(room.table_id);
@@ -53,10 +60,10 @@ export default function HotelFolioPage() {
   const grandTotal = rooms.reduce((sum, r) => sum + Number(r.total || 0), 0);
 
   return (
-    <AdminShell title="Oda Folyosu">
+    <AdminShell title="Folyo">
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Card className="flex-1">
-          <div className="text-xs font-medium text-muted">Açık oda</div>
+          <div className="text-xs font-medium text-muted">Açık folyo</div>
           <div className="mt-1 text-2xl font-bold text-ink">{rooms.length}</div>
         </Card>
         <Card className="flex-1">
@@ -70,8 +77,8 @@ export default function HotelFolioPage() {
       ) : rooms.length === 0 ? (
         <Card>
           <div className="py-8 text-center text-muted">
-            <div className="text-3xl">🛏️</div>
-            <p className="mt-2 text-sm">Açık oda folyosu yok. Misafirler odaya sipariş yansıttıkça burada görünür.</p>
+            <div className="text-3xl">🧾</div>
+            <p className="mt-2 text-sm">Açık folyo yok. Misafirler odaya/şezlonga sipariş yansıttıkça burada görünür.</p>
           </div>
         </Card>
       ) : (
@@ -80,7 +87,9 @@ export default function HotelFolioPage() {
             <Card key={room.table_id} className="flex flex-col">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-lg font-bold text-ink">Oda {room.code}</div>
+                  <div className="text-lg font-bold text-ink">
+                    {spot(room.area_type).icon} {spot(room.area_type).noun} {room.code}
+                  </div>
                   {room.area && <div className="text-xs text-muted">{room.area}</div>}
                 </div>
                 <div className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">

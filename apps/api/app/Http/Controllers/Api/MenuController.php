@@ -80,6 +80,7 @@ class MenuController extends Controller
             'id' => $table->id,
             'code' => $table->code,
             'qr_token' => $table->qr_token,
+            'area_type' => $table->diningArea?->type,
             'is_room' => $table->diningArea?->type === 'room',
         ];
 

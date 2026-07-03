@@ -106,6 +106,27 @@ class DemoHotelSeeder extends Seeder
                 ]);
                 $order->update(['charged_to_room' => true]);
             }
+
+            // Pool sunbeds — the folio also works for beach-style spots (şezlong).
+            $sunbeds = DiningArea::firstOrCreate(
+                ['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'name' => 'Havuz Şezlongları'],
+                ['type' => 'sunbed'],
+            );
+            $sunbeds->update(['type' => 'sunbed']);
+
+            $sunbedTables = collect(['Ş-1', 'Ş-2'])->map(fn ($code) => Table::firstOrCreate(
+                ['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'dining_area_id' => $sunbeds->id, 'code' => $code],
+                ['is_active' => true],
+            ));
+
+            $s1 = $sunbedTables->firstWhere('code', 'Ş-1');
+            $sSession = TableSession::firstOrCreate(['table_id' => $s1->id, 'status' => 'open'], ['opened_at' => now()]);
+            if (! Order::where('table_session_id', $sSession->id)->where('charged_to_room', true)->exists()) {
+                $so = app(OrderService::class)->place($s1, $sSession, [
+                    ['product_id' => $suyu->id, 'quantity' => 2],
+                ]);
+                $so->update(['charged_to_room' => true]);
+            }
         });
     }
 

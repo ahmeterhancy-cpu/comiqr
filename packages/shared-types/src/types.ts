@@ -180,6 +180,7 @@ export interface MenuTable {
   id: number;
   code: string;
   qr_token: string;
+  area_type?: AreaType | null;
   is_room?: boolean;
 }
 
@@ -204,6 +205,7 @@ export interface HotelFolioRoom {
   table_id: number;
   code: string;
   area: string | null;
+  area_type?: AreaType | null;
   order_count: number;
   total: number;
   orders: HotelFolioOrder[];

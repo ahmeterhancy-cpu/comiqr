@@ -67,9 +67,9 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
     window.location.reload();
   }
 
-  // Hotel tenants get a front-desk "Room Folio" entry before Settings.
+  // Hotel / beach-club tenants get a front-desk "Folio" entry before Settings.
   const navItems: { key: string; href: string }[] = NAV.map((n) => ({ key: n.key, href: n.href }));
-  if (vertical === 'hotel') {
+  if (['hotel', 'beach'].includes(vertical)) {
     const at = navItems.findIndex((i) => i.href === '/settings');
     navItems.splice(at < 0 ? navItems.length : at, 0, { key: 'hotel', href: '/hotel' });
   }
