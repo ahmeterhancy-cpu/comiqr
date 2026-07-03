@@ -87,7 +87,9 @@ class OrderController extends Controller
         $discount = $coupon->discountFor((float) $model->subtotal);
         abort_if($discount <= 0, 422, 'Coupon conditions not met.');
 
-        $model->update(['discount_total' => $discount]);
+        // Keep the larger discount so a small coupon can't wipe a bigger
+        // happy-hour discount already on the order (bar vertical).
+        $model->update(['discount_total' => max((float) $model->discount_total, $discount)]);
         $model->recalculateTotals();
         $coupon->increment('used_count');
 

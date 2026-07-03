@@ -125,8 +125,8 @@ class MenuController extends Controller
                 'theme' => $settings['theme'] ?? 'classic',
                 'vertical' => \App\Support\Restaurant\RestaurantSettings::vertical($settings),
                 'happy_hour' => [
-                    'active' => \App\Support\Restaurant\HappyHour::active($settings),
-                    'percent' => \App\Support\Restaurant\HappyHour::percent($settings),
+                    'active' => \App\Support\Restaurant\HappyHour::active($settings, null, $tenant->timezone),
+                    'percent' => \App\Support\Restaurant\HappyHour::percent($settings, null, $tenant->timezone),
                 ],
             ],
             'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),

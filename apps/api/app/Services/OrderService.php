@@ -90,6 +90,7 @@ class OrderService
         DB::transaction(function () use ($order, $items) {
             $this->addLines($order, $items);
             $order->recalculateTotals();
+            $this->applyHappyHour($order); // re-scale the discount to the grown order
         });
 
         return $order->load('items');
@@ -102,13 +103,15 @@ class OrderService
      */
     protected function applyHappyHour(Order $order): void
     {
-        $settings = app(\App\Support\Tenancy\TenantManager::class)->get()?->settings_json;
-        $percent = \App\Support\Restaurant\HappyHour::percent($settings);
+        $tenant = app(\App\Support\Tenancy\TenantManager::class)->get();
+        $percent = \App\Support\Restaurant\HappyHour::percent($tenant?->settings_json, null, $tenant?->timezone);
         if ($percent <= 0) {
             return;
         }
 
-        $discount = round((float) $order->subtotal * $percent / 100, 2);
+        // Keep whichever discount is larger — a coupon set earlier must not be
+        // reduced, and the happy-hour amount scales up as the order grows.
+        $discount = max((float) $order->discount_total, round((float) $order->subtotal * $percent / 100, 2));
         if ($discount <= 0) {
             return;
         }
