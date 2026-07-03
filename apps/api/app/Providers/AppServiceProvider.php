@@ -7,6 +7,7 @@ use App\Listeners\PushOrderToIntegrations;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -41,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Mirror placed orders to the tenant's external systems (POS/ERP/delivery).
         Event::listen(OrderPlaced::class, PushOrderToIntegrations::class);
+
+        // Reverb WebSocket channel auth for the token SPA (M6/M10). The SPA hits
+        // /v1/broadcasting/auth with its bearer token; channels.php authorizes.
+        Broadcast::routes(['prefix' => 'v1', 'middleware' => ['auth:sanctum']]);
+        require base_path('routes/channels.php');
     }
 
     /**
