@@ -21,8 +21,9 @@ use Illuminate\Support\Str;
 
 /**
  * A realistic, full TRNC meze/kebab restaurant so the QR menu looks like a real
- * venue: 6 categories, ~26 dishes with appetising descriptions, prices, calories
- * and emoji imagery. Idempotent.
+ * venue: 11 categories (soups → mezes → hot starters → salads → pides → grills →
+ * pasta → seafood → desserts → drinks → wine & spirits, 18+), ~45 dishes with
+ * appetising descriptions, prices, calories and emoji imagery. Idempotent.
  * Owner login: demo@comiqr.com / password · subdomain: demo
  */
 class DemoMenuSeeder extends Seeder
@@ -69,8 +70,14 @@ class DemoMenuSeeder extends Seeder
                 Table::firstOrCreate(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'code' => $code], ['is_active' => true]);
             }
 
-            // [category, name, price, emoji, description, kcal, diet, allergens]
+            // [category, name, price, emoji, description, kcal, diet, allergens, age18?]
             $menu = [
+                'Çorbalar' => [
+                    ['Mercimek Çorbası', 70, '🍲', 'Ev yapımı kırmızı mercimek çorbası, limon ve pul biber ile.', 180, ['vegan', 'gluten_free'], []],
+                    ['Ezogelin Çorbası', 75, '🥣', 'Bulgur, mercimek ve naneli geleneksel çorba.', 200, ['vegetarian'], ['gluten']],
+                    ['Domates Çorbası', 70, '🍅', 'Kremalı fırın domates çorbası, kruton ile.', 190, ['vegetarian'], ['gluten', 'milk']],
+                    ['İşkembe Çorbası', 90, '🥘', 'Sarımsaklı ve sirkeli klasik işkembe çorbası.', 260, [], ['milk']],
+                ],
                 'Mezeler' => [
                     ['Hellim Izgara', 140, '🧀', 'Kıbrıs’ın meşhur hellimi közde altın rengi kızartıldı, taze nane ile.', 320, ['vegetarian', 'gluten_free'], ['milk']],
                     ['Humus', 90, '🥣', 'Nohut püresi, tahin, zeytinyağı ve kimyon; sıcak pide ile.', 280, ['vegan', 'gluten_free'], []],
@@ -78,6 +85,25 @@ class DemoMenuSeeder extends Seeder
                     ['Şakşuka', 95, '🍆', 'Kızarmış patlıcan, biber ve domates sos.', 210, ['vegan', 'gluten_free'], []],
                     ['Girit Ezme', 85, '🫒', 'Beyaz peynir, ceviz ve zeytinyağı ezmesi.', 240, ['vegetarian'], ['milk', 'nuts']],
                     ['Sigara Böreği', 100, '🥟', 'Peynirli çıtır yufka böreği (5 adet).', 350, ['vegetarian'], ['gluten', 'milk']],
+                    ['Atom', 105, '🌶️', 'Acılı süzme yoğurt, közlenmiş biber ve sarımsak.', 190, ['vegetarian', 'gluten_free'], ['milk']],
+                    ['Fava', 90, '🫘', 'Zeytinyağlı bakla ezmesi, dereotu ve soğan.', 220, ['vegan', 'gluten_free'], []],
+                ],
+                'Sıcak Başlangıçlar' => [
+                    ['Paçanga Böreği', 110, '🥟', 'Pastırma ve kaşarlı çıtır tütün böreği.', 380, [], ['gluten', 'milk']],
+                    ['Midye Dolma', 120, '🦪', 'Baharatlı iç pilavlı midye dolma, limon ile (6 adet).', 260, ['gluten_free'], ['molluscs']],
+                    ['Arnavut Ciğeri', 140, '🫘', 'Baharatlı kızarmış dana ciğeri, soğan piyazı ile.', 320, ['gluten_free'], []],
+                    ['Fırın Sucuk', 100, '🌭', 'Közde sucuk, domates ve közlenmiş biber ile.', 340, ['gluten_free'], []],
+                ],
+                'Salatalar' => [
+                    ['Çoban Salata', 80, '🥗', 'Domates, salatalık, biber, soğan ve maydanoz.', 90, ['vegan', 'gluten_free'], []],
+                    ['Akdeniz Salatası', 110, '🥗', 'Roka, beyaz peynir, ceviz, nar ekşili sos.', 260, ['vegetarian', 'gluten_free'], ['milk', 'nuts']],
+                    ['Sezar Salata', 130, '🥬', 'Marul, ızgara tavuk, parmesan ve kraker.', 420, [], ['gluten', 'milk', 'eggs']],
+                ],
+                'Pideler' => [
+                    ['Kıymalı Pide', 150, '🫓', 'El açması pide, baharatlı kıyma ve maydanoz.', 620, [], ['gluten']],
+                    ['Kaşarlı Pide', 140, '🧀', 'Bol kaşarlı fırın pide.', 580, ['vegetarian'], ['gluten', 'milk']],
+                    ['Kuşbaşılı Pide', 180, '🥩', 'Kuzu kuşbaşı, kaşar ve közlenmiş biber.', 660, [], ['gluten', 'milk']],
+                    ['Karışık Pide', 190, '🍕', 'Sucuk, kaşar ve domates ile.', 640, [], ['gluten', 'milk']],
                 ],
                 'Ana Yemekler' => [
                     ['Şeftali Kebabı', 280, '🍢', 'Közde kuzu kıyma kebabı, közlenmiş biber ve bulgur pilavı ile.', 620, [], ['gluten']],
@@ -87,14 +113,16 @@ class DemoMenuSeeder extends Seeder
                     ['Tavuk Şiş', 240, '🍗', 'Marine tavuk göğsü şiş, ızgara.', 480, ['gluten_free'], []],
                     ['Fırın Kolokas', 260, '🥘', 'Kıbrıs usulü kolokas, kuzu etiyle fırında.', 610, [], []],
                 ],
+                'Makarnalar' => [
+                    ['Penne Arrabbiata', 180, '🍝', 'Acılı domates soslu penne, taze fesleğen.', 560, ['vegetarian'], ['gluten']],
+                    ['Fettuccine Alfredo', 200, '🍝', 'Kremalı tavuklu fettuccine, parmesan ile.', 680, [], ['gluten', 'milk']],
+                    ['Spagetti Bolonez', 190, '🍝', 'Dana kıymalı ev yapımı bolonez sos.', 640, [], ['gluten']],
+                ],
                 'Deniz Ürünleri' => [
                     ['Izgara Çipura', 340, '🐟', 'Taze çipura ızgarada, limon ve roka ile.', 420, ['gluten_free'], ['fish']],
                     ['Kalamar Tava', 280, '🦑', 'Çıtır kalamar halkaları, tartar sos ile.', 460, [], ['gluten', 'eggs']],
                     ['Karides Güveç', 360, '🦐', 'Domates soslu güveçte karides, kaşar ile.', 490, ['gluten_free'], ['milk']],
-                ],
-                'Salatalar' => [
-                    ['Çoban Salata', 80, '🥗', 'Domates, salatalık, biber, soğan ve maydanoz.', 90, ['vegan', 'gluten_free'], []],
-                    ['Akdeniz Salatası', 110, '🥗', 'Roka, beyaz peynir, ceviz, nar ekşili sos.', 260, ['vegetarian', 'gluten_free'], ['milk', 'nuts']],
+                    ['Levrek Buğulama', 350, '🐟', 'Sebzeli levrek buğulama, zeytinyağı ile.', 380, ['gluten_free'], ['fish']],
                 ],
                 'Tatlılar' => [
                     ['Cevizli Baklava', 120, '🍯', 'El açması yufka, ceviz ve hafif şerbet.', 480, ['vegetarian'], ['gluten', 'nuts']],
@@ -105,8 +133,16 @@ class DemoMenuSeeder extends Seeder
                 'İçecekler' => [
                     ['Ayran', 40, '🥛', 'Ev yapımı köpüklü ayran.', 90, ['vegetarian', 'gluten_free'], ['milk']],
                     ['Taze Portakal Suyu', 70, '🍊', 'Günlük sıkma portakal suyu.', 120, ['vegan', 'gluten_free'], []],
+                    ['Şalgam Suyu', 40, '🥤', 'Acılı ya da acısız fermente şalgam.', 30, ['vegan', 'gluten_free'], []],
                     ['Türk Kahvesi', 60, '☕', 'Közde pişmiş Türk kahvesi, lokum ile.', 20, ['vegan', 'gluten_free'], []],
                     ['Kıbrıs Çayı', 25, '🫖', 'Demli ince belli çay.', 5, ['vegan', 'gluten_free'], []],
+                ],
+                'Şaraplar & İçkiler' => [
+                    ['Rakı (tek)', 150, '🥃', 'Yeni Rakı, su ve buz ile.', 130, ['vegan', 'gluten_free'], [], true],
+                    ['Kırmızı Şarap (kadeh)', 130, '🍷', 'Yerli kırmızı şarap kadehi.', 130, ['vegan', 'gluten_free'], [], true],
+                    ['Beyaz Şarap (kadeh)', 130, '🥂', 'Soğuk yerli beyaz şarap.', 120, ['vegan', 'gluten_free'], [], true],
+                    ['Efes (50cl)', 80, '🍺', 'Soğuk Efes Pilsen, büyük boy.', 210, ['vegetarian'], ['gluten'], true],
+                    ['Votka + Meyve Suyu', 160, '🍸', 'Votka, taze meyve suyu ile.', 190, ['vegan', 'gluten_free'], [], true],
                 ],
             ];
 
@@ -115,7 +151,7 @@ class DemoMenuSeeder extends Seeder
             foreach ($menu as $catName => $dishes) {
                 $cat = Category::updateOrCreate(['tenant_id' => $tenant->id, 'name' => $catName], ['sort' => $sort++, 'is_active' => true]);
                 foreach ($dishes as $d) {
-                    $products[$d[0]] = $this->dish($cat, $d[0], $d[1], $d[2], $d[3], $d[4], $d[5], $d[6]);
+                    $products[$d[0]] = $this->dish($cat, $d[0], $d[1], $d[2], $d[3], $d[4], $d[5], $d[6], $d[7] ?? false);
                 }
             }
 
@@ -140,7 +176,7 @@ class DemoMenuSeeder extends Seeder
     }
 
     /** Create a dish with description, emoji image and a ready nutrition summary. */
-    private function dish(Category $cat, string $name, float $price, string $emoji, string $desc, int $kcal, array $diet, array $allergens): Product
+    private function dish(Category $cat, string $name, float $price, string $emoji, string $desc, int $kcal, array $diet, array $allergens, bool $age = false): Product
     {
         $product = Product::updateOrCreate(
             ['category_id' => $cat->id, 'name' => $name],
@@ -148,6 +184,7 @@ class DemoMenuSeeder extends Seeder
                 'price' => $price,
                 'description' => $desc,
                 'is_active' => true,
+                'age_restricted' => $age,
                 'calories_display' => true,
                 'image_paths_json' => [$this->emojiImg('demo/'.Str::slug($name).'.svg', $emoji, '#eef1f6')],
             ],
