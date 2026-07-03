@@ -7,12 +7,24 @@ import { fetchMenu } from '@/lib/menu';
  * Public venue menu by slug (M1/M2 payoff — live nutrition on the customer PWA).
  * The QR-token route (/m/[qrToken]) will resolve to the same view in M3.
  */
-export default async function VenueMenuPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function VenueMenuPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ theme?: string }>;
+}) {
   const { slug } = await params;
+  const { theme } = await searchParams;
   const menu = await fetchMenu(slug);
 
   if (!menu) {
     notFound();
+  }
+
+  // ?theme=classic|flipbook|modern previews a layout without changing settings.
+  if (theme && ['classic', 'flipbook', 'modern'].includes(theme)) {
+    menu.venue = { ...menu.venue, theme: theme as 'classic' | 'flipbook' | 'modern' };
   }
 
   const t = await getTranslations('menu');
