@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ApiClient, ApiError } from '@comiqr/shared-types/client';
 import type { AllergenRef, Menu, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
@@ -47,6 +47,10 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
       }),
     [menu.venue],
   );
+  const categories = useMemo(
+    () => menu.categories.filter((c) => c.products.length > 0),
+    [menu.categories],
+  );
 
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [phone, setPhone] = useState('');
@@ -64,8 +68,15 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const [reviewing, setReviewing] = useState(false);
   const [service, setService] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeCat, setActiveCat] = useState<number | null>(null);
+  const [activeCat, setActiveCat] = useState<number | null>(() => categories[0]?.id ?? null);
   const [sheetProduct, setSheetProduct] = useState<MenuProduct | null>(null);
+
+  // Scroll-spy: the sticky category tabs track the section currently in view and
+  // auto-scroll horizontally so the active tab stays centred as you move down.
+  const navRef = useRef<HTMLElement | null>(null);
+  const sectionRefs = useRef(new Map<number, HTMLElement>());
+  const tabRefs = useRef(new Map<number, HTMLButtonElement>());
+  const spyLockUntil = useRef(0);
 
   const lines = Object.values(cart);
   const total = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
@@ -98,6 +109,79 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
     }, 5000);
     return () => clearInterval(id);
   }, [order?.id, order?.status, paid, api, qrToken]);
+
+  // Highlight the tab of the section currently under the sticky nav as we scroll.
+  useEffect(() => {
+    if (categories.length <= 1) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        // A tab tap locks the spy while the page smooth-scrolls to that section.
+        // Keep it locked until the animation SETTLES (refresh on every tick) so a
+        // fixed timeout can't expire mid-glide and snap to a category we pass.
+        const now = Date.now();
+        if (now < spyLockUntil.current) {
+          spyLockUntil.current = now + 120;
+          return;
+        }
+        const nav = navRef.current;
+        const triggerY = (nav ? nav.getBoundingClientRect().bottom : 0) + 8;
+        let current = categories[0].id;
+        for (const c of categories) {
+          const el = sectionRefs.current.get(c.id);
+          if (el && el.getBoundingClientRect().top <= triggerY) current = c.id;
+        }
+        // A short final section may never reach the trigger line — force it active
+        // once scrolled to the bottom, but ONLY when the page can actually scroll
+        // (else a menu that fits the viewport would wrongly light the last tab).
+        const doc = document.documentElement;
+        if (doc.scrollHeight - window.innerHeight > 4 && window.innerHeight + window.scrollY >= doc.scrollHeight - 2) {
+          current = categories[categories.length - 1].id;
+        }
+        setActiveCat((prev) => (prev === current ? prev : current));
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [categories]);
+
+  // Keep the active tab centred within the horizontal strip.
+  useEffect(() => {
+    if (activeCat == null) return;
+    const nav = navRef.current;
+    const tab = tabRefs.current.get(activeCat);
+    if (!nav || !tab) return;
+    const navRect = nav.getBoundingClientRect();
+    const tabRect = tab.getBoundingClientRect();
+    const delta = tabRect.left - navRect.left - (nav.clientWidth - tab.clientWidth) / 2;
+    if (Math.abs(delta) < 4) return;
+    // Instant (not smooth): a concurrent smooth scroll here would cancel the
+    // window's smooth scroll when a tab is tapped. The strip still follows crisply.
+    nav.scrollTo({ left: nav.scrollLeft + delta });
+  }, [activeCat]);
+
+  // Tap a tab → smooth-scroll to its section (offset for the sticky nav) and
+  // briefly suppress the spy so it doesn't fight the animation.
+  function goToCategory(id: number) {
+    const el = sectionRefs.current.get(id);
+    if (!el) return;
+    const navH = navRef.current?.getBoundingClientRect().height ?? 0;
+    const y = el.getBoundingClientRect().top + window.scrollY - navH - 8;
+    // Instant jump (not smooth): a concurrent re-render/effect reliably cancels a
+    // programmatic smooth window-scroll here, leaving it stranded a few px down.
+    // Instant scroll can't be cancelled and lands exactly on the tapped section.
+    spyLockUntil.current = Date.now() + 400;
+    setActiveCat(id);
+    window.scrollTo({ top: y, behavior: 'auto' });
+  }
 
   function qtyFor(productId: number, variantId: number | undefined, modifierIds: number[]): number {
     return cart[lineKey(productId, variantId, modifierIds)]?.qty ?? 0;
@@ -220,8 +304,6 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
     }
   }
 
-  const categories = menu.categories.filter((c) => c.products.length > 0);
-
   return (
     <div className="mx-auto max-w-2xl pb-32">
       {/* Editorial header */}
@@ -274,14 +356,22 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         </div>
       </header>
 
-      {/* Sticky category filter tabs */}
+      {/* Sticky category tabs — scroll-spy: highlight & centre the in-view section */}
       {categories.length > 1 && (
-        <nav className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-5 py-3 backdrop-blur">
-          <TabPill active={activeCat === null} onClick={() => setActiveCat(null)}>
-            {t('all')}
-          </TabPill>
+        <nav
+          ref={navRef}
+          className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-5 py-3 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {categories.map((c) => (
-            <TabPill key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
+            <TabPill
+              key={c.id}
+              active={activeCat === c.id}
+              onClick={() => goToCategory(c.id)}
+              refCb={(el) => {
+                if (el) tabRefs.current.set(c.id, el);
+                else tabRefs.current.delete(c.id);
+              }}
+            >
               {c.name}
             </TabPill>
           ))}
@@ -316,8 +406,15 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         />
       )}
 
-      {(activeCat ? categories.filter((c) => c.id === activeCat) : categories).map((c) => (
-        <section key={c.id} className="px-5 pt-6">
+      {categories.map((c) => (
+        <section
+          key={c.id}
+          ref={(el) => {
+            if (el) sectionRefs.current.set(c.id, el);
+            else sectionRefs.current.delete(c.id);
+          }}
+          className="px-5 pt-6"
+        >
           <div className="mb-3 flex items-center gap-3">
             <h2 className="text-lg font-bold text-ink">{c.name}</h2>
             <span className="h-px flex-1 bg-line" />
@@ -403,9 +500,20 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   );
 }
 
-function TabPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function TabPill({
+  active,
+  onClick,
+  refCb,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  refCb?: (el: HTMLButtonElement | null) => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
+      ref={refCb}
       onClick={onClick}
       className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition ${
         active ? 'bg-brand-500 text-white shadow-sm' : 'border border-line bg-surface text-muted hover:border-brand-300'
