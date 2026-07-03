@@ -3,24 +3,26 @@
 namespace Database\Seeders;
 
 use App\Enums\Role;
-use App\Jobs\RecomputeNutrition;
 use App\Models\Allergen;
+use App\Models\Branch;
 use App\Models\Category;
-use App\Models\Ingredient;
 use App\Models\ModifierGroup;
+use App\Models\NutritionSummary;
 use App\Models\Plan;
 use App\Models\Product;
-use App\Models\Recipe;
+use App\Models\Table;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
- * A realistic TRNC demo venue with a menu, recipes and computed nutrition, so
- * the public menu + nutrition engine can be seen end-to-end. Idempotent.
+ * A realistic, full TRNC meze/kebab restaurant so the QR menu looks like a real
+ * venue: 6 categories, ~26 dishes with appetising descriptions, prices, calories
+ * and emoji imagery. Idempotent.
  * Owner login: demo@comiqr.com / password · subdomain: demo
  */
 class DemoMenuSeeder extends Seeder
@@ -53,120 +55,128 @@ class DemoMenuSeeder extends Seeder
                 ],
             );
 
-            $a = fn (string $code) => Allergen::firstWhere('code', $code)?->id;
-
-            // --- Ingredients (per 100 g/ml) ---
-            $hellim = $this->ingredient('Hellim', ['kcal' => 320, 'protein_g' => 21, 'fat_g' => 25, 'saturated_fat_g' => 16, 'sodium_mg' => 700, 'unit_cost' => 220, 'is_vegetarian' => true, 'is_gluten_free' => true], [$a('milk') => false]);
-            $kiyma = $this->ingredient('Dana Kıyma', ['kcal' => 250, 'protein_g' => 26, 'fat_g' => 15, 'saturated_fat_g' => 6, 'sodium_mg' => 75, 'unit_cost' => 320], []);
-            $bulgur = $this->ingredient('Bulgur', ['kcal' => 342, 'protein_g' => 12, 'carb_g' => 76, 'fiber_g' => 18, 'unit_cost' => 40, 'is_vegan' => true, 'is_vegetarian' => true], [$a('gluten') => false]);
-            $zeytin = $this->ingredient('Zeytinyağı', ['unit' => 'ml', 'kcal' => 884, 'fat_g' => 100, 'saturated_fat_g' => 14, 'unit_cost' => 180, 'cost_unit' => 'l', 'is_vegan' => true, 'is_vegetarian' => true, 'is_gluten_free' => true], []);
-            $ekmek = $this->ingredient('Ekmek', ['kcal' => 265, 'protein_g' => 9, 'carb_g' => 49, 'fiber_g' => 3, 'unit_cost' => 30, 'is_vegan' => true, 'is_vegetarian' => true], [$a('gluten') => false]);
-            $ceviz = $this->ingredient('Ceviz', ['kcal' => 654, 'protein_g' => 15, 'fat_g' => 65, 'fiber_g' => 7, 'unit_cost' => 400, 'is_vegan' => true, 'is_vegetarian' => true, 'is_gluten_free' => true], [$a('nuts') => false]);
-            $baklavaHamur = $this->ingredient('Baklava Hamuru', ['kcal' => 310, 'protein_g' => 8, 'carb_g' => 55, 'unit_cost' => 90, 'is_vegetarian' => true], [$a('gluten') => false, $a('eggs') => true]);
-
-            // --- Categories ---
-            $mezeler = $this->category('Mezeler', 1);
-            $anaYemek = $this->category('Ana Yemekler', 2);
-            $tatlilar = $this->category('Tatlılar', 3);
-
-            // --- Products + recipes ---
-            $hellimIzgara = $this->product($mezeler, 'Hellim Izgara', 140, ['tags_json' => ['favorite']], [
-                [$hellim, 150, 'g'], [$zeytin, 10, 'ml'],
-            ]);
-
-            $seftali = $this->product($anaYemek, 'Şeftali Kebabı', 280, ['tags_json' => ['chefs_choice']], [
-                [$kiyma, 220, 'g'], [$bulgur, 120, 'g'], [$ekmek, 60, 'g'],
-            ]);
-
-            $baklava = $this->product($tatlilar, 'Cevizli Baklava', 120, ['tags_json' => ['new']], [
-                [$baklavaHamur, 90, 'g'], [$ceviz, 40, 'g'],
-            ]);
-
-            // --- Branding + product photos (placeholder SVGs) so all 3 menu themes
-            //     (classic/flipbook/modern) render fully. ---
             $tenant->update(['settings_json' => array_merge($tenant->settings_json ?? [], [
-                'logo' => $this->placeholder('demo/logo.svg', 'GM', '#c1502e', 240, 240),
-                'cover' => $this->placeholder('demo/cover.svg', 'Girne Meze Bahçesi', '#8a3d22', 1200, 480),
+                'logo' => $this->emojiImg('demo/logo.svg', '🌿', '#0f766e', 240),
+                'cover' => $this->emojiImg('demo/cover.svg', '🍢', '#14284a', 1200, 480),
                 'sub_title' => 'Girne Meze & Mangal',
                 'timing' => '11:00 - 23:00',
                 'description' => "Kıbrıs'ın en taze mezeleri, mangalda hellim ve közde şeftali kebabı. Deniz manzarasında keyifli bir sofra sizi bekliyor.",
                 'address' => 'Sahil Yolu No:12, Girne / KKTC',
             ])]);
-            $hellimIzgara->update(['image_paths_json' => [$this->placeholder('demo/p-hellim.svg', 'Hellim Izgara', '#d98c5f')]]);
-            $seftali->update(['image_paths_json' => [$this->placeholder('demo/p-kebap.svg', 'Şeftali Kebabı', '#a0522d')]]);
-            $baklava->update(['image_paths_json' => [$this->placeholder('demo/p-baklava.svg', 'Cevizli Baklava', '#b8763a')]]);
 
-            // --- Modifier groups (M1) — optional extras + a required doneness choice ---
+            $branch = Branch::firstOrCreate(['tenant_id' => $tenant->id, 'name' => 'Merkez'], ['is_active' => true, 'timezone' => 'Asia/Nicosia']);
+            foreach (['Masa 1', 'Masa 2', 'Masa 3', 'Masa 4', 'Bahçe 1', 'Bahçe 2'] as $code) {
+                Table::firstOrCreate(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'code' => $code], ['is_active' => true]);
+            }
+
+            // [category, name, price, emoji, description, kcal, diet, allergens]
+            $menu = [
+                'Mezeler' => [
+                    ['Hellim Izgara', 140, '🧀', 'Kıbrıs’ın meşhur hellimi közde altın rengi kızartıldı, taze nane ile.', 320, ['vegetarian', 'gluten_free'], ['milk']],
+                    ['Humus', 90, '🥣', 'Nohut püresi, tahin, zeytinyağı ve kimyon; sıcak pide ile.', 280, ['vegan', 'gluten_free'], []],
+                    ['Cacık', 70, '🥒', 'Süzme yoğurt, salatalık, sarımsak ve nane.', 120, ['vegetarian', 'gluten_free'], ['milk']],
+                    ['Şakşuka', 95, '🍆', 'Kızarmış patlıcan, biber ve domates sos.', 210, ['vegan', 'gluten_free'], []],
+                    ['Girit Ezme', 85, '🫒', 'Beyaz peynir, ceviz ve zeytinyağı ezmesi.', 240, ['vegetarian'], ['milk', 'nuts']],
+                    ['Sigara Böreği', 100, '🥟', 'Peynirli çıtır yufka böreği (5 adet).', 350, ['vegetarian'], ['gluten', 'milk']],
+                ],
+                'Ana Yemekler' => [
+                    ['Şeftali Kebabı', 280, '🍢', 'Közde kuzu kıyma kebabı, közlenmiş biber ve bulgur pilavı ile.', 620, [], ['gluten']],
+                    ['Adana Kebap', 260, '🌶️', 'Acılı el yapımı zırh kıyma kebabı, közlenmiş domates ile.', 580, [], ['gluten']],
+                    ['Izgara Köfte', 220, '🍖', 'Baharatlı ızgara köfte, pilav ve közlenmiş sebze.', 540, [], ['gluten']],
+                    ['Kuzu Şiş', 320, '🍢', 'Marine kuzu şiş, mangalda; közlenmiş sebze ile.', 560, ['gluten_free'], []],
+                    ['Tavuk Şiş', 240, '🍗', 'Marine tavuk göğsü şiş, ızgara.', 480, ['gluten_free'], []],
+                    ['Fırın Kolokas', 260, '🥘', 'Kıbrıs usulü kolokas, kuzu etiyle fırında.', 610, [], []],
+                ],
+                'Deniz Ürünleri' => [
+                    ['Izgara Çipura', 340, '🐟', 'Taze çipura ızgarada, limon ve roka ile.', 420, ['gluten_free'], ['fish']],
+                    ['Kalamar Tava', 280, '🦑', 'Çıtır kalamar halkaları, tartar sos ile.', 460, [], ['gluten', 'eggs']],
+                    ['Karides Güveç', 360, '🦐', 'Domates soslu güveçte karides, kaşar ile.', 490, ['gluten_free'], ['milk']],
+                ],
+                'Salatalar' => [
+                    ['Çoban Salata', 80, '🥗', 'Domates, salatalık, biber, soğan ve maydanoz.', 90, ['vegan', 'gluten_free'], []],
+                    ['Akdeniz Salatası', 110, '🥗', 'Roka, beyaz peynir, ceviz, nar ekşili sos.', 260, ['vegetarian', 'gluten_free'], ['milk', 'nuts']],
+                ],
+                'Tatlılar' => [
+                    ['Cevizli Baklava', 120, '🍯', 'El açması yufka, ceviz ve hafif şerbet.', 480, ['vegetarian'], ['gluten', 'nuts']],
+                    ['Ekmek Kadayıfı', 110, '🍮', 'Şerbetli kadayıf, bol kaymak ile.', 520, ['vegetarian'], ['gluten', 'milk']],
+                    ['Fırın Sütlaç', 80, '🍚', 'Fırında Kıbrıs sütlacı, tarçınlı.', 300, ['vegetarian', 'gluten_free'], ['milk']],
+                    ['Sakızlı Dondurma', 90, '🍨', 'Maraş usulü sakızlı dondurma (3 top).', 350, ['vegetarian', 'gluten_free'], ['milk']],
+                ],
+                'İçecekler' => [
+                    ['Ayran', 40, '🥛', 'Ev yapımı köpüklü ayran.', 90, ['vegetarian', 'gluten_free'], ['milk']],
+                    ['Taze Portakal Suyu', 70, '🍊', 'Günlük sıkma portakal suyu.', 120, ['vegan', 'gluten_free'], []],
+                    ['Türk Kahvesi', 60, '☕', 'Közde pişmiş Türk kahvesi, lokum ile.', 20, ['vegan', 'gluten_free'], []],
+                    ['Kıbrıs Çayı', 25, '🫖', 'Demli ince belli çay.', 5, ['vegan', 'gluten_free'], []],
+                ],
+            ];
+
+            $products = [];
+            $sort = 1;
+            foreach ($menu as $catName => $dishes) {
+                $cat = Category::updateOrCreate(['tenant_id' => $tenant->id, 'name' => $catName], ['sort' => $sort++, 'is_active' => true]);
+                foreach ($dishes as $d) {
+                    $products[$d[0]] = $this->dish($cat, $d[0], $d[1], $d[2], $d[3], $d[4], $d[5], $d[6]);
+                }
+            }
+
+            // Modifier groups (M1) — a few real add-on / choice sets.
             $extras = $this->modifierGroup('Ekstra Malzeme', ['min_select' => 0, 'max_select' => 3, 'is_required' => false], [
                 ['name' => 'Ekstra Hellim', 'price_delta' => 40],
                 ['name' => 'Acılı Sos', 'price_delta' => 0],
                 ['name' => 'Ceviz', 'price_delta' => 25],
             ]);
-            $hellimIzgara->modifierGroups()->syncWithoutDetaching([$extras->id]);
+            $products['Hellim Izgara']->modifierGroups()->syncWithoutDetaching([$extras->id]);
+            $products['Girit Ezme']->modifierGroups()->syncWithoutDetaching([$extras->id]);
 
             $doneness = $this->modifierGroup('Pişme Derecesi', ['min_select' => 1, 'max_select' => 1, 'is_required' => true], [
                 ['name' => 'Az Pişmiş', 'price_delta' => 0],
                 ['name' => 'Orta', 'price_delta' => 0],
                 ['name' => 'İyi Pişmiş', 'price_delta' => 0],
             ]);
-            $seftali->modifierGroups()->syncWithoutDetaching([$doneness->id]);
-
-            // Recompute nutrition for every product with a recipe.
-            Product::whereHas('recipe')->pluck('id')
-                ->each(fn ($id) => RecomputeNutrition::dispatch($tenant->id, $id));
+            foreach (['Şeftali Kebabı', 'Adana Kebap', 'Kuzu Şiş', 'Izgara Köfte'] as $name) {
+                $products[$name]->modifierGroups()->syncWithoutDetaching([$doneness->id]);
+            }
         });
     }
 
-    /** Write a simple labelled SVG to the public disk and return its media URL. */
-    private function placeholder(string $path, string $label, string $bg, int $w = 800, int $h = 600): string
-    {
-        $font = max(18, (int) ($w / max(6, mb_strlen($label) * 0.7)));
-        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'">'
-            .'<rect width="100%" height="100%" fill="'.$bg.'"/>'
-            .'<text x="50%" y="50%" font-family="Georgia, serif" font-size="'.$font.'" fill="#ffffff" '
-            .'text-anchor="middle" dominant-baseline="middle">'.htmlspecialchars($label, ENT_QUOTES).'</text></svg>';
-
-        Storage::disk('public')->put($path, $svg);
-
-        return url('/v1/media/'.$path);
-    }
-
-    private function ingredient(string $name, array $attrs, array $allergens): Ingredient
-    {
-        $ingredient = Ingredient::updateOrCreate(
-            ['name' => $name],
-            array_merge(['unit' => 'g', 'cost_unit' => 'kg', 'waste_pct' => 5, 'data_source' => 'manual'], $attrs),
-        );
-
-        $sync = [];
-        foreach ($allergens as $id => $trace) {
-            if ($id) {
-                $sync[$id] = ['trace' => $trace];
-            }
-        }
-        $ingredient->allergens()->sync($sync);
-
-        return $ingredient;
-    }
-
-    private function category(string $name, int $sort): Category
-    {
-        return Category::updateOrCreate(['name' => $name], ['sort' => $sort, 'is_active' => true]);
-    }
-
-    /** @param array<int,array{0:Ingredient,1:float,2:string}> $items */
-    private function product(Category $category, string $name, float $price, array $extra, array $items): Product
+    /** Create a dish with description, emoji image and a ready nutrition summary. */
+    private function dish(Category $cat, string $name, float $price, string $emoji, string $desc, int $kcal, array $diet, array $allergens): Product
     {
         $product = Product::updateOrCreate(
-            ['category_id' => $category->id, 'name' => $name],
-            array_merge(['price' => $price, 'is_active' => true, 'calories_display' => true], $extra),
+            ['category_id' => $cat->id, 'name' => $name],
+            [
+                'price' => $price,
+                'description' => $desc,
+                'is_active' => true,
+                'calories_display' => true,
+                'image_paths_json' => [$this->emojiImg('demo/'.Str::slug($name).'.svg', $emoji, '#eef1f6')],
+            ],
         );
 
-        $recipe = Recipe::updateOrCreate(['product_id' => $product->id], ['yield_portions' => 1]);
-        $recipe->items()->delete();
-        foreach ($items as [$ingredient, $qty, $unit]) {
-            $recipe->items()->create(['ingredient_id' => $ingredient->id, 'quantity' => $qty, 'unit' => $unit]);
-        }
+        $vegan = in_array('vegan', $diet, true);
+        $ids = array_values(array_filter(array_map(fn ($c) => Allergen::firstWhere('code', $c)?->id, $allergens)));
+
+        NutritionSummary::updateOrCreate(
+            ['product_id' => $product->id],
+            [
+                'per_portion_kcal' => $kcal,
+                'protein_g' => max(1, round($kcal * 0.05)),
+                'carb_g' => max(1, round($kcal * 0.10)),
+                'fat_g' => max(1, round($kcal * 0.04)),
+                'saturated_fat_g' => max(0, round($kcal * 0.015)),
+                'sugar_g' => 4,
+                'fiber_g' => 3,
+                'sodium_mg' => 420,
+                'allergen_ids_json' => ['contains' => $ids, 'traces' => []],
+                'diet_flags_json' => [
+                    'vegan' => $vegan,
+                    'vegetarian' => $vegan || in_array('vegetarian', $diet, true),
+                    'gluten_free' => in_array('gluten_free', $diet, true),
+                ],
+                'is_stale' => false,
+                'computed_at' => now(),
+            ],
+        );
 
         return $product;
     }
@@ -178,12 +188,25 @@ class DemoMenuSeeder extends Seeder
     private function modifierGroup(string $name, array $attrs, array $options): ModifierGroup
     {
         $group = ModifierGroup::updateOrCreate(['name' => $name], $attrs);
-
         $group->modifiers()->delete();
         foreach ($options as $sort => $option) {
             $group->modifiers()->create($option + ['sort' => $sort]);
         }
 
         return $group;
+    }
+
+    /** A clean emoji-on-tint square, served from the public disk. */
+    private function emojiImg(string $path, string $emoji, string $bg, int $w = 400, int $h = 0): string
+    {
+        $h = $h ?: $w;
+        $size = (int) ($h * 0.5);
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'">'
+            .'<rect width="100%" height="100%" fill="'.$bg.'"/>'
+            .'<text x="50%" y="50%" font-size="'.$size.'" text-anchor="middle" dominant-baseline="central">'.$emoji.'</text></svg>';
+
+        Storage::disk('public')->put($path, $svg);
+
+        return url('/v1/media/'.$path);
     }
 }

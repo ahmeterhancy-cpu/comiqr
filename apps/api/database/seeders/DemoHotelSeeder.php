@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\DiningArea;
+use App\Models\NutritionSummary;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Product;
@@ -18,6 +19,7 @@ use App\Support\Tenancy\TenantManager;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * A demo HOTEL venue (Faz 3 vertical) so the room-service + "charge to room"
@@ -62,8 +64,8 @@ class DemoHotelSeeder extends Seeder
                 'timing' => '24 saat',
                 'description' => 'Odanızın konforunda taze oda servisi. QR ile sipariş verin, dilerseniz oda hesabınıza yansıtın.',
                 'address' => 'Sahil Yolu No:1, Girne / KKTC',
-                'logo' => $this->placeholder('demo-otel/logo.svg', 'DK', '#1e5f74', 240, 240),
-                'cover' => $this->placeholder('demo-otel/cover.svg', 'Deniz Kızı Otel', '#14495a', 1200, 480),
+                'logo' => $this->emojiImg('demo-otel/logo.svg', '🌊', '#14495a', 240),
+                'cover' => $this->emojiImg('demo-otel/cover.svg', '🛏️', '#14284a', 1200, 480),
             ])]);
 
             $branch = Branch::firstOrCreate(
@@ -82,14 +84,41 @@ class DemoHotelSeeder extends Seeder
                 ['is_active' => true],
             ));
 
-            $cat = Category::updateOrCreate(
-                ['tenant_id' => $tenant->id, 'name' => 'Oda Servisi'],
-                ['sort' => 1, 'is_active' => true],
-            );
+            // [name, price, emoji, description, kcal, vegetarian]
+            $menu = [
+                'Kahvaltı' => [
+                    ['Serpme Kahvaltı', 450, '🍳', 'Zengin Kıbrıs kahvaltısı: hellim, zeytin, reçeller ve sıcak ekmek.', 720, false],
+                    ['Menemen', 220, '🍅', 'Domates, biber ve yumurta ile köy usulü.', 380, true],
+                    ['Sahanda Omlet', 180, '🍳', 'Peynirli ya da sebzeli sahanda omlet.', 320, true],
+                ],
+                'Sıcaklar' => [
+                    ['Club Sandviç', 280, '🥪', 'Tavuk, domates, marul ve patates kızartması ile.', 640, false],
+                    ['Cheeseburger', 320, '🍔', '180gr köfte, cheddar ve ev yapımı sos.', 780, false],
+                    ['Izgara Tavuk', 300, '🍗', 'Marine tavuk göğsü, mevsim sebzeleri ile.', 520, false],
+                    ['Penne Arrabbiata', 260, '🍝', 'Acılı domates soslu penne.', 560, true],
+                    ['Sezar Salata', 240, '🥗', 'Marul, ızgara tavuk, parmesan ve kraker.', 420, false],
+                ],
+                'Tatlı & İçecek' => [
+                    ['Cheesecake', 180, '🍰', 'Frambuazlı New York usulü cheesecake.', 450, true],
+                    ['Meyve Tabağı', 150, '🍓', 'Mevsim meyveleri tabağı.', 160, true],
+                    ['Taze Portakal Suyu', 120, '🍊', 'Günlük sıkma portakal suyu.', 120, true],
+                    ['Kola', 90, '🥤', 'Soğuk kutu kola.', 140, true],
+                    ['Su', 40, '💧', '0.5L doğal kaynak suyu.', 0, true],
+                    ['Kahve', 110, '☕', 'Espresso, Americano veya Latte.', 15, true],
+                ],
+            ];
 
-            $kahvalti = $this->product($cat, 'Serpme Kahvaltı', 450, 'Kahvalti', '#e8a33d');
-            $sandvic = $this->product($cat, 'Club Sandviç', 280, 'Sandvic', '#c96f3a');
-            $suyu = $this->product($cat, 'Taze Portakal Suyu', 120, 'Portakal', '#e88a1a');
+            $products = [];
+            $sort = 1;
+            foreach ($menu as $catName => $dishes) {
+                $c = Category::updateOrCreate(['tenant_id' => $tenant->id, 'name' => $catName], ['sort' => $sort++, 'is_active' => true]);
+                foreach ($dishes as $d) {
+                    $products[$d[0]] = $this->dish($c, $d[0], $d[1], $d[2], $d[3], $d[4], $d[5]);
+                }
+            }
+
+            $kahvalti = $products['Serpme Kahvaltı'];
+            $suyu = $products['Taze Portakal Suyu'];
 
             // Leave room 101 with an open folio so the front-desk view isn't empty.
             $room101 = $roomTables->firstWhere('code', '101');
@@ -130,26 +159,45 @@ class DemoHotelSeeder extends Seeder
         });
     }
 
-    private function product(Category $category, string $name, float $price, string $label, string $bg): Product
+    private function dish(Category $cat, string $name, float $price, string $emoji, string $desc, int $kcal, bool $veg): Product
     {
         $product = Product::updateOrCreate(
-            ['category_id' => $category->id, 'name' => $name],
-            ['price' => $price, 'is_active' => true, 'calories_display' => false],
+            ['category_id' => $cat->id, 'name' => $name],
+            [
+                'price' => $price,
+                'description' => $desc,
+                'is_active' => true,
+                'calories_display' => $kcal > 0,
+                'image_paths_json' => [$this->emojiImg('demo-otel/'.Str::slug($name).'.svg', $emoji, '#eef1f6')],
+            ],
         );
 
-        $product->update(['image_paths_json' => [$this->placeholder('demo-otel/p-'.$label.'.svg', $name, $bg)]]);
+        NutritionSummary::updateOrCreate(['product_id' => $product->id], [
+            'per_portion_kcal' => $kcal,
+            'protein_g' => max(1, round($kcal * 0.05)),
+            'carb_g' => max(1, round($kcal * 0.11)),
+            'fat_g' => max(1, round($kcal * 0.04)),
+            'saturated_fat_g' => max(0, round($kcal * 0.015)),
+            'sugar_g' => 5,
+            'fiber_g' => 2,
+            'sodium_mg' => 400,
+            'allergen_ids_json' => ['contains' => [], 'traces' => []],
+            'diet_flags_json' => ['vegan' => false, 'vegetarian' => $veg, 'gluten_free' => false],
+            'is_stale' => false,
+            'computed_at' => now(),
+        ]);
 
         return $product;
     }
 
-    /** Write a simple labelled SVG to the public disk and return its media URL. */
-    private function placeholder(string $path, string $label, string $bg, int $w = 800, int $h = 600): string
+    /** A clean emoji-on-tint square, served from the public disk. */
+    private function emojiImg(string $path, string $emoji, string $bg, int $w = 400, int $h = 0): string
     {
-        $font = max(18, (int) ($w / max(6, mb_strlen($label) * 0.7)));
+        $h = $h ?: $w;
+        $size = (int) ($h * 0.5);
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'.$w.'" height="'.$h.'" viewBox="0 0 '.$w.' '.$h.'">'
             .'<rect width="100%" height="100%" fill="'.$bg.'"/>'
-            .'<text x="50%" y="50%" font-family="Georgia, serif" font-size="'.$font.'" fill="#ffffff" '
-            .'text-anchor="middle" dominant-baseline="middle">'.htmlspecialchars($label, ENT_QUOTES).'</text></svg>';
+            .'<text x="50%" y="50%" font-size="'.$size.'" text-anchor="middle" dominant-baseline="central">'.$emoji.'</text></svg>';
 
         Storage::disk('public')->put($path, $svg);
 
