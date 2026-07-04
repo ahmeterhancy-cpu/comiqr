@@ -21,7 +21,7 @@ class Order extends Model
 
     protected $fillable = [
         'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'type', 'charged_to_room', 'status', 'payment_status',
-        'subtotal', 'discount_total', 'tip_total', 'tax_total', 'delivery_fee', 'grand_total', 'note',
+        'subtotal', 'discount_total', 'discount_source', 'tip_total', 'tax_total', 'delivery_fee', 'grand_total', 'note',
         'contact_phone', 'address', 'placed_at',
     ];
 

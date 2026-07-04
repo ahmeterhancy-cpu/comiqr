@@ -11,22 +11,66 @@ use App\Models\Table;
 use App\Models\TableSession;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use App\Support\Restaurant\RestaurantSettings;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /**
- * Staff POS (Faz 3): a waiter/cashier creates an order for a guest — dine-in on
- * a table, or a counter/takeaway order — and settles it in person (cash or card
- * at the counter). Reuses OrderService + PaymentService; orders are tagged
+ * Staff POS (Faz 3 — ultra POS): a waiter/cashier builds an order for a guest —
+ * dine-in on a table, or a counter/takeaway order — recalls open tabs, adds or
+ * voids lines, applies a discount, and settles it (cash/card, split, or charged
+ * to a room folio). Reuses OrderService + PaymentService; POS orders are tagged
  * source = 'pos' and broadcast to the KDS like any other.
  */
 class PosController extends Controller
 {
+    private const ITEM_RULES = [
+        'items' => ['required', 'array', 'min:1'],
+        'items.*.product_id' => ['required', 'integer'],
+        'items.*.variant_id' => ['nullable', 'integer'],
+        'items.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
+        'items.*.modifiers' => ['nullable', 'array'],
+        'items.*.modifiers.*' => ['integer'],
+        'items.*.note' => ['nullable', 'string', 'max:200'],
+    ];
+
     public function __construct(
         protected OrderService $orders,
         protected PaymentService $payments,
     ) {}
+
+    /** GET /admin/pos/orders — recall open tabs (or today's) to add to / settle. */
+    public function orders(Request $request): JsonResponse
+    {
+        $scope = $request->query('scope', 'open');
+        $branchId = $request->query('branch_id');
+
+        $query = Order::query()
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->with(['items.product', 'tableSession.table.diningArea'])
+            ->latest('placed_at')
+            ->limit(100);
+
+        if ($scope === 'today') {
+            $tz = app(TenantManager::class)->get()?->timezone ?? config('app.timezone');
+            $query->whereDate('placed_at', now($tz)->toDateString());
+        } else {
+            $query->where('status', '!=', 'cancelled')->where('payment_status', '!=', 'paid');
+        }
+
+        $orders = $query->get()->map(function (Order $order) use ($request) {
+            $table = $order->tableSession?->table;
+
+            return (new OrderResource($order))->toArray($request) + [
+                'table_code' => $table?->code,
+                'area_type' => $table?->diningArea?->type,
+            ];
+        });
+
+        return response()->json(['data' => $orders]);
+    }
 
     /** POST /admin/pos/orders — create a dine-in (table) or takeaway order. */
     public function order(Request $request): JsonResponse
@@ -34,14 +78,8 @@ class PosController extends Controller
         $data = $request->validate([
             'table_id' => ['nullable', Rule::exists('tables', 'id')],
             'branch_id' => ['nullable', Rule::exists('branches', 'id')],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer'],
-            'items.*.variant_id' => ['nullable', 'integer'],
-            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
-            'items.*.modifiers' => ['nullable', 'array'],
-            'items.*.modifiers.*' => ['integer'],
             'note' => ['nullable', 'string', 'max:500'],
-        ]);
+        ] + self::ITEM_RULES);
 
         if (! empty($data['table_id'])) {
             // Table is tenant-scoped by the global scope → foreign tables 404 here.
@@ -61,22 +99,114 @@ class PosController extends Controller
         $order->update(['source' => 'pos']);
         OrderPlaced::dispatch($order);
 
-        return response()->json(['data' => new OrderResource($order->load('items'))], 201);
+        return response()->json(['data' => new OrderResource($order->load('items.product'))], 201);
     }
 
-    /** POST /admin/pos/orders/{order}/pay — settle at the counter (cash | card). */
+    /** POST /admin/pos/orders/{order}/items — add another round to an open tab. */
+    public function addItems(Request $request, string $order): JsonResponse
+    {
+        $data = $request->validate(self::ITEM_RULES);
+
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Ödenmiş siparişe ürün eklenemez.');
+
+        $this->orders->addItems($model, $data['items']);
+        OrderPlaced::dispatch($model); // push the new round to the KDS
+
+        return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
+    }
+
+    /** POST /admin/pos/orders/{order}/items/{item}/void — remove a line (unpaid). */
+    public function voidItem(string $order, string $item): JsonResponse
+    {
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Ödenmiş siparişten ürün çıkarılamaz.');
+
+        $line = $model->items()->findOrFail($item);
+        $line->update(['status' => 'cancelled', 'line_total' => 0]);
+
+        $model->recalculateTotals();
+        // A now-oversized discount (bigger than the shrunken subtotal) is clamped.
+        if ((float) $model->discount_total > (float) $model->subtotal) {
+            $model->update(['discount_total' => $model->subtotal]);
+            $model->recalculateTotals();
+        }
+        $model->refreshStatusFromItems();
+
+        return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
+    }
+
+    /** POST /admin/pos/orders/{order}/discount — manual order discount (unpaid). */
+    public function discount(Request $request, string $order): JsonResponse
+    {
+        $data = $request->validate([
+            'type' => ['required', Rule::in(['percent', 'amount'])],
+            'value' => ['required', 'numeric', 'min:0'],
+            'reason' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Ödenmiş siparişe indirim uygulanamaz.');
+
+        $subtotal = (float) $model->subtotal;
+        $amount = $data['type'] === 'percent'
+            ? round($subtotal * min(100, (float) $data['value']) / 100, 2)
+            : (float) $data['value'];
+        $amount = max(0, min($amount, $subtotal)); // never below zero, never over subtotal
+
+        // Tag manual discounts so a later happy-hour recompute won't erase them;
+        // clearing the discount (0) hands control back to the automatic rules.
+        $model->update([
+            'discount_total' => $amount,
+            'discount_source' => $amount > 0 ? 'manual' : null,
+        ]);
+        $model->recalculateTotals();
+
+        return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
+    }
+
+    /** POST /admin/pos/orders/{order}/charge-to-room — defer to a folio (hotel/beach). */
+    public function chargeRoom(string $order): JsonResponse
+    {
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Ödenmiş sipariş odaya yazılamaz.');
+
+        $tenant = app(TenantManager::class)->get();
+        abort_unless(
+            RestaurantSettings::foliosEnabled($tenant?->settings_json ?? []),
+            422,
+            'Oda/şezlong folyosu bu işletmede kapalı.',
+        );
+
+        $model->update(['charged_to_room' => true]);
+
+        return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
+    }
+
+    /** POST /admin/pos/orders/{order}/pay — settle at the counter (cash | card, split). */
     public function pay(Request $request, string $order): JsonResponse
     {
         $data = $request->validate([
             'gateway' => ['nullable', Rule::in(['cash', 'card'])],
+            'amount' => ['nullable', 'numeric', 'min:0.01'], // partial → bill split
             'tip' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $model = Order::findOrFail($order);
         abort_if($model->payment_status === 'paid', 422, 'Sipariş zaten ödendi.');
 
-        $this->payments->initiate($model, $data['gateway'] ?? 'cash', (float) ($data['tip'] ?? 0));
+        $this->payments->initiate(
+            $model,
+            $data['gateway'] ?? 'cash',
+            (float) ($data['tip'] ?? 0),
+            isset($data['amount']) ? (float) $data['amount'] : null,
+        );
 
-        return response()->json(['data' => new OrderResource($model->fresh('items'))]);
+        $fresh = $model->fresh('items.product');
+
+        return response()->json([
+            'data' => new OrderResource($fresh),
+            'meta' => ['outstanding' => $this->payments->outstandingFor($fresh)],
+        ]);
     }
 }

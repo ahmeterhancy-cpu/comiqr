@@ -318,12 +318,49 @@ export class ApiClient {
     return this.request(`/admin/reviews/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
   }
 
-  // --- Staff POS (Faz 3) — waiter creates + settles an order at the counter ---
+  // --- Staff POS (Faz 3 — ultra POS) — build, recall, discount, void, settle ---
+  posOrders(params?: { scope?: 'open' | 'today'; branch_id?: number }): Promise<any[]> {
+    const q = new URLSearchParams();
+    if (params?.scope) q.set('scope', params.scope);
+    if (params?.branch_id) q.set('branch_id', String(params.branch_id));
+    const qs = q.toString();
+    return this.request(`/admin/pos/orders${qs ? `?${qs}` : ''}`);
+  }
   posOrder(body: { table_id?: number; branch_id?: number; items: unknown[]; note?: string }): Promise<any> {
     return this.request('/admin/pos/orders', { method: 'POST', body: JSON.stringify(body) });
   }
-  posPay(orderId: number, gateway: 'cash' | 'card'): Promise<any> {
-    return this.request(`/admin/pos/orders/${orderId}/pay`, { method: 'POST', body: JSON.stringify({ gateway }) });
+  posAddItems(orderId: number, items: unknown[]): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/items`, { method: 'POST', body: JSON.stringify({ items }) });
+  }
+  posVoidItem(orderId: number, itemId: number): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/items/${itemId}/void`, { method: 'POST' });
+  }
+  posDiscount(orderId: number, body: { type: 'percent' | 'amount'; value: number; reason?: string }): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/discount`, { method: 'POST', body: JSON.stringify(body) });
+  }
+  posChargeRoom(orderId: number): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/charge-to-room`, { method: 'POST' });
+  }
+  posPay(orderId: number, gateway: 'cash' | 'card', opts?: { amount?: number; tip?: number }): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify({ gateway, ...(opts ?? {}) }),
+    });
+  }
+
+  // --- POS cash-drawer shift (Z-report) ---
+  posShift(branchId?: number): Promise<any | null> {
+    // A "no open shift" response is {data:null}; request() unwraps that to the
+    // envelope (truthy), so normalise it back to a real shift object or null.
+    return this.request<any>(`/admin/pos/shift/current${branchId ? `?branch_id=${branchId}` : ''}`).then((r) =>
+      r && r.status ? r : null,
+    );
+  }
+  posOpenShift(body: { opening_float?: number; branch_id?: number }): Promise<any> {
+    return this.request('/admin/pos/shift/open', { method: 'POST', body: JSON.stringify(body) });
+  }
+  posCloseShift(shiftId: number, body: { counted_cash: number; note?: string }): Promise<any> {
+    return this.request(`/admin/pos/shift/${shiftId}/close`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   adminBranches(): Promise<any[]> {

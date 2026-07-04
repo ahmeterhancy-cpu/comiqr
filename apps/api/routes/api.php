@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
 use App\Http\Controllers\Api\Admin\RestaurantMediaController;
 use App\Http\Controllers\Api\Admin\PosController;
+use App\Http\Controllers\Api\Admin\PosShiftController;
 use App\Http\Controllers\Api\Admin\ProductVariantController;
 use App\Http\Controllers\Api\Admin\RecipeController;
 use App\Http\Controllers\Api\Admin\StockController;
@@ -214,10 +215,20 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/reviews/{review}/status', [ReviewController::class, 'setStatus']);
         });
 
-        // --- Staff POS (Faz 3) — waiter+, ordering plan; create + settle at counter ---
+        // --- Staff POS (Faz 3 — ultra POS) — waiter+, ordering plan ---
         Route::middleware(['role:waiter', 'plan:ordering'])->group(function () {
+            Route::get('admin/pos/orders', [PosController::class, 'orders']);
             Route::post('admin/pos/orders', [PosController::class, 'order'])->middleware('throttle:120,1');
+            Route::post('admin/pos/orders/{order}/items', [PosController::class, 'addItems'])->middleware('throttle:120,1');
+            Route::post('admin/pos/orders/{order}/items/{item}/void', [PosController::class, 'voidItem'])->middleware('throttle:120,1');
+            Route::post('admin/pos/orders/{order}/discount', [PosController::class, 'discount'])->middleware('throttle:120,1');
+            Route::post('admin/pos/orders/{order}/charge-to-room', [PosController::class, 'chargeRoom'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/pay', [PosController::class, 'pay'])->middleware('throttle:120,1');
+
+            // Cash-drawer shift (Z-report).
+            Route::get('admin/pos/shift/current', [PosShiftController::class, 'current']);
+            Route::post('admin/pos/shift/open', [PosShiftController::class, 'open'])->middleware('throttle:60,1');
+            Route::post('admin/pos/shift/{shift}/close', [PosShiftController::class, 'close'])->middleware('throttle:60,1');
         });
 
         // --- Analytics (M9) — manager+, plan-gated ---

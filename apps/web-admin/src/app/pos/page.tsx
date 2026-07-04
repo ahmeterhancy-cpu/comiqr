@@ -1,10 +1,20 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AdminShell } from '@/components/AdminShell';
-import { Button, Card, Input } from '@/components/ui';
+import { useRouter } from 'next/navigation';
 import { getActiveBranchId } from '@/lib/branch';
 import { useApi } from '@/lib/useApi';
+import {
+  Customizer,
+  DiscountModal,
+  Modal,
+  money,
+  PaymentModal,
+  printReceipt,
+  RecallDrawer,
+  ShiftModal,
+  TableMapModal,
+} from '@/components/pos-kit';
 
 type Line = {
   key: string;
@@ -20,40 +30,92 @@ type Line = {
 const lineKey = (pid: number, vid: number | undefined, mods: number[]) =>
   `${pid}:${vid ?? 0}:${[...mods].sort((a, b) => a - b).join(',')}`;
 
-/** Staff POS (Faz 3): waiter/cashier builds an order and settles at the counter. */
+const productImg = (p: any): string | undefined => p?.images?.[0] ?? p?.image_paths_json?.[0] ?? p?.image_path;
+
+/**
+ * Ultra POS (Faz 3) — a full-screen, independent cashier terminal (no admin
+ * sidebar). Build a ticket from the product grid, seat it at a table, add rounds
+ * to open tabs, discount, void, and settle with split cash/card, room charge or
+ * a printed receipt — plus a cash-drawer shift with a Z-report.
+ */
 export default function PosPage() {
+  const router = useRouter();
   const { api, me, ready } = useApi();
-  const currency = me?.tenant?.currency ?? 'TRY';
+  const currency = (me?.tenant as any)?.currency ?? 'TRY';
+  const venueName = (me?.tenant as any)?.name ?? 'ComiQR';
+  const vertical = (me?.tenant as any)?.settings?.vertical ?? 'restaurant';
+  const canRoomCharge = ['hotel', 'beach'].includes(vertical);
+
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [tables, setTables] = useState<any[]>([]);
+  const [shift, setShift] = useState<any | null>(null);
+  const [activeBranch, setActiveBranch] = useState<number | null>(null);
   const [activeCat, setActiveCat] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+
   const [cart, setCart] = useState<Record<string, Line>>({});
-  const [tableId, setTableId] = useState<number | ''>('');
-  const [note, setNote] = useState('');
-  const [customizing, setCustomizing] = useState<any | null>(null);
   const [order, setOrder] = useState<any | null>(null);
+  const [orderType, setOrderType] = useState<'table' | 'takeaway'>('table');
+  const [tableId, setTableId] = useState<number | null>(null);
+  const [tableCode, setTableCode] = useState<string | null>(null);
+  const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState<Date>(() => new Date());
+
+  // Modals
+  const [customizing, setCustomizing] = useState<any | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [showDiscount, setShowDiscount] = useState(false);
+  const [payOrder, setPayOrder] = useState<any | null>(null);
+  const [showRecall, setShowRecall] = useState(false);
+  const [recallOrders, setRecallOrders] = useState<any[]>([]);
+  const [showShift, setShowShift] = useState(false);
+  const [receipt, setReceipt] = useState<any | null>(null);
 
   const load = useCallback(async () => {
-    const [ps, cs, ts] = await Promise.all([api.adminProducts(), api.adminCategories(), api.adminTables()]);
+    const stored = getActiveBranchId();
+    const [ps, cs, ts, bs] = await Promise.all([
+      api.adminProducts(),
+      api.adminCategories(),
+      api.adminTables(),
+      api.adminBranches().catch(() => [] as any[]),
+    ]);
+    // Validate the stored branch against the tenant's real branches so a stale or
+    // foreign id can't be baked into every write (order/pay/shift would 404).
+    const branch = bs.find((b: any) => b.id === stored)?.id ?? bs[0]?.id ?? null;
+    setActiveBranch(branch);
     setProducts(ps.filter((p: any) => p.is_active));
     setCategories(cs);
-    setActiveCat(cs[0]?.id ?? null);
     setTables(ts);
+    setShift(await api.posShift(branch ?? undefined).catch(() => null));
   }, [api]);
 
   useEffect(() => {
     if (ready) load();
   }, [ready, load]);
 
-  const shown = useMemo(
-    () => products.filter((p) => (activeCat ? p.category_id === activeCat : true)),
-    [products, activeCat],
-  );
-  const fmt = (n: number) => `${Number(n).toLocaleString('tr-TR')} ${currency}`;
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
+  const productName = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const p of products) m.set(p.id, p.name);
+    return (id: number) => m.get(id) ?? `#${id}`;
+  }, [products]);
+
+  const shown = useMemo(() => {
+    const q = search.trim().toLocaleLowerCase('tr');
+    return products.filter(
+      (p) =>
+        (activeCat ? p.category_id === activeCat : true) && (q ? p.name.toLocaleLowerCase('tr').includes(q) : true),
+    );
+  }, [products, activeCat, search]);
+
+  // --- Cart ---------------------------------------------------------------
   function pick(product: any) {
     const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
     if (hasOptions) setCustomizing(product);
@@ -87,252 +149,496 @@ export default function PosPage() {
     });
   }
 
-  const lines = Object.values(cart);
-  const total = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
+  const cartLines = Object.values(cart);
+  const cartTotal = cartLines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
+  const committedItems = (order?.items ?? []).filter((i: any) => i.status !== 'cancelled');
+  const runningSubtotal = Number(order?.subtotal ?? 0) + cartTotal;
+  const discountTotal = Number(order?.discount_total ?? 0);
+  const grandTotal = Number(order?.grand_total ?? 0) + cartTotal;
 
-  async function sendToKitchen() {
-    if (lines.length === 0) return;
-    setBusy(true);
+  function itemsPayload() {
+    return cartLines.map((l) => ({
+      product_id: l.product.id,
+      variant_id: l.variantId,
+      quantity: l.qty,
+      modifiers: l.modifierIds,
+    }));
+  }
+
+  function resetTicket() {
+    setOrder(null);
+    setCart({});
+    setNote('');
+    setTableId(null);
+    setTableCode(null);
+    setOrderType('table');
     setError(null);
+  }
+
+  /** Persist any pending cart lines (create the order or add a round). */
+  async function send(): Promise<any | null> {
+    setError(null);
+    const items = itemsPayload();
+    if (items.length === 0) return order;
+    // A dine-in ticket must be seated before it is sent — otherwise it would
+    // silently become a takeaway. Prompt for the table instead.
+    if (!order && orderType === 'table' && !tableId) {
+      setShowMap(true);
+      return null;
+    }
+    setBusy(true);
     try {
-      const res = await api.posOrder({
-        table_id: tableId || undefined,
-        branch_id: getActiveBranchId() ?? undefined,
-        items: lines.map((l) => ({
-          product_id: l.product.id,
-          variant_id: l.variantId,
-          quantity: l.qty,
-          modifiers: l.modifierIds,
-        })),
-        note: note || undefined,
-      });
+      const res = order
+        ? await api.posAddItems(order.id, items)
+        : await api.posOrder({
+            table_id: orderType === 'table' && tableId ? tableId : undefined,
+            branch_id: activeBranch ?? undefined,
+            items,
+            note: note || undefined,
+          });
       setOrder(res);
       setCart({});
-      setNote('');
-    } catch (e) {
-      setError((e as { message?: string })?.message ?? 'Sipariş oluşturulamadı.');
+      return res;
+    } catch (e: any) {
+      setError(e?.message ?? 'Sipariş kaydedilemedi.');
+      return null;
     } finally {
       setBusy(false);
     }
   }
 
-  async function pay(gateway: 'cash' | 'card') {
+  async function onSendToKitchen() {
+    if (cartLines.length === 0) return;
+    await send();
+  }
+
+  async function onPay() {
+    const o = await send();
+    if (!o || (o.items ?? []).filter((i: any) => i.status !== 'cancelled').length === 0) return;
+    setPayOrder(o);
+  }
+
+  async function onDiscount() {
+    const o = await send();
+    if (!o) return;
+    setOrder(o);
+    setShowDiscount(true);
+  }
+
+  async function applyDiscount(type: 'percent' | 'amount', value: number, reason?: string) {
+    setShowDiscount(false);
     if (!order) return;
-    setBusy(true);
     try {
-      await api.posPay(order.id, gateway);
-      setOrder(null);
-      setTableId('');
-    } catch {
-      setError('Tahsilat başarısız.');
-    } finally {
-      setBusy(false);
+      const res = await api.posDiscount(order.id, { type, value, reason });
+      setOrder(res);
+    } catch (e: any) {
+      setError(e?.message ?? 'İndirim uygulanamadı.');
     }
+  }
+
+  async function voidCommitted(itemId: number) {
+    if (!order) return;
+    try {
+      const res = await api.posVoidItem(order.id, itemId);
+      setOrder(res);
+    } catch (e: any) {
+      setError(e?.message ?? 'Ürün çıkarılamadı.');
+    }
+  }
+
+  async function onPark() {
+    const o = await send();
+    if (o) resetTicket();
+    load(); // refresh table occupancy
+  }
+
+  async function openRecall() {
+    try {
+      const list = await api.posOrders({ scope: 'open', branch_id: activeBranch ?? undefined });
+      setRecallOrders(list);
+      setShowRecall(true);
+    } catch {
+      setError('Adisyonlar yüklenemedi.');
+    }
+  }
+
+  function pickRecalled(o: any) {
+    setShowRecall(false);
+    setOrder(o);
+    setCart({});
+    setNote(o.note ?? '');
+    setOrderType(o.table_code ? 'table' : 'takeaway');
+    setTableCode(o.table_code ?? null);
+    setTableId(null); // adding rounds uses the order id, not the table
+  }
+
+  function onPaid(finalOrder: any) {
+    setPayOrder(null);
+    setReceipt(finalOrder);
+    load();
+  }
+
+  if (!ready) {
+    return <div className="grid h-screen place-items-center bg-canvas text-muted">Yükleniyor…</div>;
   }
 
   return (
-    <AdminShell title="POS — Hızlı Satış">
-      <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
-        {/* Product picker */}
-        <div>
-          <div className="mb-3 flex flex-wrap gap-2">
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setActiveCat(c.id)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  activeCat === c.id ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted hover:border-brand-300'
-                }`}
-              >
-                {c.name}
-              </button>
-            ))}
+    <div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
+      {/* Top chrome */}
+      <header className="flex items-center justify-between gap-3 bg-slate-900 px-4 py-2.5 text-white">
+        <div className="flex items-center gap-3">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-500 font-black">K</span>
+          <div className="leading-tight">
+            <div className="text-sm font-bold">{venueName} · KASA</div>
+            <div className="text-[11px] text-white/60">{now.toLocaleTimeString('tr-TR')}</div>
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowShift(true)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+              shift ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white/80 hover:bg-white/20'
+            }`}
+          >
+            {shift ? `🟢 Vardiya · ${money(shift.expected_cash, currency)}` : '🔒 Kasa Kapalı'}
+          </button>
+          <button onClick={openRecall} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
+            📋 Adisyonlar
+          </button>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
+          >
+            ← Panel
+          </button>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        {/* Product picker */}
+        <main className="flex min-w-0 flex-1 flex-col border-r border-line">
+          <div className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2.5">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Ürün ara…"
+              className="w-56 rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-500"
+            />
+            <div className="flex flex-1 gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <CatPill active={activeCat === null} onClick={() => setActiveCat(null)}>
+                Tümü
+              </CatPill>
+              {categories.map((c) => (
+                <CatPill key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
+                  {c.name}
+                </CatPill>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2.5 overflow-y-auto p-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {shown.map((p) => (
               <button
                 key={p.id}
                 onClick={() => pick(p)}
-                className="rounded-xl border border-line bg-surface p-3 text-left transition hover:border-brand-400 hover:shadow-sm"
+                className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-brand-400 hover:shadow-md active:scale-[0.98]"
               >
-                <div className="text-sm font-semibold text-ink">{p.name}</div>
-                <div className="mt-1 text-xs text-muted">{fmt(p.price)}</div>
-                {(p.variants?.length > 0 || p.modifier_groups?.length > 0) && (
-                  <div className="mt-1 text-[10px] text-brand-600">seçenekli</div>
-                )}
+                <div className="relative aspect-[4/3] w-full bg-canvas">
+                  {productImg(p) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={productImg(p)} alt={p.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-2xl font-black text-line">
+                      {p.name.slice(0, 2)}
+                    </div>
+                  )}
+                  {p.age_restricted && (
+                    <span className="absolute right-1 top-1 rounded bg-red-600 px-1 text-[10px] font-bold text-white">
+                      18+
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col p-2">
+                  <div className="line-clamp-2 text-xs font-semibold leading-tight text-ink">{p.name}</div>
+                  <div className="mt-auto flex items-center justify-between pt-1">
+                    <span className="text-sm font-bold text-brand-600">{money(p.price, currency)}</span>
+                    {(p.variants?.length > 0 || p.modifier_groups?.length > 0) && (
+                      <span className="text-[10px] text-muted">seçenek</span>
+                    )}
+                  </div>
+                </div>
               </button>
             ))}
-            {shown.length === 0 && <p className="text-sm text-muted">Bu kategoride ürün yok.</p>}
+            {shown.length === 0 && <p className="col-span-full py-10 text-center text-sm text-muted">Ürün bulunamadı.</p>}
           </div>
-        </div>
+        </main>
 
-        {/* Cart / checkout */}
-        <Card className="lg:sticky lg:top-6 h-fit">
-          {order ? (
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-ink">Sipariş #{order.id} oluşturuldu ✓</p>
-              <p className="text-xs text-muted">Mutfağa gönderildi. Tutar: <b className="text-ink">{fmt(order.grand_total)}</b></p>
-              <p className="text-xs font-medium text-muted">Kapıda tahsilat:</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => pay('cash')} disabled={busy}>💵 Nakit</Button>
-                <Button onClick={() => pay('card')} disabled={busy}>💳 Kart</Button>
-              </div>
-              <button onClick={() => setOrder(null)} className="w-full text-xs text-muted hover:underline">
-                Ödemeyi atla (sonra tahsil et)
-              </button>
+        {/* Ticket */}
+        <aside className="flex w-[360px] shrink-0 flex-col bg-surface xl:w-[400px]">
+          {/* Order context */}
+          <div className="border-b border-line p-3">
+            <div className="mb-2 grid grid-cols-2 gap-1.5">
+              <SegBtn active={orderType === 'table'} onClick={() => setOrderType('table')} disabled={!!order}>
+                🍽️ Masa
+              </SegBtn>
+              <SegBtn active={orderType === 'takeaway'} onClick={() => { setOrderType('takeaway'); setTableId(null); setTableCode(null); }} disabled={!!order}>
+                🛍️ Gel-Al
+              </SegBtn>
             </div>
-          ) : (
-            <>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-ink">Sepet</h3>
-                <select
-                  value={tableId}
-                  onChange={(e) => setTableId(e.target.value ? Number(e.target.value) : '')}
-                  className="rounded-lg border border-line bg-white px-2 py-1 text-xs text-ink"
-                >
-                  <option value="">Gel-al</option>
-                  {tables.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.code}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {lines.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted">Ürün ekleyin…</p>
-              ) : (
-                <ul className="mb-3 max-h-72 space-y-2 overflow-y-auto">
-                  {lines.map((l) => (
-                    <li key={l.key} className="flex items-start justify-between gap-2 text-sm">
-                      <div className="min-w-0">
-                        <div className="text-ink">{l.product.name}</div>
-                        {(l.variantName || l.modifierNames.length > 0) && (
-                          <div className="text-[11px] text-muted">
-                            {[l.variantName, ...l.modifierNames].filter(Boolean).join(' · ')}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <button onClick={() => setQty(l.key, l.qty - 1)} className="grid h-6 w-6 place-items-center rounded bg-canvas text-ink">−</button>
-                        <span className="w-5 text-center font-semibold text-ink">{l.qty}</span>
-                        <button onClick={() => setQty(l.key, l.qty + 1)} className="grid h-6 w-6 place-items-center rounded bg-canvas text-ink">+</button>
-                        <span className="w-16 text-right text-xs font-medium text-ink">{fmt(l.unitPrice * l.qty)}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => !order && orderType === 'table' && setShowMap(true)}
+                className="text-sm font-bold text-ink disabled:opacity-100"
+                disabled={!!order}
+              >
+                {order
+                  ? `Adisyon #${order.id}${tableCode ? ` · ${tableCode}` : ''}`
+                  : orderType === 'table'
+                    ? tableCode
+                      ? `${tableCode} ✎`
+                      : 'Masa Seç →'
+                    : 'Gel-Al'}
+              </button>
+              {order && (
+                <button onClick={resetTicket} className="text-xs font-semibold text-brand-600 hover:underline">
+                  + Yeni
+                </button>
               )}
+            </div>
+          </div>
 
-              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Not (opsiyonel)" className="mb-3" />
-              <div className="mb-3 flex items-center justify-between text-sm">
-                <span className="text-muted">Toplam</span>
-                <span className="text-lg font-bold text-ink">{fmt(total)}</span>
+          {/* Lines */}
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {committedItems.length === 0 && cartLines.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted">Ürün ekleyin…</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {committedItems.map((i: any) => (
+                  <li key={`c${i.id}`} className="flex items-start justify-between gap-2 rounded-lg bg-canvas px-2.5 py-2 text-sm">
+                    <div className="min-w-0">
+                      <div className="font-medium text-ink">
+                        <span className="text-muted">{i.quantity}×</span> {i.product_name ?? productName(i.product_id)}
+                      </div>
+                      {(i.modifiers ?? []).length > 0 && (
+                        <div className="text-[11px] text-muted">{i.modifiers.map((m: any) => m.name).join(' · ')}</div>
+                      )}
+                      <span className="text-[10px] font-semibold uppercase text-emerald-600">✓ gönderildi</span>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="text-xs font-semibold text-ink">{money(i.line_total, currency)}</span>
+                      {order?.payment_status !== 'paid' && (
+                        <button onClick={() => voidCommitted(i.id)} className="text-[11px] text-red-500 hover:underline">
+                          çıkar
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+                {cartLines.map((l) => (
+                  <li key={l.key} className="flex items-start justify-between gap-2 rounded-lg border border-brand-100 bg-brand-50/40 px-2.5 py-2 text-sm">
+                    <div className="min-w-0">
+                      <div className="font-medium text-ink">{l.product.name}</div>
+                      {(l.variantName || l.modifierNames.length > 0) && (
+                        <div className="text-[11px] text-muted">{[l.variantName, ...l.modifierNames].filter(Boolean).join(' · ')}</div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button onClick={() => setQty(l.key, l.qty - 1)} className="grid h-7 w-7 place-items-center rounded-md bg-white text-ink shadow-sm">−</button>
+                      <span className="w-5 text-center font-bold text-ink">{l.qty}</span>
+                      <button onClick={() => setQty(l.key, l.qty + 1)} className="grid h-7 w-7 place-items-center rounded-md bg-white text-ink shadow-sm">+</button>
+                      <span className="w-16 text-right text-xs font-semibold text-ink">{money(l.unitPrice * l.qty, currency)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Totals + actions */}
+          <div className="border-t border-line p-3">
+            {!order && (
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Sipariş notu…"
+                className="mb-2 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-500"
+              />
+            )}
+            <div className="mb-2 space-y-0.5 text-sm">
+              <div className="flex justify-between text-muted">
+                <span>Ara toplam</span>
+                <span>{money(runningSubtotal, currency)}</span>
               </div>
-              {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
-              <Button onClick={sendToKitchen} disabled={busy || lines.length === 0} className="w-full">
-                {busy ? 'Gönderiliyor…' : 'Mutfağa Gönder'}
-              </Button>
-            </>
-          )}
-        </Card>
+              {discountTotal > 0 && (
+                <div className="flex justify-between text-brand-600">
+                  <span>İndirim</span>
+                  <span>− {money(discountTotal, currency)}</span>
+                </div>
+              )}
+              {Number(order?.tip_total ?? 0) > 0 && (
+                <div className="flex justify-between text-muted">
+                  <span>Bahşiş</span>
+                  <span>{money(order.tip_total, currency)}</span>
+                </div>
+              )}
+              {order?.charged_to_room && (
+                <div className="flex justify-between font-semibold text-amber-600">
+                  <span>🧾 Odaya yazıldı</span>
+                  <span></span>
+                </div>
+              )}
+              <div className="flex justify-between pt-0.5 text-lg font-black text-ink">
+                <span>Toplam</span>
+                <span>{money(grandTotal, currency)}</span>
+              </div>
+            </div>
+            {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
+
+            <div className="mb-2 grid grid-cols-3 gap-1.5">
+              <MiniBtn onClick={onPark} disabled={busy || (cartLines.length === 0 && !order)}>
+                ⏸ Beklet
+              </MiniBtn>
+              <MiniBtn onClick={onDiscount} disabled={busy || (committedItems.length === 0 && cartLines.length === 0)}>
+                % İndirim
+              </MiniBtn>
+              <MiniBtn onClick={onSendToKitchen} disabled={busy || cartLines.length === 0}>
+                🍳 Mutfak
+              </MiniBtn>
+            </div>
+            <button
+              onClick={onPay}
+              disabled={busy || (grandTotal <= 0 && committedItems.length === 0)}
+              className="w-full rounded-xl bg-brand-500 py-4 text-base font-bold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-50"
+            >
+              {busy ? 'İşleniyor…' : `ÖDE · ${money(grandTotal, currency)}`}
+            </button>
+          </div>
+        </aside>
       </div>
 
+      {/* Modals */}
       {customizing && (
         <Customizer
           product={customizing}
-          fmt={fmt}
+          currency={currency}
           onClose={() => setCustomizing(null)}
-          onAdd={(variant: any, ids: number[], names: string[]) => {
+          onAdd={(variant, ids, names) => {
             addLine(customizing, variant, ids, names);
             setCustomizing(null);
           }}
         />
       )}
-    </AdminShell>
+      {showMap && (
+        <TableMapModal
+          tables={tables}
+          onClose={() => setShowMap(false)}
+          onPick={(id) => {
+            setShowMap(false);
+            if (id === null) {
+              setOrderType('takeaway');
+              setTableId(null);
+              setTableCode(null);
+            } else {
+              setOrderType('table');
+              setTableId(id);
+              setTableCode(tables.find((t) => t.id === id)?.code ?? null);
+            }
+          }}
+        />
+      )}
+      {showDiscount && order && (
+        <DiscountModal
+          subtotal={Number(order.subtotal)}
+          currency={currency}
+          onClose={() => setShowDiscount(false)}
+          onApply={applyDiscount}
+        />
+      )}
+      {payOrder && (
+        <PaymentModal
+          order={payOrder}
+          currency={currency}
+          canRoomCharge={canRoomCharge}
+          api={api}
+          onClose={() => setPayOrder(null)}
+          onDone={onPaid}
+        />
+      )}
+      {showRecall && (
+        <RecallDrawer orders={recallOrders} currency={currency} onClose={() => setShowRecall(false)} onPick={pickRecalled} />
+      )}
+      {showShift && (
+        <ShiftModal
+          shift={shift}
+          api={api}
+          branchId={activeBranch}
+          currency={currency}
+          onClose={() => setShowShift(false)}
+          onChange={(s) => setShift(s)}
+        />
+      )}
+      {receipt && (
+        <Modal title="Ödeme Tamamlandı ✓" onClose={() => { setReceipt(null); resetTicket(); }}>
+          <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
+            <div className="text-4xl">✅</div>
+            <div className="mt-2 text-2xl font-black text-ink">{money(receipt.grand_total, currency)}</div>
+            <div className="text-sm text-muted">Adisyon #{receipt.id} kapatıldı</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => printReceipt(receipt, venueName, currency)}
+              className="rounded-xl border border-line py-3 text-sm font-semibold text-ink hover:bg-canvas"
+            >
+              🖨️ Fiş Yazdır
+            </button>
+            <button
+              onClick={() => { setReceipt(null); resetTicket(); }}
+              className="rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white hover:bg-brand-600"
+            >
+              + Yeni Sipariş
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
   );
 }
 
-function Customizer({ product, fmt, onClose, onAdd }: any) {
-  const variants = product.variants ?? [];
-  const groups = product.modifier_groups ?? [];
-  const [variantId, setVariantId] = useState<number | undefined>(
-    variants.find((v: any) => v.is_default)?.id ?? variants[0]?.id,
-  );
-  const [selected, setSelected] = useState<Record<number, number[]>>({});
-
-  const variant = variants.find((v: any) => v.id === variantId);
-  const chosen = groups.flatMap((g: any) => (selected[g.id] ?? []).map((id: number) => g.modifiers.find((m: any) => m.id === id))).filter(Boolean);
-  const modifierIds = chosen.map((m: any) => m.id);
-  const modifierNames = chosen.map((m: any) => m.name);
-  const missingRequired = groups.some((g: any) => {
-    const min = g.is_required ? Math.max(1, g.min_select) : g.min_select;
-    return (selected[g.id] ?? []).length < min;
-  });
-
-  function toggle(g: any, id: number) {
-    setSelected((prev) => {
-      const cur = prev[g.id] ?? [];
-      let next: number[];
-      if (g.max_select <= 1) next = cur.includes(id) ? (g.is_required ? cur : []) : [id];
-      else if (cur.includes(id)) next = cur.filter((x) => x !== id);
-      else if (cur.length < g.max_select) next = [...cur, id];
-      else next = cur;
-      return { ...prev, [g.id]: next };
-    });
-  }
-
+function CatPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-30 grid place-items-center bg-black/40 p-4" onClick={onClose}>
-      <Card className="w-full max-w-md" >
-        <div onClick={(e) => e.stopPropagation()}>
-          <h3 className="text-base font-semibold text-ink">{product.name}</h3>
-          {variants.length > 0 && (
-            <div className="mt-3">
-              <p className="mb-1.5 text-xs font-semibold text-muted">Boyut</p>
-              <div className="flex flex-wrap gap-1.5">
-                {variants.map((v: any) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setVariantId(v.id)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${v.id === variantId ? 'bg-brand-500 text-white' : 'border border-line text-muted'}`}
-                  >
-                    {v.name}
-                    {Number(v.price_delta) ? ` +${fmt(v.price_delta)}` : ''}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {groups.map((g: any) => (
-            <div key={g.id} className="mt-3">
-              <p className="mb-1.5 text-xs font-semibold text-muted">
-                {g.name} {g.is_required ? <span className="text-brand-600">(zorunlu)</span> : ''}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {g.modifiers.map((m: any) => (
-                  <button
-                    key={m.id}
-                    onClick={() => toggle(g, m.id)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${(selected[g.id] ?? []).includes(m.id) ? 'bg-brand-500 text-white' : 'border border-line text-muted'}`}
-                  >
-                    {m.name}
-                    {Number(m.price_delta) ? ` +${fmt(m.price_delta)}` : ''}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          <div className="mt-4 flex gap-2">
-            <Button onClick={() => onAdd(variant, modifierIds, modifierNames)} disabled={missingRequired} className="flex-1">
-              Sepete Ekle
-            </Button>
-            <Button variant="ghost" onClick={onClose}>
-              İptal
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </div>
+    <button
+      onClick={onClick}
+      className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+        active ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted hover:border-brand-300'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SegBtn({ active, onClick, disabled, children }: { active: boolean; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-lg py-2 text-sm font-semibold transition disabled:opacity-40 ${
+        active ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MiniBtn({ onClick, disabled, children }: { onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="rounded-lg border border-line bg-surface py-2.5 text-xs font-semibold text-ink transition hover:border-brand-400 disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }

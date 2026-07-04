@@ -30,13 +30,16 @@ class PaymentService
         $gateway = $this->gateways->gateway($gatewayName);
 
         return DB::transaction(function () use ($order, $gateway, $gatewayName, $tip, $amount, $context) {
+            // Principal still owed BEFORE this tip — grand_total already reflects
+            // any earlier tips. A tip is extra money that both grows the bill and
+            // helps settle it, so it must never inflate the collectable principal.
+            $owed = $this->outstanding($order);
+            $payAmount = $amount === null ? $owed : min($amount, $owed);
+
             if ($tip > 0) {
                 $order->update(['tip_total' => (float) $order->tip_total + $tip]);
                 $order->recalculateTotals();
             }
-
-            $outstanding = $this->outstanding($order);
-            $payAmount = $amount === null ? $outstanding : min($amount, $outstanding);
 
             $payment = Payment::create([
                 'order_id' => $order->id,
@@ -74,8 +77,8 @@ class PaymentService
         $payment->markPaid($ref);
 
         $order = $payment->order;
-        $paid = (float) $order->payments()->where('status', 'paid')->sum('amount');
-        $fullyPaid = $paid + 0.001 >= (float) $order->grand_total;
+        $collected = $this->collected($order);
+        $fullyPaid = $collected + 0.001 >= (float) $order->grand_total;
         $order->update(['payment_status' => $fullyPaid ? 'paid' : 'partially_paid']);
 
         // Award loyalty points once the order is fully paid (M8).
@@ -84,11 +87,19 @@ class PaymentService
         }
     }
 
+    /** Total money collected toward the order — principals plus tips (server-side). */
+    protected function collected(Order $order): float
+    {
+        $row = $order->payments()->where('status', 'paid')
+            ->selectRaw('COALESCE(SUM(amount), 0) as a, COALESCE(SUM(tip_amount), 0) as t')
+            ->first();
+
+        return round((float) $row->a + (float) $row->t, 2);
+    }
+
     protected function outstanding(Order $order): float
     {
-        $paid = (float) $order->payments()->where('status', 'paid')->sum('amount');
-
-        return max(0, round((float) $order->grand_total - $paid, 2));
+        return max(0, round((float) $order->grand_total - $this->collected($order), 2));
     }
 
     public function outstandingFor(Order $order): float

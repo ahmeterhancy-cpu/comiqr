@@ -103,6 +103,11 @@ class OrderService
      */
     protected function applyHappyHour(Order $order): void
     {
+        // Never override a cashier's manual POS discount when the tab grows.
+        if ($order->discount_source === 'manual') {
+            return;
+        }
+
         $tenant = app(\App\Support\Tenancy\TenantManager::class)->get();
         $percent = \App\Support\Restaurant\HappyHour::percent($tenant?->settings_json, null, $tenant?->timezone);
         if ($percent <= 0) {

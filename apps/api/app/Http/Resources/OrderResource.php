@@ -26,11 +26,16 @@ class OrderResource extends JsonResource
             'discount_total' => $this->discount_total,
             'tip_total' => $this->tip_total,
             'grand_total' => $this->grand_total,
+            // Money collected toward the order — principals plus tips (matches the
+            // outstanding balance the POS shows: grand_total - paid_total).
+            'paid_total' => (float) $this->payments()->where('status', 'paid')
+                ->selectRaw('COALESCE(SUM(amount + tip_amount), 0) as c')->value('c'),
             'note' => $this->note,
             'placed_at' => $this->placed_at,
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($i) => [
                 'id' => $i->id,
                 'product_id' => $i->product_id,
+                'product_name' => $i->relationLoaded('product') ? $i->product?->name : null,
                 'variant_id' => $i->variant_id,
                 'quantity' => $i->quantity,
                 'unit_price' => $i->unit_price,
