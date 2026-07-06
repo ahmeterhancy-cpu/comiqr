@@ -106,4 +106,68 @@ class PaymentService
     {
         return $this->outstanding($order);
     }
+
+    public function collectedFor(Order $order): float
+    {
+        return $this->collected($order);
+    }
+
+    /**
+     * Refund money already collected on an order (Faz 3 — ultra POS). Recorded as
+     * a negative settled payment so it nets out of `collected()` and pulls the
+     * matching cash/card back out of the shift drawer. Capped at what was collected.
+     */
+    public function refund(Order $order, float $amount, string $gateway, ?string $reason = null): Payment
+    {
+        return DB::transaction(function () use ($order, $amount, $gateway, $reason) {
+            // Serialize concurrent refunds on this order so two can't both clear the cap.
+            Order::whereKey($order->id)->lockForUpdate()->first();
+
+            // Never refund more than was collected via this same tender — a cash
+            // refund must not pull the drawer for money that came in on card.
+            $refund = min(round(max(0, $amount), 2), $this->collectedVia($order, $gateway));
+
+            $payment = Payment::create([
+                'order_id' => $order->id,
+                'gateway' => $gateway,
+                'amount' => -$refund,
+                'tip_amount' => 0,
+                'status' => 'paid', // settled refund line
+                'gateway_ref' => 'refund_'.bin2hex(random_bytes(6)),
+                'split_meta_json' => ['refund' => true, 'reason' => $reason],
+            ]);
+
+            $fresh = $order->fresh();
+            $this->reconcile($fresh);
+            // A no-longer-fully-paid sale must not leave the customer holding its points.
+            if ($fresh->fresh()->payment_status !== 'paid') {
+                $this->loyalty->reverseEarnForOrder($fresh->fresh());
+            }
+
+            return $payment;
+        });
+    }
+
+    /** Money collected on the order via a specific tender (principal + tips). */
+    public function collectedVia(Order $order, string $gateway): float
+    {
+        $row = $order->payments()->where('status', 'paid')->where('gateway', $gateway)
+            ->selectRaw('COALESCE(SUM(amount), 0) as a, COALESCE(SUM(tip_amount), 0) as t')
+            ->first();
+
+        return round((float) $row->a + (float) $row->t, 2);
+    }
+
+    /** Re-derive payment_status from what is net-collected (after a refund or void). */
+    public function reconcile(Order $order): void
+    {
+        $collected = $this->collected($order);
+        $grand = (float) $order->grand_total;
+
+        $status = $collected + 0.001 >= $grand
+            ? 'paid'
+            : ($collected > 0.001 ? 'partially_paid' : 'unpaid');
+
+        $order->update(['payment_status' => $status]);
+    }
 }

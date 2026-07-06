@@ -117,6 +117,45 @@ class LoyaltyService
         });
     }
 
+    /**
+     * Reverse the points earned for an order (Faz 3 — ultra POS). Called when a
+     * refund drops the order below fully-paid so a refunded sale doesn't leave the
+     * customer holding its points. Deletes the earn so a later re-pay can re-earn.
+     */
+    public function reverseEarnForOrder(Order $order): void
+    {
+        if (! $order->customer_id) {
+            return;
+        }
+
+        $account = LoyaltyAccount::where('customer_id', $order->customer_id)->first();
+        if (! $account) {
+            return;
+        }
+
+        $earn = LoyaltyTransaction::where('loyalty_account_id', $account->id)
+            ->where('order_id', $order->id)
+            ->where('type', 'earn')
+            ->whereNull('meta_json') // the order-earn, not the review bonus
+            ->first();
+        if (! $earn) {
+            return;
+        }
+
+        DB::transaction(function () use ($account, $earn) {
+            $account->decrement('points_balance', $earn->points);
+            LoyaltyTransaction::create([
+                'loyalty_account_id' => $account->id,
+                'type' => 'redeem',
+                'points' => -$earn->points,
+                'order_id' => $earn->order_id,
+                'meta_json' => ['reason' => 'refund_reversal'],
+                'created_at' => now(),
+            ]);
+            $earn->delete();
+        });
+    }
+
     /** Redeem points; returns false if the balance is insufficient. */
     public function redeem(LoyaltyAccount $account, int $points, ?int $orderId = null): bool
     {

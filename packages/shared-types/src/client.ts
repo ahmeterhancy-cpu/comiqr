@@ -338,6 +338,9 @@ export class ApiClient {
   posDiscount(orderId: number, body: { type: 'percent' | 'amount'; value: number; reason?: string }): Promise<any> {
     return this.request(`/admin/pos/orders/${orderId}/discount`, { method: 'POST', body: JSON.stringify(body) });
   }
+  posLineDiscount(orderId: number, itemId: number, body: { type: 'percent' | 'amount'; value: number }): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/items/${itemId}/discount`, { method: 'POST', body: JSON.stringify(body) });
+  }
   posChargeRoom(orderId: number): Promise<any> {
     return this.request(`/admin/pos/orders/${orderId}/charge-to-room`, { method: 'POST' });
   }
@@ -346,6 +349,9 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify({ gateway, ...(opts ?? {}) }),
     });
+  }
+  posRefund(orderId: number, body: { amount: number; gateway?: 'cash' | 'card'; reason?: string }): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/refund`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   // --- POS cash-drawer shift (Z-report) ---

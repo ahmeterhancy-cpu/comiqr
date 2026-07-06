@@ -228,3 +228,142 @@ it('keeps a manual POS discount when the tab grows (happy-hour must not clobber 
         ->assertOk()
         ->assertJsonPath('data.discount_total', '10.00');
 });
+
+it('refunds collected money and flips the order back to partially paid then unpaid', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posShop();
+    actAsCashier($tenant);
+
+    $orderId = postJson('/v1/admin/pos/orders', [
+        'table_id' => $table->id,
+        'items' => [['product_id' => $product->id, 'quantity' => 2]], // 200
+    ])->json('data.id');
+    postJson("/v1/admin/pos/orders/{$orderId}/pay", ['gateway' => 'cash'])
+        ->assertOk()->assertJsonPath('data.payment_status', 'paid')->assertJsonPath('data.paid_total', 200);
+
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 50, 'gateway' => 'cash', 'reason' => 'yanlış ürün'])
+        ->assertOk()
+        ->assertJsonPath('data.payment_status', 'partially_paid')
+        ->assertJsonPath('data.paid_total', 150);
+
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 150, 'gateway' => 'cash'])
+        ->assertOk()
+        ->assertJsonPath('data.payment_status', 'unpaid')
+        ->assertJsonPath('data.paid_total', 0);
+});
+
+it('rejects a refund with nothing collected and caps an over-refund', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posShop();
+    actAsCashier($tenant);
+
+    $orderId = postJson('/v1/admin/pos/orders', [
+        'table_id' => $table->id,
+        'items' => [['product_id' => $product->id, 'quantity' => 1]], // 100
+    ])->json('data.id');
+
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 50])->assertStatus(422); // nothing paid
+
+    postJson("/v1/admin/pos/orders/{$orderId}/pay", ['gateway' => 'card'])->assertOk();
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 9999, 'gateway' => 'card'])
+        ->assertOk()
+        ->assertJsonPath('data.paid_total', 0) // capped at what was collected
+        ->assertJsonPath('data.payment_status', 'unpaid');
+});
+
+it('discounts a single line and shrinks the order total', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posShop();
+    actAsCashier($tenant);
+
+    $order = postJson('/v1/admin/pos/orders', [
+        'table_id' => $table->id,
+        'items' => [['product_id' => $product->id, 'quantity' => 2]], // 200
+    ])->json('data');
+    $itemId = $order['items'][0]['id'];
+
+    postJson("/v1/admin/pos/orders/{$order['id']}/items/{$itemId}/discount", ['type' => 'percent', 'value' => 25])
+        ->assertOk()
+        ->assertJsonPath('data.items.0.discount_total', '50.00')
+        ->assertJsonPath('data.items.0.line_total', '150.00')
+        ->assertJsonPath('data.subtotal', '150.00')
+        ->assertJsonPath('data.grand_total', '150.00');
+});
+
+it('clamps an order discount when a line discount shrinks the subtotal below it', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posShop();
+    actAsCashier($tenant);
+
+    $order = postJson('/v1/admin/pos/orders', [
+        'table_id' => $table->id,
+        'items' => [['product_id' => $product->id, 'quantity' => 2]], // 200
+    ])->json('data');
+
+    postJson("/v1/admin/pos/orders/{$order['id']}/discount", ['type' => 'amount', 'value' => 150])
+        ->assertOk()->assertJsonPath('data.grand_total', '50.00');
+
+    // 100% off the only line → subtotal 0; the 150 order discount must clamp, no negative total.
+    $itemId = $order['items'][0]['id'];
+    postJson("/v1/admin/pos/orders/{$order['id']}/items/{$itemId}/discount", ['type' => 'percent', 'value' => 100])
+        ->assertOk()
+        ->assertJsonPath('data.subtotal', '0.00')
+        ->assertJsonPath('data.discount_total', '0.00')
+        ->assertJsonPath('data.grand_total', '0.00');
+});
+
+it('refuses a cash refund on a card-only sale but allows a card refund', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posShop();
+    actAsCashier($tenant);
+
+    $orderId = postJson('/v1/admin/pos/orders', [
+        'table_id' => $table->id,
+        'items' => [['product_id' => $product->id, 'quantity' => 1]], // 100
+    ])->json('data.id');
+    postJson("/v1/admin/pos/orders/{$orderId}/pay", ['gateway' => 'card'])->assertOk();
+
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 50, 'gateway' => 'cash'])->assertStatus(422);
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 50, 'gateway' => 'card'])
+        ->assertOk()->assertJsonPath('data.payment_status', 'partially_paid');
+});
+
+it('reverses earned loyalty points when a paid order is fully refunded', function () {
+    $tenant = Tenant::factory()->create();
+    [$accountId, $orderId] = app(TenantManager::class)->runAs($tenant, function () use ($tenant) {
+        Branch::factory()->create();
+        $cat = Category::factory()->create();
+        $product = Product::factory()->forCategory($cat)->create(['price' => 100]);
+        $table = Table::factory()->create();
+        $customer = App\Models\Customer::factory()->create();
+        $account = App\Models\LoyaltyAccount::create(['tenant_id' => $tenant->id, 'customer_id' => $customer->id, 'points_balance' => 0]);
+        $session = App\Models\TableSession::create(['table_id' => $table->id, 'status' => 'open', 'opened_at' => now()]);
+        $order = app(App\Services\OrderService::class)->place($table, $session, [['product_id' => $product->id, 'quantity' => 2]], null, $customer); // 200
+
+        return [$account->id, $order->id];
+    });
+    $balance = fn () => app(TenantManager::class)->runAs($tenant, fn () => (int) App\Models\LoyaltyAccount::find($accountId)->points_balance);
+
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Waiter)->create());
+
+    postJson("/v1/admin/pos/orders/{$orderId}/pay", ['gateway' => 'cash'])->assertJsonPath('data.payment_status', 'paid');
+    expect($balance())->toBe(20); // floor(200 * 0.1)
+
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 200, 'gateway' => 'cash'])
+        ->assertOk()->assertJsonPath('data.payment_status', 'unpaid');
+    expect($balance())->toBe(0); // points reversed
+});
+
+it('a cash refund is pulled back out of the drawer in the Z-report', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posShop();
+    actAsCashier($tenant);
+
+    postJson('/v1/admin/pos/shift/open', ['opening_float' => 100])->assertCreated();
+
+    $orderId = postJson('/v1/admin/pos/orders', [
+        'table_id' => $table->id,
+        'items' => [['product_id' => $product->id, 'quantity' => 2]], // 200
+    ])->json('data.id');
+    postJson("/v1/admin/pos/orders/{$orderId}/pay", ['gateway' => 'cash'])->assertOk();
+    postJson("/v1/admin/pos/orders/{$orderId}/refund", ['amount' => 50, 'gateway' => 'cash'])->assertOk();
+
+    getJson('/v1/admin/pos/shift/current')
+        ->assertOk()
+        ->assertJsonPath('data.cash_sales', 150)     // 200 in, 50 back out
+        ->assertJsonPath('data.expected_cash', 250); // 100 float + 150 net
+});

@@ -221,9 +221,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/pos/orders', [PosController::class, 'order'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/items', [PosController::class, 'addItems'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/items/{item}/void', [PosController::class, 'voidItem'])->middleware('throttle:120,1');
+            Route::post('admin/pos/orders/{order}/items/{item}/discount', [PosController::class, 'lineDiscount'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/discount', [PosController::class, 'discount'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/charge-to-room', [PosController::class, 'chargeRoom'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/pay', [PosController::class, 'pay'])->middleware('throttle:120,1');
+            Route::post('admin/pos/orders/{order}/refund', [PosController::class, 'refund'])->middleware('throttle:120,1');
 
             // Cash-drawer shift (Z-report).
             Route::get('admin/pos/shift/current', [PosShiftController::class, 'current']);

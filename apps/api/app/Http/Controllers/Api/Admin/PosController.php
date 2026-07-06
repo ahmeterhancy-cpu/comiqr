@@ -132,6 +132,38 @@ class PosController extends Controller
             $model->recalculateTotals();
         }
         $model->refreshStatusFromItems();
+        $this->payments->reconcile($model); // a partial payment may now cover the smaller total
+
+        return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
+    }
+
+    /** POST /admin/pos/orders/{order}/items/{item}/discount — comp/discount one line. */
+    public function lineDiscount(Request $request, string $order, string $item): JsonResponse
+    {
+        $data = $request->validate([
+            'type' => ['required', Rule::in(['percent', 'amount'])],
+            'value' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Ödenmiş siparişte satır indirimi yapılamaz.');
+
+        $line = $model->items()->where('status', '!=', 'cancelled')->findOrFail($item);
+        $gross = round((float) $line->unit_price * (int) $line->quantity, 2);
+        $discount = $data['type'] === 'percent'
+            ? round($gross * min(100, (float) $data['value']) / 100, 2)
+            : (float) $data['value'];
+        $discount = max(0, min($discount, $gross)); // 0..gross
+
+        $line->update(['discount_total' => $discount, 'line_total' => round($gross - $discount, 2)]);
+
+        $model->recalculateTotals();
+        // A now-oversized order-level discount (bigger than the shrunken subtotal) is clamped.
+        if ((float) $model->discount_total > (float) $model->subtotal) {
+            $model->update(['discount_total' => $model->subtotal]);
+            $model->recalculateTotals();
+        }
+        $this->payments->reconcile($model);
 
         return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
     }
@@ -161,6 +193,7 @@ class PosController extends Controller
             'discount_source' => $amount > 0 ? 'manual' : null,
         ]);
         $model->recalculateTotals();
+        $this->payments->reconcile($model); // a partial payment may now cover the discounted total
 
         return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
     }
@@ -208,5 +241,23 @@ class PosController extends Controller
             'data' => new OrderResource($fresh),
             'meta' => ['outstanding' => $this->payments->outstandingFor($fresh)],
         ]);
+    }
+
+    /** POST /admin/pos/orders/{order}/refund — return collected money (cash|card). */
+    public function refund(Request $request, string $order): JsonResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'gateway' => ['nullable', Rule::in(['cash', 'card'])],
+            'reason' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $model = Order::findOrFail($order);
+        $gateway = $data['gateway'] ?? 'cash';
+        abort_if($this->payments->collectedVia($model, $gateway) <= 0, 422, 'Bu ödeme türünde iade edilecek tutar yok.');
+
+        $this->payments->refund($model, (float) $data['amount'], $gateway, $data['reason'] ?? null);
+
+        return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
     }
 }

@@ -7,11 +7,13 @@ import { useApi } from '@/lib/useApi';
 import {
   Customizer,
   DiscountModal,
+  KdsPanel,
   Modal,
   money,
   PaymentModal,
   printReceipt,
   RecallDrawer,
+  RefundModal,
   ShiftModal,
   TableMapModal,
 } from '@/components/pos-kit';
@@ -53,6 +55,8 @@ export default function PosPage() {
   const [activeBranch, setActiveBranch] = useState<number | null>(null);
   const [activeCat, setActiveCat] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [favView, setFavView] = useState(false);
 
   const [cart, setCart] = useState<Record<string, Line>>({});
   const [order, setOrder] = useState<any | null>(null);
@@ -68,10 +72,14 @@ export default function PosPage() {
   const [customizing, setCustomizing] = useState<any | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [showDiscount, setShowDiscount] = useState(false);
+  const [lineDisc, setLineDisc] = useState<any | null>(null);
   const [payOrder, setPayOrder] = useState<any | null>(null);
+  const [refundOrder, setRefundOrder] = useState<any | null>(null);
   const [showRecall, setShowRecall] = useState(false);
   const [recallOrders, setRecallOrders] = useState<any[]>([]);
+  const [recallScope, setRecallScope] = useState<'open' | 'today'>('open');
   const [showShift, setShowShift] = useState(false);
+  const [showKds, setShowKds] = useState(false);
   const [receipt, setReceipt] = useState<any | null>(null);
 
   const load = useCallback(async () => {
@@ -101,6 +109,28 @@ export default function PosPage() {
     return () => clearInterval(id);
   }, []);
 
+  const favKey = `comiqr.pos.fav.${(me?.tenant as any)?.id ?? 'x'}`;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(favKey);
+      setFavorites(raw ? JSON.parse(raw) : []);
+    } catch {
+      /* ignore */
+    }
+  }, [favKey]);
+
+  function toggleFav(id: number) {
+    setFavorites((f) => {
+      const next = f.includes(id) ? f.filter((x) => x !== id) : [...f, id];
+      try {
+        localStorage.setItem(favKey, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
   const productName = useMemo(() => {
     const m = new Map<number, string>();
     for (const p of products) m.set(p.id, p.name);
@@ -111,9 +141,10 @@ export default function PosPage() {
     const q = search.trim().toLocaleLowerCase('tr');
     return products.filter(
       (p) =>
-        (activeCat ? p.category_id === activeCat : true) && (q ? p.name.toLocaleLowerCase('tr').includes(q) : true),
+        (favView ? favorites.includes(p.id) : activeCat ? p.category_id === activeCat : true) &&
+        (q ? p.name.toLocaleLowerCase('tr').includes(q) : true),
     );
-  }, [products, activeCat, search]);
+  }, [products, activeCat, search, favView, favorites]);
 
   // --- Cart ---------------------------------------------------------------
   function pick(product: any) {
@@ -252,9 +283,10 @@ export default function PosPage() {
     load(); // refresh table occupancy
   }
 
-  async function openRecall() {
+  async function loadRecall(scope: 'open' | 'today') {
+    setRecallScope(scope);
     try {
-      const list = await api.posOrders({ scope: 'open', branch_id: activeBranch ?? undefined });
+      const list = await api.posOrders({ scope, branch_id: activeBranch ?? undefined });
       setRecallOrders(list);
       setShowRecall(true);
     } catch {
@@ -302,7 +334,10 @@ export default function PosPage() {
           >
             {shift ? `🟢 Vardiya · ${money(shift.expected_cash, currency)}` : '🔒 Kasa Kapalı'}
           </button>
-          <button onClick={openRecall} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
+          <button onClick={() => setShowKds(true)} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
+            🍳 Mutfak
+          </button>
+          <button onClick={() => loadRecall('open')} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
             📋 Adisyonlar
           </button>
           <button
@@ -325,11 +360,16 @@ export default function PosPage() {
               className="w-56 rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
             <div className="flex flex-1 gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <CatPill active={activeCat === null} onClick={() => setActiveCat(null)}>
+              {favorites.length > 0 && (
+                <CatPill active={favView} onClick={() => setFavView(true)}>
+                  ⭐ Sık
+                </CatPill>
+              )}
+              <CatPill active={!favView && activeCat === null} onClick={() => { setFavView(false); setActiveCat(null); }}>
                 Tümü
               </CatPill>
               {categories.map((c) => (
-                <CatPill key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
+                <CatPill key={c.id} active={!favView && activeCat === c.id} onClick={() => { setFavView(false); setActiveCat(c.id); }}>
                   {c.name}
                 </CatPill>
               ))}
@@ -357,6 +397,15 @@ export default function PosPage() {
                       18+
                     </span>
                   )}
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFav(p.id);
+                    }}
+                    className="absolute left-1 top-1 cursor-pointer rounded-full bg-white/85 px-1 text-sm leading-none shadow-sm"
+                  >
+                    {favorites.includes(p.id) ? '⭐' : '☆'}
+                  </span>
                 </div>
                 <div className="flex flex-1 flex-col p-2">
                   <div className="line-clamp-2 text-xs font-semibold leading-tight text-ink">{p.name}</div>
@@ -425,11 +474,23 @@ export default function PosPage() {
                       <span className="text-[10px] font-semibold uppercase text-emerald-600">✓ gönderildi</span>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-xs font-semibold text-ink">{money(i.line_total, currency)}</span>
+                      <span className="text-xs font-semibold text-ink">
+                        {Number(i.discount_total) > 0 && (
+                          <span className="mr-1 text-[10px] font-normal text-muted line-through">
+                            {money(Number(i.unit_price) * i.quantity, currency)}
+                          </span>
+                        )}
+                        {money(i.line_total, currency)}
+                      </span>
                       {order?.payment_status !== 'paid' && (
-                        <button onClick={() => voidCommitted(i.id)} className="text-[11px] text-red-500 hover:underline">
-                          çıkar
-                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={() => setLineDisc(i)} className="text-[11px] text-brand-600 hover:underline">
+                            % indir
+                          </button>
+                          <button onClick={() => voidCommitted(i.id)} className="text-[11px] text-red-500 hover:underline">
+                            çıkar
+                          </button>
+                        </div>
                       )}
                     </div>
                   </li>
@@ -505,6 +566,14 @@ export default function PosPage() {
                 🍳 Mutfak
               </MiniBtn>
             </div>
+            {order && Number(order.paid_total) > 0 && (
+              <button
+                onClick={() => setRefundOrder(order)}
+                className="mb-2 w-full rounded-xl border border-red-200 bg-red-50 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+              >
+                ↩ İade · {money(order.paid_total, currency)} tahsil edildi
+              </button>
+            )}
             <button
               onClick={onPay}
               disabled={busy || (grandTotal <= 0 && committedItems.length === 0)}
@@ -554,6 +623,22 @@ export default function PosPage() {
           onApply={applyDiscount}
         />
       )}
+      {lineDisc && order && (
+        <DiscountModal
+          subtotal={Number(lineDisc.unit_price) * lineDisc.quantity}
+          currency={currency}
+          onClose={() => setLineDisc(null)}
+          onApply={async (type, value) => {
+            const item = lineDisc;
+            setLineDisc(null);
+            try {
+              setOrder(await api.posLineDiscount(order.id, item.id, { type, value }));
+            } catch (e: any) {
+              setError(e?.message ?? 'Satır indirimi uygulanamadı.');
+            }
+          }}
+        />
+      )}
       {payOrder && (
         <PaymentModal
           order={payOrder}
@@ -565,7 +650,30 @@ export default function PosPage() {
         />
       )}
       {showRecall && (
-        <RecallDrawer orders={recallOrders} currency={currency} onClose={() => setShowRecall(false)} onPick={pickRecalled} />
+        <RecallDrawer
+          orders={recallOrders}
+          currency={currency}
+          scope={recallScope}
+          onScope={loadRecall}
+          onClose={() => setShowRecall(false)}
+          onPick={pickRecalled}
+        />
+      )}
+      {refundOrder && (
+        <RefundModal
+          order={refundOrder}
+          currency={currency}
+          api={api}
+          onClose={() => setRefundOrder(null)}
+          onDone={(res) => {
+            setRefundOrder(null);
+            setOrder(res);
+            load();
+          }}
+        />
+      )}
+      {showKds && (
+        <KdsPanel branchId={activeBranch} api={api} productName={productName} onClose={() => setShowKds(false)} />
       )}
       {showShift && (
         <ShiftModal

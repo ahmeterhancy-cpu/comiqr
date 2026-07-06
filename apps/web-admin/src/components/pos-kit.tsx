@@ -392,6 +392,94 @@ export function PaymentModal({
   );
 }
 
+// --- Refund ---------------------------------------------------------------
+
+export function RefundModal({
+  order,
+  currency,
+  api,
+  onClose,
+  onDone,
+}: {
+  order: any;
+  currency: string;
+  api: any;
+  onClose: () => void;
+  onDone: (order: any) => void;
+}) {
+  const collected = Number(order.paid_total ?? 0);
+  const [amount, setAmount] = useState(String(collected));
+  const [gateway, setGateway] = useState<'cash' | 'card'>('cash');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const amt = Math.min(collected, Number(amount) || 0);
+
+  async function submit() {
+    if (amt <= 0) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.posRefund(order.id, { amount: amt, gateway, reason: reason || undefined });
+      onDone(res);
+    } catch (e: any) {
+      setError(e?.message ?? 'İade başarısız.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title="İade" onClose={onClose}>
+      <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-canvas px-4 py-3">
+        <span className="text-sm text-muted">Tahsil edilen</span>
+        <span className="text-2xl font-black text-ink">{money(collected, currency)}</span>
+      </div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">İade tutarı</label>
+      <input
+        value={amount}
+        onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+        inputMode="decimal"
+        className="mb-2 w-full rounded-xl border border-line px-4 py-3 text-2xl font-bold text-ink outline-none focus:border-brand-500"
+      />
+      <div className="mb-3 flex gap-2">
+        {[collected / 2, collected].map((q, i) => (
+          <button
+            key={i}
+            onClick={() => setAmount(String(round2(q)))}
+            className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-ink hover:border-brand-400"
+          >
+            {i === 0 ? 'Yarısı' : 'Tamamı'} · {money(round2(q), currency)}
+          </button>
+        ))}
+      </div>
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        {(['cash', 'card'] as const).map((g) => (
+          <button
+            key={g}
+            onClick={() => setGateway(g)}
+            className={`rounded-xl py-2.5 text-sm font-semibold transition ${
+              gateway === g ? 'bg-brand-500 text-white' : 'border border-line text-muted'
+            }`}
+          >
+            {g === 'cash' ? '💵 Nakit iade' : '💳 Kart iade'}
+          </button>
+        ))}
+      </div>
+      <input
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder="Sebep (opsiyonel)"
+        className="mb-4 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-500"
+      />
+      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+      <Button onClick={submit} loading={busy} disabled={amt <= 0} className="w-full bg-red-600 py-3.5 hover:bg-red-700">
+        {money(amt, currency)} İade Et
+      </Button>
+    </Modal>
+  );
+}
+
 // --- Table map ------------------------------------------------------------
 
 export function TableMapModal({
@@ -454,18 +542,44 @@ export function TableMapModal({
 export function RecallDrawer({
   orders,
   currency,
+  scope,
+  onScope,
   onPick,
   onClose,
 }: {
   orders: any[];
   currency: string;
+  scope: 'open' | 'today';
+  onScope: (s: 'open' | 'today') => void;
   onPick: (order: any) => void;
   onClose: () => void;
 }) {
+  const status = (o: any) =>
+    o.payment_status === 'paid'
+      ? 'ödendi'
+      : o.payment_status === 'partially_paid'
+        ? 'kısmi ödendi'
+        : o.charged_to_room
+          ? 'odaya yazıldı'
+          : 'ödenmedi';
+
   return (
-    <Modal title={`Açık Adisyonlar (${orders.length})`} onClose={onClose}>
+    <Modal title={`Adisyonlar (${orders.length})`} onClose={onClose}>
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        {(['open', 'today'] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => onScope(s)}
+            className={`rounded-lg py-2 text-sm font-semibold transition ${
+              scope === s ? 'bg-brand-500 text-white' : 'border border-line text-muted'
+            }`}
+          >
+            {s === 'open' ? 'Açık' : 'Bugün (ödenenler)'}
+          </button>
+        ))}
+      </div>
       {orders.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">Açık adisyon yok.</p>
+        <p className="py-8 text-center text-sm text-muted">Adisyon yok.</p>
       ) : (
         <ul className="space-y-2">
           {orders.map((o) => (
@@ -480,8 +594,7 @@ export function RecallDrawer({
                     <span className="ml-2 text-xs font-normal text-muted">#{o.id}</span>
                   </div>
                   <div className="text-xs text-muted">
-                    {(o.items ?? []).filter((i: any) => i.status !== 'cancelled').length} ürün ·{' '}
-                    {o.payment_status === 'partially_paid' ? 'kısmi ödendi' : o.charged_to_room ? 'odaya yazıldı' : 'ödenmedi'}
+                    {(o.items ?? []).filter((i: any) => i.status !== 'cancelled').length} ürün · {status(o)}
                   </div>
                 </div>
                 <span className="text-base font-bold text-ink">{money(o.grand_total, currency)}</span>
@@ -489,6 +602,101 @@ export function RecallDrawer({
             </li>
           ))}
         </ul>
+      )}
+    </Modal>
+  );
+}
+
+// --- Kitchen (KDS) live view ----------------------------------------------
+
+export function KdsPanel({
+  branchId,
+  api,
+  productName,
+  onClose,
+}: {
+  branchId: number | null;
+  api: any;
+  productName: (id: number) => string;
+  onClose: () => void;
+}) {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!branchId) {
+      setErr('Aktif şube yok.');
+      return;
+    }
+    let alive = true;
+    const load = () =>
+      api
+        .kdsOrders(branchId)
+        .then((o: any[]) => alive && (setOrders(o), setErr(null)))
+        .catch(() => alive && setErr('Mutfak siparişleri alınamadı (yetki gerekebilir).'));
+    load();
+    const id = setInterval(load, 4000); // live poll
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [api, branchId]);
+
+  async function advance(item: any) {
+    const next: Record<string, string> = { pending: 'preparing', preparing: 'ready', ready: 'served' };
+    const to = next[item.status];
+    if (!to) return;
+    // Optimistic — the 4s poll reconciles.
+    setOrders((os) => os.map((o) => ({ ...o, items: o.items.map((i: any) => (i.id === item.id ? { ...i, status: to } : i)) })));
+    try {
+      if (to === 'served') await api.kdsBump(item.id);
+      else await api.kdsItemStatus(item.id, to);
+    } catch {
+      /* poll will restore true state */
+    }
+  }
+
+  const btn: Record<string, { label: string; cls: string }> = {
+    pending: { label: 'Hazırla →', cls: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
+    preparing: { label: 'Hazır →', cls: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
+    ready: { label: 'Servis ✓', cls: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' },
+  };
+
+  const active = orders
+    .map((o) => ({ ...o, live: (o.items ?? []).filter((i: any) => !['cancelled', 'served'].includes(i.status)) }))
+    .filter((o) => o.live.length > 0);
+
+  return (
+    <Modal title="Mutfak — Canlı Siparişler" onClose={onClose} wide>
+      {err && <p className="mb-2 text-sm text-red-600">{err}</p>}
+      {active.length === 0 ? (
+        <p className="py-10 text-center text-sm text-muted">Hazırlanacak sipariş yok.</p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {active.map((o) => (
+            <div key={o.id} className="rounded-2xl border border-line bg-canvas p-3">
+              <div className="mb-2 flex items-center justify-between text-sm font-bold text-ink">
+                <span>{o.table_code ? `Masa ${o.table_code}` : o.type === 'takeaway' ? 'Gel-Al' : 'Sipariş'} · #{o.id}</span>
+              </div>
+              <ul className="space-y-1.5">
+                {o.live.map((i: any) => (
+                  <li key={i.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 truncate text-ink">
+                      <b>{i.quantity}×</b> {i.product_name ?? productName(i.product_id)}
+                      {i.note ? <span className="text-muted"> · {i.note}</span> : ''}
+                    </span>
+                    <button
+                      onClick={() => advance(i)}
+                      className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold transition ${btn[i.status]?.cls ?? ''}`}
+                    >
+                      {btn[i.status]?.label ?? i.status}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       )}
     </Modal>
   );

@@ -39,6 +39,7 @@ class OrderResource extends JsonResource
                 'variant_id' => $i->variant_id,
                 'quantity' => $i->quantity,
                 'unit_price' => $i->unit_price,
+                'discount_total' => $i->discount_total,
                 'modifiers' => $i->modifiers_json ?? [],
                 'line_total' => $i->line_total,
                 'status' => $i->status,
