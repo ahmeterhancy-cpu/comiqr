@@ -24,18 +24,25 @@ class SetTenantFromUser
     {
         $user = $request->user();
 
-        if ($user && $user->tenant_id !== null) {
-            if (! $user->tenant) {
-                abort(403, 'Tenant unavailable.');
-            }
-
-            if ($user->tenant->status === 'suspended') {
-                abort(403, 'Tenant suspended.');
-            }
-
-            $this->tenants->set($user->tenant);
-            app()->setLocale($request->query('locale', $user->tenant->locale_default ?? config('app.locale')));
+        // Fail closed: these routes are tenant-scoped, so a user carrying no tenant
+        // (a superadmin using their own token) must be denied — otherwise the global
+        // TenantScope would no-op and every query would leak all tenants' rows.
+        // Superadmins reach tenant data only via /superadmin/* or impersonation,
+        // which issues a token for the tenant's owner (tenant_id set → allowed here).
+        if (! $user || $user->tenant_id === null) {
+            abort(403, 'Tenant context required.');
         }
+
+        if (! $user->tenant) {
+            abort(403, 'Tenant unavailable.');
+        }
+
+        if ($user->tenant->status === 'suspended') {
+            abort(403, 'Tenant suspended.');
+        }
+
+        $this->tenants->set($user->tenant);
+        app()->setLocale($request->query('locale', $user->tenant->locale_default ?? config('app.locale')));
 
         return $next($request);
     }
