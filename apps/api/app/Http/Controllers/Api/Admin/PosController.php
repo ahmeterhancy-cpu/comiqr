@@ -6,9 +6,11 @@ use App\Events\OrderPlaced;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Branch;
+use App\Models\LoyaltyAccount;
 use App\Models\Order;
 use App\Models\Table;
 use App\Models\TableSession;
+use App\Services\LoyaltyService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Support\Restaurant\RestaurantSettings;
@@ -257,6 +259,54 @@ class PosController extends Controller
         abort_if($this->payments->collectedVia($model, $gateway) <= 0, 422, 'Bu ödeme türünde iade edilecek tutar yok.');
 
         $this->payments->refund($model, (float) $data['amount'], $gateway, $data['reason'] ?? null);
+
+        return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
+    }
+
+    /** POST /admin/pos/orders/{order}/redeem — pay part of the bill with loyalty points. */
+    public function redeem(Request $request, string $order): JsonResponse
+    {
+        $data = $request->validate([
+            'phone' => ['required', 'string', 'max:32'],
+            'points' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Sipariş zaten ödendi.');
+
+        $customer = app(LoyaltyService::class)->identify(['phone' => $data['phone']]);
+        abort_unless($customer, 422, 'Müşteri bulunamadı.');
+
+        $account = LoyaltyAccount::where('customer_id', $customer->id)->first();
+        abort_unless($account && $account->points_balance > 0, 422, 'Kullanılabilir puan yok.');
+
+        if (! $model->customer_id) {
+            $model->update(['customer_id' => $customer->id]); // link so the sale also earns
+        }
+
+        $result = $this->payments->redeemPoints($model, $account, (int) $data['points']);
+        abort_if($result['points'] <= 0, 422, 'Puan uygulanamadı.');
+
+        return response()->json([
+            'data' => new OrderResource($model->fresh('items.product')),
+            'meta' => ['redeemed_points' => $result['points'], 'balance' => (int) $account->fresh()->points_balance],
+        ]);
+    }
+
+    /** POST /admin/pos/orders/{order}/service-charge — auto-gratuity as a % of the subtotal. */
+    public function serviceCharge(Request $request, string $order): JsonResponse
+    {
+        $data = $request->validate([
+            'percent' => ['required', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Ödenmiş siparişe servis ücreti eklenemez.');
+
+        // Stored in tax_total (already summed into grand_total by recalculateTotals).
+        $model->update(['tax_total' => round((float) $model->subtotal * (float) $data['percent'] / 100, 2)]);
+        $model->recalculateTotals();
+        $this->payments->reconcile($model);
 
         return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
     }

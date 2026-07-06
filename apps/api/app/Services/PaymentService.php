@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\LoyaltyAccount;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\PaymentManager;
@@ -15,6 +16,9 @@ use Illuminate\Support\Facades\DB;
  */
 class PaymentService
 {
+    /** Currency value of one loyalty point when redeemed at the POS. */
+    public const POINT_VALUE = 1.0;
+
     public function __construct(
         protected PaymentManager $gateways,
         protected LoyaltyService $loyalty,
@@ -169,5 +173,42 @@ class PaymentService
             : ($collected > 0.001 ? 'partially_paid' : 'unpaid');
 
         $order->update(['payment_status' => $status]);
+    }
+
+    /**
+     * Settle part of the bill with loyalty points (Faz 3 — ultra POS). Points are
+     * a tender (a 'points' payment) so the drawer isn't touched; capped at the
+     * balance and at what the order still owes.
+     *
+     * @return array{points:int,value:float}
+     */
+    public function redeemPoints(Order $order, LoyaltyAccount $account, int $points): array
+    {
+        return DB::transaction(function () use ($order, $account, $points) {
+            Order::whereKey($order->id)->lockForUpdate()->first();
+
+            $outstanding = $this->outstanding($order);
+            $maxByBill = (int) ceil($outstanding / self::POINT_VALUE); // never redeem more than owed
+            $use = max(0, min($points, (int) $account->points_balance, $maxByBill));
+            if ($use <= 0) {
+                return ['points' => 0, 'value' => 0.0];
+            }
+
+            $value = min(round($use * self::POINT_VALUE, 2), $outstanding);
+            $this->loyalty->redeem($account, $use, $order->id);
+
+            Payment::create([
+                'order_id' => $order->id,
+                'gateway' => 'points',
+                'amount' => $value,
+                'tip_amount' => 0,
+                'status' => 'paid',
+                'split_meta_json' => ['points' => $use],
+            ]);
+
+            $this->reconcile($order->fresh());
+
+            return ['points' => $use, 'value' => $value];
+        });
     }
 }

@@ -263,6 +263,10 @@ export function PaymentModal({
   const [tip, setTip] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRedeem, setShowRedeem] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [points, setPoints] = useState('');
+  const [redeemMsg, setRedeemMsg] = useState<string | null>(null);
 
   const grand = Number(order.grand_total);
   const paid = Number(order.paid_total ?? 0);
@@ -302,6 +306,23 @@ export function PaymentModal({
       onDone(res);
     } catch (e: any) {
       setError(e?.message ?? 'İşlem başarısız.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyRedeem() {
+    if (!phone || !points) return;
+    setBusy(true);
+    setRedeemMsg(null);
+    try {
+      const res = await api.posRedeem(order.id, { phone, points: Number(points) });
+      setOrder(res);
+      setPoints('');
+      if (res.payment_status === 'paid') onDone(res);
+      else setShowRedeem(false);
+    } catch (e: any) {
+      setRedeemMsg(e?.message ?? 'Puan kullanılamadı.');
     } finally {
       setBusy(false);
     }
@@ -350,6 +371,18 @@ export function PaymentModal({
               </button>
             ))}
           </div>
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <span className="font-semibold text-muted">Eşit böl:</span>
+            {[2, 3, 4].map((n) => (
+              <button
+                key={n}
+                onClick={() => setAmount(String(round2(outstanding / n)))}
+                className="rounded-lg border border-line px-2.5 py-1 font-semibold text-ink hover:border-brand-400"
+              >
+                {n} kişi
+              </button>
+            ))}
+          </div>
           <div className="mt-3 flex items-center gap-2">
             <span className="text-xs font-semibold text-muted">Bahşiş</span>
             <input
@@ -359,6 +392,36 @@ export function PaymentModal({
               placeholder="0"
               className="w-24 rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-brand-500"
             />
+          </div>
+          <div className="mt-3">
+            {!showRedeem ? (
+              <button onClick={() => setShowRedeem(true)} className="text-xs font-semibold text-brand-600">
+                ⭐ Puan Kullan
+              </button>
+            ) : (
+              <div className="space-y-2 rounded-xl border border-line p-2.5">
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Müşteri telefonu"
+                  className="w-full rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+                />
+                <div className="flex gap-2">
+                  <input
+                    value={points}
+                    onChange={(e) => setPoints(e.target.value.replace(/[^0-9]/g, ''))}
+                    inputMode="numeric"
+                    placeholder="Puan"
+                    className="flex-1 rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+                  />
+                  <Button onClick={applyRedeem} loading={busy} className="px-4 py-1.5 text-xs">
+                    Kullan
+                  </Button>
+                </div>
+                {redeemMsg && <p className="text-xs text-red-600">{redeemMsg}</p>}
+                <p className="text-[10px] text-muted">1 puan = {money(1, currency)}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -829,7 +892,7 @@ export function printReceipt(order: any, venueName: string, currency: string) {
     )
     .join('');
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Fiş #${order.id}</title>
-    <style>body{font:13px/1.5 monospace;max-width:300px;margin:12px auto;color:#111}
+    <style>@page{size:80mm auto;margin:0} body{font:12px/1.45 monospace;width:80mm;max-width:80mm;margin:0 auto;padding:6px 8px;color:#000}
     h2{text-align:center;margin:0 0 4px} .muted{color:#666;text-align:center;font-size:11px}
     table{width:100%;border-collapse:collapse;margin:10px 0} td{padding:2px 0;vertical-align:top}
     .tot{border-top:1px dashed #999;margin-top:8px;padding-top:6px}

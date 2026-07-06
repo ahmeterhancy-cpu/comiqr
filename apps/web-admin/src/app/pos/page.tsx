@@ -267,6 +267,15 @@ export default function PosPage() {
     }
   }
 
+  async function applyServiceCharge(percent: number) {
+    if (!order) return;
+    try {
+      setOrder(await api.posServiceCharge(order.id, percent));
+    } catch (e: any) {
+      setError(e?.message ?? 'Servis ücreti uygulanamadı.');
+    }
+  }
+
   async function voidCommitted(itemId: number) {
     if (!order) return;
     try {
@@ -542,6 +551,12 @@ export default function PosPage() {
                   <span>{money(order.tip_total, currency)}</span>
                 </div>
               )}
+              {Number(order?.tax_total ?? 0) > 0 && (
+                <div className="flex justify-between text-muted">
+                  <span>Servis</span>
+                  <span>{money(order.tax_total, currency)}</span>
+                </div>
+              )}
               {order?.charged_to_room && (
                 <div className="flex justify-between font-semibold text-amber-600">
                   <span>🧾 Odaya yazıldı</span>
@@ -554,6 +569,20 @@ export default function PosPage() {
               </div>
             </div>
             {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
+
+            {order && (
+              <div className="mb-2 text-xs">
+                {Number(order.tax_total) > 0 ? (
+                  <button onClick={() => applyServiceCharge(0)} className="font-medium text-muted hover:underline">
+                    ✕ Servis ücretini kaldır
+                  </button>
+                ) : (
+                  <button onClick={() => applyServiceCharge(10)} className="font-semibold text-brand-600 hover:underline">
+                    + Servis ücreti %10
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="mb-2 grid grid-cols-3 gap-1.5">
               <MiniBtn onClick={onPark} disabled={busy || (cartLines.length === 0 && !order)}>

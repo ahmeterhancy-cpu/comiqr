@@ -353,6 +353,12 @@ export class ApiClient {
   posRefund(orderId: number, body: { amount: number; gateway?: 'cash' | 'card'; reason?: string }): Promise<any> {
     return this.request(`/admin/pos/orders/${orderId}/refund`, { method: 'POST', body: JSON.stringify(body) });
   }
+  posRedeem(orderId: number, body: { phone: string; points: number }): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/redeem`, { method: 'POST', body: JSON.stringify(body) });
+  }
+  posServiceCharge(orderId: number, percent: number): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/service-charge`, { method: 'POST', body: JSON.stringify({ percent }) });
+  }
 
   // --- POS cash-drawer shift (Z-report) ---
   posShift(branchId?: number): Promise<any | null> {

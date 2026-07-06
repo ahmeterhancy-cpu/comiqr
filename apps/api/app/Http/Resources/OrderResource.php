@@ -25,6 +25,7 @@ class OrderResource extends JsonResource
             'subtotal' => $this->subtotal,
             'discount_total' => $this->discount_total,
             'tip_total' => $this->tip_total,
+            'tax_total' => $this->tax_total,
             'grand_total' => $this->grand_total,
             // Money collected toward the order — principals plus tips (matches the
             // outstanding balance the POS shows: grand_total - paid_total).

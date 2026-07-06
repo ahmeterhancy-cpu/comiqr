@@ -367,3 +367,46 @@ it('a cash refund is pulled back out of the drawer in the Z-report', function ()
         ->assertJsonPath('data.cash_sales', 150)     // 200 in, 50 back out
         ->assertJsonPath('data.expected_cash', 250); // 100 float + 150 net
 });
+
+it('pays part of the bill with loyalty points', function () {
+    $tenant = Tenant::factory()->create();
+    $orderId = app(TenantManager::class)->runAs($tenant, function () {
+        Branch::factory()->create();
+        $cat = Category::factory()->create();
+        $product = Product::factory()->forCategory($cat)->create(['price' => 100]);
+        $table = Table::factory()->create();
+        $customer = app(App\Services\LoyaltyService::class)->identify(['phone' => '05001234567']);
+        App\Models\LoyaltyAccount::where('customer_id', $customer->id)->update(['points_balance' => 50]);
+        $session = App\Models\TableSession::create(['table_id' => $table->id, 'status' => 'open', 'opened_at' => now()]);
+
+        return app(App\Services\OrderService::class)->place($table, $session, [['product_id' => $product->id, 'quantity' => 2]])->id; // 200
+    });
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Waiter)->create());
+
+    // 50 points = 50 TRY off → 150 still owed.
+    postJson("/v1/admin/pos/orders/{$orderId}/redeem", ['phone' => '05001234567', 'points' => 50])
+        ->assertOk()
+        ->assertJsonPath('data.payment_status', 'partially_paid')
+        ->assertJsonPath('data.paid_total', 50);
+
+    postJson("/v1/admin/pos/orders/{$orderId}/pay", ['gateway' => 'cash'])
+        ->assertOk()->assertJsonPath('data.payment_status', 'paid');
+});
+
+it('adds and removes a service charge as a percentage of the subtotal', function () {
+    ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posShop();
+    actAsCashier($tenant);
+
+    $orderId = postJson('/v1/admin/pos/orders', [
+        'table_id' => $table->id,
+        'items' => [['product_id' => $product->id, 'quantity' => 2]], // 200
+    ])->json('data.id');
+
+    postJson("/v1/admin/pos/orders/{$orderId}/service-charge", ['percent' => 10])
+        ->assertOk()
+        ->assertJsonPath('data.tax_total', '20.00')
+        ->assertJsonPath('data.grand_total', '220.00');
+
+    postJson("/v1/admin/pos/orders/{$orderId}/service-charge", ['percent' => 0])
+        ->assertOk()->assertJsonPath('data.grand_total', '200.00');
+});
