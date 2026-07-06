@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getActiveBranchId } from '@/lib/branch';
+import { createEcho } from '@/lib/echo';
 import { useApi } from '@/lib/useApi';
 import {
   Customizer,
@@ -78,6 +79,8 @@ export default function PosPage() {
   const [showRecall, setShowRecall] = useState(false);
   const [recallOrders, setRecallOrders] = useState<any[]>([]);
   const [recallScope, setRecallScope] = useState<'open' | 'today'>('open');
+  const [liveTick, setLiveTick] = useState(0);
+  const [liveAlert, setLiveAlert] = useState(false);
   const [showShift, setShowShift] = useState(false);
   const [showKds, setShowKds] = useState(false);
   const [receipt, setReceipt] = useState<any | null>(null);
@@ -103,6 +106,35 @@ export default function PosPage() {
   useEffect(() => {
     if (ready) load();
   }, [ready, load]);
+
+  // Live recall via Reverb (M6/M10): new orders / status changes on this branch
+  // refresh the open Adisyonlar drawer, or flag the button. Degrades gracefully to
+  // refetch-on-open when Reverb is offline (local `log` broadcaster).
+  useEffect(() => {
+    if (!ready || !activeBranch) return;
+    const echo = createEcho();
+    if (!echo) return;
+    const name = `branch.${activeBranch}.orders`;
+    const ch = echo.private(name);
+    const bump = () => setLiveTick((n) => n + 1);
+    ch.listen('.OrderPlaced', bump);
+    ch.listen('.OrderItemStatusChanged', bump);
+    return () => {
+      try {
+        echo.leave(name);
+        echo.disconnect();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, [ready, activeBranch]);
+
+  useEffect(() => {
+    if (liveTick === 0) return;
+    if (showRecall) loadRecall(recallScope);
+    else setLiveAlert(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveTick]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -294,6 +326,7 @@ export default function PosPage() {
 
   async function loadRecall(scope: 'open' | 'today') {
     setRecallScope(scope);
+    setLiveAlert(false);
     try {
       const list = await api.posOrders({ scope, branch_id: activeBranch ?? undefined });
       setRecallOrders(list);
@@ -346,8 +379,9 @@ export default function PosPage() {
           <button onClick={() => setShowKds(true)} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
             🍳 Mutfak
           </button>
-          <button onClick={() => loadRecall('open')} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
+          <button onClick={() => loadRecall('open')} className="relative rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
             📋 Adisyonlar
+            {liveAlert && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-slate-900" />}
           </button>
           <button
             onClick={() => router.push('/dashboard')}

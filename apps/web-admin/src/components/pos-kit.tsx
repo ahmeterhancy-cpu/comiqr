@@ -267,10 +267,22 @@ export function PaymentModal({
   const [phone, setPhone] = useState('');
   const [points, setPoints] = useState('');
   const [redeemMsg, setRedeemMsg] = useState<string | null>(null);
+  const [showItemSplit, setShowItemSplit] = useState(false);
+  const [selItems, setSelItems] = useState<number[]>([]);
 
   const grand = Number(order.grand_total);
   const paid = Number(order.paid_total ?? 0);
   const outstanding = round2(Math.max(0, grand - paid));
+  const liveItems = (order.items ?? []).filter((i: any) => i.status !== 'cancelled');
+
+  function toggleItem(item: any) {
+    setSelItems((s) => {
+      const next = s.includes(item.id) ? s.filter((x) => x !== item.id) : [...s, item.id];
+      const sum = liveItems.filter((x: any) => next.includes(x.id)).reduce((a: number, x: any) => a + Number(x.line_total), 0);
+      setAmount(next.length ? String(round2(Math.min(sum, outstanding))) : '');
+      return next;
+    });
+  }
   const entered = Number(amount) || 0;
   const change = entered > outstanding ? round2(entered - outstanding) : 0;
 
@@ -383,6 +395,28 @@ export function PaymentModal({
               </button>
             ))}
           </div>
+          {liveItems.length > 1 && (
+            <div className="mt-2">
+              <button onClick={() => setShowItemSplit((v) => !v)} className="text-xs font-semibold text-brand-600">
+                🍽️ Ürüne göre böl
+              </button>
+              {showItemSplit && (
+                <div className="mt-1.5 max-h-36 space-y-1 overflow-y-auto rounded-xl border border-line p-2">
+                  {liveItems.map((i: any) => (
+                    <label key={i.id} className="flex cursor-pointer items-center justify-between gap-2 text-xs">
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <input type="checkbox" checked={selItems.includes(i.id)} onChange={() => toggleItem(i)} />
+                        <span className="truncate">
+                          {i.quantity}× {i.product_name ?? `#${i.product_id}`}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-muted">{money(i.line_total, currency)}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <div className="mt-3 flex items-center gap-2">
             <span className="text-xs font-semibold text-muted">Bahşiş</span>
             <input

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Shift;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,13 +32,18 @@ class PosShiftController extends Controller
             ->first();
         abort_if($existing !== null, 422, 'Zaten açık bir vardiya var. Önce onu kapatın.');
 
-        $shift = Shift::create([
-            'branch_id' => $branchId,
-            'opened_by' => $request->user()?->id,
-            'status' => 'open',
-            'opening_float' => (float) ($data['opening_float'] ?? 0),
-            'opened_at' => now(),
-        ]);
+        try {
+            $shift = Shift::create([
+                'branch_id' => $branchId,
+                'opened_by' => $request->user()?->id,
+                'status' => 'open',
+                'opening_float' => (float) ($data['opening_float'] ?? 0),
+                'opened_at' => now(),
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Lost a race against a concurrent open — the DB partial unique index caught it.
+            abort(422, 'Zaten açık bir vardiya var. Önce onu kapatın.');
+        }
 
         return response()->json(['data' => $this->report($shift)], 201);
     }

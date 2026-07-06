@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\Allergen;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\DiningArea;
 use App\Models\ModifierGroup;
 use App\Models\NutritionSummary;
 use App\Models\Plan;
@@ -66,8 +67,13 @@ class DemoMenuSeeder extends Seeder
             ])]);
 
             $branch = Branch::firstOrCreate(['tenant_id' => $tenant->id, 'name' => 'Merkez'], ['is_active' => true, 'timezone' => 'Asia/Nicosia']);
-            foreach (['Masa 1', 'Masa 2', 'Masa 3', 'Masa 4', 'Bahçe 1', 'Bahçe 2'] as $code) {
-                Table::firstOrCreate(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'code' => $code], ['is_active' => true]);
+            $salon = DiningArea::firstOrCreate(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'name' => 'Salon'], ['type' => 'table']);
+            $bahce = DiningArea::firstOrCreate(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'name' => 'Bahçe'], ['type' => 'table']);
+            foreach (['Masa 1' => $salon, 'Masa 2' => $salon, 'Masa 3' => $salon, 'Masa 4' => $salon, 'Bahçe 1' => $bahce, 'Bahçe 2' => $bahce] as $code => $area) {
+                Table::updateOrCreate(
+                    ['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'code' => $code],
+                    ['is_active' => true, 'dining_area_id' => $area->id],
+                );
             }
 
             // [category, name, price, emoji, description, kcal, diet, allergens, age18?]

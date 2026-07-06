@@ -112,8 +112,9 @@ class PosController extends Controller
         $model = Order::findOrFail($order);
         abort_if($model->payment_status === 'paid', 422, 'Ödenmiş siparişe ürün eklenemez.');
 
+        // No OrderPlaced re-dispatch (would ring the KDS as a brand-new order, like
+        // the customer add-items path avoids); the KDS poll picks up the new round.
         $this->orders->addItems($model, $data['items']);
-        OrderPlaced::dispatch($model); // push the new round to the KDS
 
         return response()->json(['data' => new OrderResource($model->fresh('items.product'))]);
     }
