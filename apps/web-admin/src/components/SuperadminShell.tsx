@@ -17,6 +17,7 @@ type IconName =
   | 'currency'
   | 'clock'
   | 'audit'
+  | 'design'
   | 'settings';
 
 const PATHS: Record<IconName, string> = {
@@ -30,6 +31,7 @@ const PATHS: Record<IconName, string> = {
   currency: 'M12 3v18M8 7h5a3 3 0 010 6H8h8',
   clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',
   audit: 'M9 12l2 2 4-4M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z',
+  design: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   settings: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1L14.5 2h-4l-.3 2.6a7 7 0 00-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.3 2.6h4l.3-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6a7 7 0 00.1-1z',
 };
 
@@ -47,6 +49,7 @@ const NAV: { group: string; items: { label: string; href: string; icon: IconName
     group: 'YÖNETİM',
     items: [
       { label: 'İşletmeler', href: '/superadmin/restaurants', icon: 'store' },
+      { label: 'QR Menü Tasarımları', href: '/superadmin/menu-designs', icon: 'design', badge: 'Yeni' },
       { label: 'Alerjenler', href: '/superadmin/allergens', icon: 'allergy', badge: 'Yeni' },
       { label: 'Üyelik / Planlar', href: '/superadmin/membership', icon: 'membership' },
       { label: 'İşlemler', href: '/superadmin/transactions', icon: 'transactions' },
