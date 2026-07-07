@@ -128,6 +128,9 @@ Route::match(['get', 'post'], 'payments/return/{gateway}', [PaymentController::c
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
+    // Current user — available to ANY authenticated user (incl. superadmins, who have
+    // no tenant), so it must sit OUTSIDE the fail-closed tenant.user group below.
+    Route::get('auth/me', [AuthController::class, 'me']);
     Route::post('auth/2fa/enable', [AuthController::class, 'enableTwoFactor']);
     Route::post('auth/2fa/confirm', [AuthController::class, 'confirmTwoFactor']);
     Route::post('auth/2fa/verify', [AuthController::class, 'verifyTwoFactor']);
@@ -157,8 +160,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tenant-scoped: binds the active tenant from the signed-in user.
     Route::middleware('tenant.user')->group(function () {
-        Route::get('auth/me', [AuthController::class, 'me']);
-
         Route::get('tenant', [TenantController::class, 'show']);
         Route::patch('tenant', [TenantController::class, 'update'])->middleware('role:manager');
         Route::post('tenant/media', [RestaurantMediaController::class, 'upload'])->middleware('role:manager');

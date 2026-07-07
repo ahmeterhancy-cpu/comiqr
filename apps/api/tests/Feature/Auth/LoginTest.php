@@ -48,6 +48,30 @@ it('requires authentication for /auth/me', function () {
     getJson('/v1/auth/me')->assertUnauthorized();
 });
 
+it('returns the current superadmin on /auth/me without a tenant', function () {
+    // Regression: /auth/me must live outside the fail-closed tenant.user group so
+    // superadmins (tenant_id null) can validate their session — otherwise the admin
+    // panel bounces them back to /login on a 403.
+    $root = User::factory()->superadmin()->create(['email' => 'root@comiqr.com']);
+    $token = $root->createToken('t')->plainTextToken;
+
+    getJson('/v1/auth/me', ['Authorization' => "Bearer {$token}"])
+        ->assertOk()
+        ->assertJsonPath('data.user.email', 'root@comiqr.com')
+        ->assertJsonPath('data.user.role', 'superadmin')
+        ->assertJsonPath('data.tenant', null);
+});
+
+it('returns the current owner with their tenant on /auth/me', function () {
+    $owner = makeOwner(['email' => 'me@example.com']);
+    $token = $owner->createToken('t')->plainTextToken;
+
+    getJson('/v1/auth/me', ['Authorization' => "Bearer {$token}"])
+        ->assertOk()
+        ->assertJsonPath('data.user.email', 'me@example.com')
+        ->assertJsonPath('data.tenant.id', $owner->tenant_id);
+});
+
 it('scopes each owner to only their own tenant', function () {
     $ownerA = makeOwner(['email' => 'a@example.com']);
     $ownerB = makeOwner(['email' => 'b@example.com']);
