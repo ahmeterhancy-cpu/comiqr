@@ -517,6 +517,23 @@ export class ApiClient {
   superAuditLogs(): Promise<any[]> {
     return this.request('/superadmin/audit-logs');
   }
+  /** Live per-vertical demo deep-links for the QR-menu design gallery. */
+  superMenuModelDemos(): Promise<{
+    models: {
+      vertical: 'restaurant' | 'hotel' | 'bar' | 'beach';
+      demo: {
+        slug: string;
+        name: string;
+        theme: string | null;
+        area_name: string;
+        area_type: string;
+        table_code: string;
+        qr_token: string;
+      } | null;
+    }[];
+  }> {
+    return this.request('/superadmin/menu-model-demos');
+  }
 
   // --- KDS / live orders (M6, docs/06 §6.7) ---
   kdsOrders(branchId: number, station?: number): Promise<any[]> {

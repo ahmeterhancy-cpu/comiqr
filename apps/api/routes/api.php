@@ -152,6 +152,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('tenants/{id}/impersonate', [SuperadminController::class, 'impersonate']);
         Route::post('tenants/{id}/subscription', [SuperadminController::class, 'startSubscription']);
         Route::get('audit-logs', [SuperadminController::class, 'auditLogs']);
+        Route::get('menu-model-demos', [SuperadminController::class, 'menuModelDemos']);
     });
 
     // Tenant-scoped: binds the active tenant from the signed-in user.

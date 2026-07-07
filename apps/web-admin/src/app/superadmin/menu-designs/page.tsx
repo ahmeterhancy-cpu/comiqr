@@ -1,107 +1,223 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Panel } from '@/components/superadmin-ui';
+import { ThemeThumb } from '@/components/ThemeThumb';
+import { useApi } from '@/lib/useApi';
 
 const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
 
-/** Üç QR menü teması (apps/web-customer/src/components/menu.tsx). */
+/** Sektör modelleri (dikeyler) — kaynak: RestaurantSettings::VERTICALS. */
+const VERTICALS = [
+  {
+    key: 'restaurant',
+    icon: '🍽️',
+    name: 'Restoran / Kafe',
+    area: 'Masa',
+    plan: 'Free +',
+    desc: 'Masa QR siparişi, gel-al ve teslimat. Nakit/kart ödeme, kupon, sadakat, garson çağır ve değerlendirme.',
+    features: ['Masa siparişi', 'Kupon + sadakat', 'Garson çağır', 'Değerlendirme'],
+  },
+  {
+    key: 'hotel',
+    icon: '🛏️',
+    name: 'Otel',
+    area: 'Oda',
+    plan: 'Business +',
+    desc: 'Oda servisi akışı. Misafir siparişi ödeme yerine "🧾 Odaya Yaz" ile oda folyosuna işleyebilir; çıkışta toplu tahsil edilir.',
+    features: ['Oda servisi', 'Odaya yansıt (folyo)', 'Çıkışta tahsilat'],
+  },
+  {
+    key: 'bar',
+    icon: '🍹',
+    name: 'Bar / Pub',
+    area: 'Masa',
+    plan: 'Pro +',
+    desc: 'Gece / adisyon akışı. Happy hour indirimi menüde otomatik yansır; 18+ ürünlerde sepete eklemeden önce yaş onayı kapısı çıkar.',
+    features: ['Happy hour indirimi', '18+ yaş kapısı', 'Adisyon akışı'],
+  },
+  {
+    key: 'beach',
+    icon: '⛱️',
+    name: 'Plaj Kulübü',
+    area: 'Şezlong',
+    plan: 'Business +',
+    desc: 'Şezlong servisi. Sipariş "🧾 Şezlonga Yaz" ile şezlong folyosuna işlenir (otel folyosuyla aynı mekanizma).',
+    features: ['Şezlong servisi', 'Şezlonga yansıt (folyo)', 'Çıkışta tahsilat'],
+  },
+] as const;
+
+/** Görsel temalar — kaynak: RestaurantSettings::THEMES. */
 const THEMES = [
   {
     key: 'modern',
     name: 'Modern',
-    emoji: '🧊',
     tag: 'Varsayılan',
-    desc: 'Görsel ağırlıklı, kart tabanlı çağdaş düzen. Ürün fotoğrafları, alerjen rozetleri ve hızlı sepet için ideal — çoğu işletme için önerilir.',
-    accent: 'from-teal-500 to-emerald-600',
+    desc: 'Kart tabanlı çağdaş düzen: ürün fotoğrafı, besin değeri / kalori rozetleri ve yapışkan kategori navigasyonu.',
   },
   {
     key: 'classic',
     name: 'Classic',
-    emoji: '📜',
-    desc: 'Sade, basılı menü hissi veren tipografik liste düzeni. Fotoğrafsız, hızlı taranır; fine-dining, kahve ve şarap menüleri için uygun.',
-    accent: 'from-amber-500 to-orange-600',
+    tag: null,
+    desc: 'Görsel odaklı: üstte kapak (hero) görseli + yuvarlak logo + hakkında metni, her üründe fotoğraf.',
   },
   {
     key: 'flipbook',
     name: 'Flipbook',
-    emoji: '📖',
-    desc: 'Sayfa çevirmeli kitapçık deneyimi. Her kategori ayrı bir sayfa gibi; sunum ve marka hikayesi güçlü menüler için.',
-    accent: 'from-indigo-500 to-violet-600',
+    tag: null,
+    desc: 'Basılı menü / dergi estetiği: krem zemin, serif başlıklar, noktalı fiyat çizgileri, fotoğrafsız.',
   },
 ] as const;
 
-/** Zengin içerikli demo işletmeler — her tema bunlarla önizlenebilir. */
-const DEMOS = [
-  { slug: 'demo', label: 'Girne Meze', hint: 'restoran' },
-  { slug: 'demo-bar', label: 'Efsane Bar', hint: 'bar' },
-  { slug: 'demo-otel', label: 'Deniz Kızı', hint: 'otel' },
-] as const;
+/** Tema önizlemeleri zengin restoran demosu (Girne Meze) üzerinden gösterilir. */
+const THEME_PREVIEW_SLUG = 'demo';
+
+type Demo = {
+  slug: string;
+  name: string;
+  theme: string | null;
+  area_name: string;
+  area_type: string;
+  table_code: string;
+  qr_token: string;
+} | null;
 
 export default function MenuDesignsPage() {
+  const { api, ready } = useApi();
+  const [demos, setDemos] = useState<Record<string, Demo>>({});
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!ready) return;
+    api
+      .superMenuModelDemos()
+      .then((r) => {
+        const map: Record<string, Demo> = {};
+        for (const m of r.models) map[m.vertical] = m.demo;
+        setDemos(map);
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, [ready, api]);
+
   return (
-    <Panel
-      title="QR Menü Tasarımları"
-      right={<span className="text-xs text-muted">3 tema · canlı önizleme</span>}
-    >
-      <p className="mb-5 max-w-3xl text-sm leading-relaxed text-muted">
-        Her işletme, QR menüsü için aşağıdaki üç tasarımdan birini seçer (İşletme → Ayarlar → Görünüm).
-        Aşağıdaki örnek linkler gerçek demo menüleri ilgili temada açar ve işletmenin kayıtlı
-        ayarını <strong>değiştirmez</strong> — <code className="rounded bg-canvas px-1 py-0.5 text-[11px]">?theme=</code> yalnızca önizleme amaçlıdır.
-      </p>
+    <div className="space-y-6">
+      <Panel
+        title="Sektör Modelleri"
+        right={<span className="text-xs text-muted">4 dikey · canlı sipariş menüsü</span>}
+      >
+        <p className="mb-5 max-w-3xl text-sm leading-relaxed text-muted">
+          Her işletme türü (dikey) QR menüde farklı bir sipariş akışı sunar.{' '}
+          <strong>Canlı menü</strong> linkleri gerçek demo işletmenin <em>taranmış</em> QR menüsünü açar —
+          otel/plaj folyosu (&quot;Odaya/Şezlonga Yaz&quot;), happy hour ve 18+ yaş kapısı gibi dikeye özel
+          davranışlar yalnızca burada görünür. <strong>Salt-okunur</strong> ise menünün siparişsiz halidir.
+        </p>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {THEMES.map((t) => (
-          <div key={t.key} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface">
-            <div className={`flex h-24 items-center justify-center bg-gradient-to-br ${t.accent}`}>
-              <span className="text-4xl drop-shadow">{t.emoji}</span>
-            </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {VERTICALS.map((v) => {
+            const demo = demos[v.key];
+            return (
+              <div key={v.key} className="flex gap-4 rounded-2xl border border-line bg-surface p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-canvas text-2xl">
+                  {v.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-bold text-ink">{v.name}</h3>
+                    <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-semibold text-brand-600">
+                      {v.plan}
+                    </span>
+                    <span className="ml-auto rounded bg-canvas px-1.5 py-0.5 text-[10px] text-muted">
+                      Alan: {v.area}
+                    </span>
+                  </div>
 
-            <div className="flex flex-1 flex-col p-5">
-              <div className="mb-2 flex items-center gap-2">
-                <h3 className="text-base font-bold text-ink">{t.name}</h3>
-                {'tag' in t && t.tag && (
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{v.desc}</p>
+
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {v.features.map((f) => (
+                      <span key={f} className="rounded-md bg-canvas px-2 py-0.5 text-[11px] text-ink/70">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-3.5 flex flex-wrap items-center gap-2">
+                    {demo ? (
+                      <>
+                        <a
+                          href={`${CUSTOMER_URL}/m/${demo.qr_token}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
+                        >
+                          Canlı menü ↗
+                        </a>
+                        <a
+                          href={`${CUSTOMER_URL}/v/${demo.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-medium text-ink transition hover:border-brand-500 hover:text-brand-600"
+                        >
+                          Salt-okunur
+                        </a>
+                        <span className="text-[11px] text-muted">
+                          {demo.name} · {demo.area_name} “{demo.table_code}”
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[12px] text-muted">
+                        {loaded
+                          ? 'Bu dikey için demo işletme yok — self-service kayıtla oluşturulabilir.'
+                          : 'Yükleniyor…'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
+
+      <Panel
+        title="Görsel Temalar"
+        right={<span className="text-xs text-muted">3 tema · ?theme= önizleme</span>}
+      >
+        <p className="mb-5 max-w-3xl text-sm leading-relaxed text-muted">
+          Dikeyden bağımsız olarak her menü üç görsel düzenden biriyle sunulur. Örnek linkler aynı zengin
+          restoran menüsünü (Girne Meze) ilgili temada açar ve işletmenin kayıtlı temasını{' '}
+          <strong>değiştirmez</strong>.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {THEMES.map((t) => (
+            <div key={t.key} className="flex flex-col rounded-2xl border border-line bg-surface p-4">
+              <div className="mb-3 overflow-hidden rounded-lg border border-line/60">
+                <ThemeThumb theme={t.key} />
+              </div>
+              <div className="mb-1 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-ink">{t.name}</h3>
+                {t.tag && (
                   <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-semibold text-brand-600">
                     {t.tag}
                   </span>
                 )}
                 <code className="ml-auto rounded bg-canvas px-1.5 py-0.5 text-[10px] text-muted">{t.key}</code>
               </div>
-
-              <p className="mb-4 flex-1 text-sm leading-relaxed text-muted">{t.desc}</p>
-
+              <p className="mb-3 flex-1 text-[13px] leading-relaxed text-muted">{t.desc}</p>
               <a
-                href={`${CUSTOMER_URL}/v/demo?theme=${t.key}`}
+                href={`${CUSTOMER_URL}/v/${THEME_PREVIEW_SLUG}?theme=${t.key}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mb-3 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
               >
-                Örnek Menüyü Aç ↗
+                Örnek ↗
               </a>
-
-              <div className="flex flex-wrap gap-1.5">
-                {DEMOS.map((d) => (
-                  <a
-                    key={d.slug}
-                    href={`${CUSTOMER_URL}/v/${d.slug}?theme=${t.key}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${d.label} — ${t.name} temasıyla`}
-                    className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-muted transition hover:border-brand-500 hover:text-brand-600"
-                  >
-                    {d.label}
-                    <span className="ml-1 text-[9px] uppercase tracking-wide opacity-60">{d.hint}</span>
-                  </a>
-                ))}
-              </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-5 text-xs text-muted">
-        İşletme kendi menüsünü <code className="rounded bg-canvas px-1 py-0.5">{'<müşteri-uygulaması>/v/<slug>'}</code> adresinde,
-        panelinde seçtiği temayla yayınlar. Örnek linkler yeni sekmede açılır.
-      </p>
-    </Panel>
+          ))}
+        </div>
+      </Panel>
+    </div>
   );
 }

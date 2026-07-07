@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\Table;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Payments\TikoGateway;
@@ -508,5 +509,69 @@ class SuperadminController extends Controller
             ]);
 
         return response()->json(['data' => $logs]);
+    }
+
+    /**
+     * GET /superadmin/menu-model-demos — cross-tenant live preview links for each
+     * QR-menu sector model (vertical). For every vertical we resolve a representative
+     * ordering point (table/room/sunbed) from a demo tenant and return its live
+     * qr_token, so the design gallery can deep-link into the actual scanned menu
+     * (folio / happy-hour / 18+ behaviours) without hard-coding tokens that rotate
+     * on reseed. Beach has no dedicated demo tenant, so its sunbed-folio flow is
+     * demonstrated by whichever tenant owns a 'sunbed' area (seeded in the hotel demo).
+     */
+    public function menuModelDemos(): JsonResponse
+    {
+        // The characteristic area type whose scanned menu best showcases each vertical.
+        $charArea = ['restaurant' => 'table', 'hotel' => 'room', 'bar' => 'table', 'beach' => 'sunbed'];
+
+        $models = array_map(function (string $vertical) use ($charArea) {
+            $areaType = $charArea[$vertical] ?? 'table';
+
+            $q = Table::withoutTenancy()
+                ->join('dining_areas', 'dining_areas.id', '=', 'tables.dining_area_id')
+                ->join('tenants', 'tenants.id', '=', 'tables.tenant_id')
+                ->where('tables.is_active', true)
+                ->where('dining_areas.type', $areaType)
+                ->whereNull('tenants.deleted_at')
+                ->where('tenants.status', '!=', 'suspended');
+
+            // Beach has no vertical=beach tenant — match purely by the sunbed area.
+            // Other verticals must match the tenant's own vertical so a bar 'table'
+            // isn't mistaken for a restaurant one (restaurant is the default when unset).
+            if ($vertical !== 'beach') {
+                $q->where(function (Builder $w) use ($vertical) {
+                    $w->where('tenants.settings_json->vertical', $vertical);
+                    if ($vertical === 'restaurant') {
+                        $w->orWhereNull('tenants.settings_json->vertical');
+                    }
+                });
+            }
+
+            $row = $q
+                ->orderByRaw("case when tenants.slug like 'demo%' then 0 else 1 end")
+                ->orderBy('tenants.id')
+                ->orderBy('tables.id')
+                ->first([
+                    'tables.qr_token', 'tables.code',
+                    'tenants.slug', 'tenants.name', 'tenants.settings_json',
+                    'dining_areas.name as area_name', 'dining_areas.type as area_type',
+                ]);
+
+            return [
+                'vertical' => $vertical,
+                'demo' => $row ? [
+                    'slug' => $row->slug,
+                    'name' => $row->name,
+                    'theme' => data_get(json_decode($row->settings_json ?? '{}', true), 'theme'),
+                    'area_name' => $row->area_name,
+                    'area_type' => $row->area_type,
+                    'table_code' => $row->code,
+                    'qr_token' => $row->qr_token,
+                ] : null,
+            ];
+        }, RestaurantSettings::VERTICALS);
+
+        return response()->json(['data' => ['models' => $models]]);
     }
 }
