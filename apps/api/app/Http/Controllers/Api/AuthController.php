@@ -56,6 +56,13 @@ class AuthController extends Controller
             ]);
         }
 
+        // A superadmin-disabled account cannot sign in (tokens are revoked on block).
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => [__('Your account is not active. Please contact support.')],
+            ]);
+        }
+
         if ($user->tenant_id !== null) {
             $tenant = $user->tenant()->withTrashed()->first();
 

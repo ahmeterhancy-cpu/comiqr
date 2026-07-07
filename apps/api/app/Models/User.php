@@ -24,7 +24,7 @@ class User extends Authenticatable
     protected bool $tenantOptional = true;
 
     protected $fillable = [
-        'tenant_id', 'name', 'email', 'phone', 'password', 'role',
+        'tenant_id', 'name', 'email', 'phone', 'password', 'role', 'is_active',
     ];
 
     protected $hidden = [
@@ -40,6 +40,7 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'is_active' => 'boolean',
         ];
     }
 

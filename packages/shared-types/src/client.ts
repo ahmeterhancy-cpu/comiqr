@@ -500,6 +500,7 @@ export class ApiClient {
       email: string;
       role: string;
       role_label: string;
+      is_active: boolean;
       tenant: string | null;
       tenant_slug: string | null;
       last_login_at: string | null;
@@ -524,6 +525,15 @@ export class ApiClient {
     tenant_id?: number | null;
   }): Promise<{ id: number; name: string; email: string; role: string; role_label: string; tenant: string | null }> {
     return this.request('/superadmin/users', { method: 'POST', body: JSON.stringify(body) });
+  }
+  superUpdateUser(
+    id: number,
+    body: { is_active?: boolean; password?: string; name?: string },
+  ): Promise<{ id: number; is_active: boolean; role: string }> {
+    return this.request(`/superadmin/users/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  superDeleteUser(id: number): Promise<{ deleted: boolean }> {
+    return this.request(`/superadmin/users/${id}`, { method: 'DELETE' });
   }
   superTenants(): Promise<any[]> {
     return this.request('/superadmin/tenants');

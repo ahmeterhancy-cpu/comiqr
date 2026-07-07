@@ -275,6 +275,7 @@ class SuperadminController extends Controller
                 'email' => $u->email,
                 'role' => $u->role?->value,
                 'role_label' => $u->role?->label(),
+                'is_active' => (bool) $u->is_active,
                 'tenant' => $u->tenant?->name,
                 'tenant_slug' => $u->tenant?->slug,
                 'last_login_at' => $u->last_login_at,
@@ -334,9 +335,120 @@ class SuperadminController extends Controller
             'email' => $user->email,
             'role' => $user->role?->value,
             'role_label' => $user->role?->label(),
+            'is_active' => (bool) $user->is_active,
             'tenant' => $user->tenant?->name,
             'tenant_slug' => $user->tenant?->slug,
         ]], 201);
+    }
+
+    /**
+     * PATCH /superadmin/users/{id} — block/unblock (is_active), reset password or
+     * rename a user. Blocking or a password reset revokes the user's active tokens
+     * (immediate logout). Guards prevent locking out yourself or the last superadmin.
+     */
+    public function updateUser(Request $request, string $id): JsonResponse
+    {
+        $user = User::withoutTenancy()->findOrFail($id);
+
+        $data = $request->validate([
+            'is_active' => ['sometimes', 'boolean'],
+            'password' => ['sometimes', 'string', 'min:8', 'max:255'],
+            'name' => ['sometimes', 'string', 'max:255'],
+        ]);
+
+        $deactivating = array_key_exists('is_active', $data) && ! $data['is_active'];
+
+        if ($deactivating) {
+            if ($user->id === $request->user()->id) {
+                throw ValidationException::withMessages(['is_active' => 'Kendi hesabınızı engelleyemezsiniz.']);
+            }
+            $this->guardLastSuperadmin($user, 'is_active');
+        }
+
+        if (array_key_exists('name', $data)) {
+            $user->name = $data['name'];
+        }
+        if (array_key_exists('is_active', $data)) {
+            $user->is_active = $data['is_active'];
+        }
+        if (array_key_exists('password', $data)) {
+            $user->password = $data['password']; // 'hashed' cast hashes on save
+        }
+
+        $user->save();
+
+        // Blocking or a password change must end any active sessions.
+        if ($deactivating || array_key_exists('password', $data)) {
+            $user->tokens()->delete();
+        }
+
+        AuditLog::create([
+            'tenant_id' => $user->tenant_id,
+            'user_id' => $request->user()->id,
+            'action' => 'superadmin.user_updated',
+            'subject_type' => User::class,
+            'subject_id' => $user->id,
+            'meta_json' => ['changed' => array_keys($data), 'by' => $request->user()->email],
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json(['data' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role?->value,
+            'role_label' => $user->role?->label(),
+            'is_active' => (bool) $user->is_active,
+            'tenant' => $user->tenant?->name,
+            'tenant_slug' => $user->tenant?->slug,
+        ]]);
+    }
+
+    /**
+     * DELETE /superadmin/users/{id} — soft-delete a user and revoke their tokens.
+     * Cannot delete yourself or the last active superadmin.
+     */
+    public function deleteUser(Request $request, string $id): JsonResponse
+    {
+        $user = User::withoutTenancy()->findOrFail($id);
+
+        if ($user->id === $request->user()->id) {
+            throw ValidationException::withMessages(['user' => 'Kendi hesabınızı silemezsiniz.']);
+        }
+        $this->guardLastSuperadmin($user, 'user');
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        AuditLog::create([
+            'tenant_id' => $user->tenant_id,
+            'user_id' => $request->user()->id,
+            'action' => 'superadmin.user_deleted',
+            'subject_type' => User::class,
+            'subject_id' => $user->id,
+            'meta_json' => ['email' => $user->email, 'by' => $request->user()->email],
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json(['data' => ['deleted' => true]]);
+    }
+
+    /** Refuse an action that would remove the platform's last active superadmin. */
+    private function guardLastSuperadmin(User $user, string $field): void
+    {
+        if ($user->role !== Role::Superadmin) {
+            return;
+        }
+
+        $anotherActive = User::withoutTenancy()
+            ->where('role', Role::Superadmin->value)
+            ->where('is_active', true)
+            ->where('id', '!=', $user->id)
+            ->exists();
+
+        if (! $anotherActive) {
+            throw ValidationException::withMessages([$field => 'Platformdaki son aktif süperadmin engellenemez/silinemez.']);
+        }
     }
 
     /** GET /superadmin/tenants */
