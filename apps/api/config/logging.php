@@ -73,6 +73,16 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Structured JSON logs for aggregation (B5). Set LOG_CHANNEL=json (or add to
+        // LOG_STACK) in prod; the LogContext middleware attaches request_id/tenant_id.
+        'json' => [
+            'driver' => 'monolog',
+            'handler' => Monolog\Handler\RotatingFileHandler::class,
+            'handler_with' => ['filename' => storage_path('logs/laravel.json.log'), 'maxFiles' => env('LOG_DAILY_DAYS', 14)],
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'level' => env('LOG_LEVEL', 'debug'),
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

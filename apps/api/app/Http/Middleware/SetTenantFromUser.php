@@ -42,6 +42,7 @@ class SetTenantFromUser
         }
 
         $this->tenants->set($user->tenant);
+        \Illuminate\Support\Facades\Log::withContext(['tenant_id' => $user->tenant_id, 'user_id' => $user->id]);
         app()->setLocale($request->query('locale', $user->tenant->locale_default ?? config('app.locale')));
 
         return $next($request);

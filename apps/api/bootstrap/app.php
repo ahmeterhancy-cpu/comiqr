@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Reset tenant context first (no cross-request leak), then rate-limit
         // every API route (docs/04 §4.2, §4.9).
         $middleware->api(prepend: [
+            \App\Http\Middleware\LogContext::class,
             \App\Http\Middleware\ResetTenantContext::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
         ]);
