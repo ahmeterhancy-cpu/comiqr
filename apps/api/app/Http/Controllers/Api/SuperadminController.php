@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Platform superadmin (M12, docs/06 §6.11). Operates across tenants (no tenant
@@ -248,30 +249,94 @@ class SuperadminController extends Controller
     }
 
     /** GET /superadmin/users?q= — global user lookup across tenants (support). */
+    /**
+     * GET /superadmin/users — list every platform user (paginated, newest first).
+     * With ?q= (>=2 chars) filters by name/email. No tenant scope in the superadmin
+     * context, so this spans all tenants + superadmins.
+     */
     public function userSearch(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
-        if (strlen($q) < 2) {
-            return response()->json(['data' => []]);
+
+        $query = User::query()
+            ->with('tenant:id,name,slug')
+            ->latest('id');
+
+        if (strlen($q) >= 2) {
+            $query->where(fn ($w) => $w->where('email', 'ilike', "%{$q}%")->orWhere('name', 'ilike', "%{$q}%"));
         }
 
-        $users = User::query()
-            ->where(fn ($w) => $w->where('email', 'ilike', "%{$q}%")->orWhere('name', 'ilike', "%{$q}%"))
-            ->with('tenant:id,name,slug')
-            ->orderBy('name')
-            ->limit(50)
-            ->get()
-            ->map(fn (User $u) => [
+        $page = $query->paginate(25);
+
+        return response()->json(['data' => [
+            'users' => collect($page->items())->map(fn (User $u) => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
                 'role' => $u->role?->value,
+                'role_label' => $u->role?->label(),
                 'tenant' => $u->tenant?->name,
                 'tenant_slug' => $u->tenant?->slug,
                 'last_login_at' => $u->last_login_at,
-            ]);
+                'created_at' => $u->created_at,
+            ])->all(),
+            'total' => $page->total(),
+            'page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'last_page' => $page->lastPage(),
+        ]]);
+    }
 
-        return response()->json(['data' => $users]);
+    /**
+     * POST /superadmin/users — create a platform user. A superadmin carries no
+     * tenant; every other role must belong to one. Audited.
+     */
+    public function createUser(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('users', 'email')],
+            'password' => ['required', 'string', 'min:8', 'max:255'],
+            'role' => ['required', Rule::in(array_map(fn (Role $r) => $r->value, Role::cases()))],
+            'tenant_id' => ['nullable', 'integer', 'exists:tenants,id'],
+        ]);
+
+        $isSuper = $data['role'] === Role::Superadmin->value;
+
+        if ($isSuper && ! empty($data['tenant_id'])) {
+            throw ValidationException::withMessages(['tenant_id' => 'Süperadmin bir işletmeye bağlı olamaz.']);
+        }
+        if (! $isSuper && empty($data['tenant_id'])) {
+            throw ValidationException::withMessages(['tenant_id' => 'Bu rol için bir işletme seçilmelidir.']);
+        }
+
+        $user = User::create([
+            'tenant_id' => $isSuper ? null : $data['tenant_id'],
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['password'], // 'hashed' cast hashes on save
+            'role' => $data['role'],
+        ]);
+
+        AuditLog::create([
+            'tenant_id' => $user->tenant_id,
+            'user_id' => $request->user()->id,
+            'action' => 'superadmin.user_created',
+            'subject_type' => User::class,
+            'subject_id' => $user->id,
+            'meta_json' => ['email' => $user->email, 'role' => $user->role?->value, 'by' => $request->user()->email],
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json(['data' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role?->value,
+            'role_label' => $user->role?->label(),
+            'tenant' => $user->tenant?->name,
+            'tenant_slug' => $user->tenant?->slug,
+        ]], 201);
     }
 
     /** GET /superadmin/tenants */

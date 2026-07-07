@@ -147,6 +147,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('allergens/{id}', [SuperadminController::class, 'updateAllergen']);
         Route::delete('allergens/{id}', [SuperadminController::class, 'deleteAllergen']);
         Route::get('users', [SuperadminController::class, 'userSearch']);
+        Route::post('users', [SuperadminController::class, 'createUser']);
         Route::get('tenants', [SuperadminController::class, 'tenants']);
         Route::get('tenants/{id}', [SuperadminController::class, 'tenantDetail']);
         Route::patch('tenants/{id}', [SuperadminController::class, 'updateTenant']);

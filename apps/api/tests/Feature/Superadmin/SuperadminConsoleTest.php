@@ -79,7 +79,7 @@ it('searches users across tenants by email', function () {
 
     Sanctum::actingAs(rootUser());
 
-    $emails = collect(getJson('/v1/superadmin/users?q=ahmet')->assertOk()->json('data'))->pluck('email');
+    $emails = collect(getJson('/v1/superadmin/users?q=ahmet')->assertOk()->json('data.users'))->pluck('email');
     expect($emails)->toContain('ahmet@venuea.com')->not->toContain('mehmet@venueb.com');
 });
 

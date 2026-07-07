@@ -493,8 +493,37 @@ export class ApiClient {
   superTenantDetail(id: number): Promise<any> {
     return this.request(`/superadmin/tenants/${id}`);
   }
-  superUsers(q: string): Promise<any[]> {
-    return this.request(`/superadmin/users?q=${encodeURIComponent(q)}`);
+  superUsers(params: { q?: string; page?: number } = {}): Promise<{
+    users: {
+      id: number;
+      name: string;
+      email: string;
+      role: string;
+      role_label: string;
+      tenant: string | null;
+      tenant_slug: string | null;
+      last_login_at: string | null;
+      created_at: string | null;
+    }[];
+    total: number;
+    page: number;
+    per_page: number;
+    last_page: number;
+  }> {
+    const sp = new URLSearchParams();
+    if (params.q) sp.set('q', params.q);
+    if (params.page) sp.set('page', String(params.page));
+    const qs = sp.toString();
+    return this.request(`/superadmin/users${qs ? `?${qs}` : ''}`);
+  }
+  superCreateUser(body: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    tenant_id?: number | null;
+  }): Promise<{ id: number; name: string; email: string; role: string; role_label: string; tenant: string | null }> {
+    return this.request('/superadmin/users', { method: 'POST', body: JSON.stringify(body) });
   }
   superTenants(): Promise<any[]> {
     return this.request('/superadmin/tenants');
