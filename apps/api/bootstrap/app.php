@@ -37,6 +37,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // A5: report unhandled exceptions to Sentry (no-op until SENTRY_LARAVEL_DSN is set).
+        \Sentry\Laravel\Integration::handles($exceptions);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('v1/*') || $request->expectsJson(),
         );

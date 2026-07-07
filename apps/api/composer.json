@@ -12,7 +12,8 @@
         "laravel/reverb": "^1.10",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
-        "predis/predis": "^3.5"
+        "predis/predis": "^3.5",
+        "sentry/sentry-laravel": "^4.26"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
