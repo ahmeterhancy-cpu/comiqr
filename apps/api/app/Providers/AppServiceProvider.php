@@ -38,6 +38,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // A1: never run production with debug on — it leaks stack traces + config.
+        if ($this->app->isProduction() && config('app.debug')) {
+            \Illuminate\Support\Facades\Log::critical('APP_DEBUG is enabled in production — disable it immediately (config/env leak risk).');
+        }
+
         $this->configureRateLimiters();
 
         // Mirror placed orders to the tenant's external systems (POS/ERP/delivery).

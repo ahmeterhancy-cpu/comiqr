@@ -20,9 +20,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Bearer-token auth (no cookies) → wildcard origin is safe. Tighten to the
-    // known frontends in production if desired.
-    'allowed_origins' => ['*'],
+    // Bearer-token auth (no cookies) → a wildcard origin is safe, but production
+    // should pin the known frontends via CORS_ALLOWED_ORIGINS (comma-separated).
+    'allowed_origins' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('CORS_ALLOWED_ORIGINS', '*')),
+    ))),
 
     'allowed_origins_patterns' => [],
 

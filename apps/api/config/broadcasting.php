@@ -15,7 +15,9 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_CONNECTION', 'null'),
+    // Default 'log' (not 'null') so a missing prod env fails VISIBLE — broadcasts
+    // land in the log instead of being silently black-holed. Prod must set 'reverb'.
+    'default' => env('BROADCAST_CONNECTION', 'log'),
 
     /*
     |--------------------------------------------------------------------------

@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
         ]);
 
+        // Baseline security headers on every API response (A2).
+        $middleware->api(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
         // Route-level aliases; tenancy is applied per route group in routes/api.php.
         $middleware->alias([
             'tenant' => \App\Http\Middleware\TenantResolver::class,
