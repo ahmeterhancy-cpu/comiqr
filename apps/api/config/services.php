@@ -14,6 +14,22 @@ return [
     |
     */
 
+    // Campaign delivery gateways (M8). A channel activates only when its creds
+    // are present; otherwise CampaignChannelManager falls back to the log driver.
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+    ],
+    'telsim' => [
+        'url' => env('TELSIM_SMS_URL'),
+        'user' => env('TELSIM_SMS_USER'),
+        'pass' => env('TELSIM_SMS_PASS'),
+        'header' => env('TELSIM_SMS_HEADER'),
+    ],
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_id' => env('WHATSAPP_PHONE_ID'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

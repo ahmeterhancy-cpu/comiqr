@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 
 use function Pest\Laravel\postJson;
@@ -76,6 +77,22 @@ it('e-mail only reaches customers with an address', function () {
     postJson("/v1/admin/campaigns/{$id}/send")
         ->assertOk()
         ->assertJsonPath('data.sent_count', 2);
+});
+
+it('delivers email campaigns through the real Brevo gateway when configured', function () {
+    config(['services.brevo.key' => 'test-key']);
+    Http::fake(['api.brevo.com/*' => Http::response(['messageId' => 'x'], 201)]);
+
+    $tenant = seedCampaignAudience();
+    actingManager($tenant);
+
+    $id = postJson('/v1/admin/campaigns', [
+        'name' => 'Brevo', 'channel' => 'email', 'subject' => 'Merhaba', 'body' => 'Kampanya', 'audience' => 'all',
+    ])->json('data.id');
+
+    postJson("/v1/admin/campaigns/{$id}/send")->assertOk()->assertJsonPath('data.sent_count', 2);
+
+    Http::assertSent(fn ($req) => str_contains($req->url(), 'api.brevo.com/v3/smtp/email'));
 });
 
 it('min_points audience filters by loyalty balance', function () {
