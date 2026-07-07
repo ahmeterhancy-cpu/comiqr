@@ -64,6 +64,10 @@ class DemoMenuSeeder extends Seeder
                 'timing' => '11:00 - 23:00',
                 'description' => "Kıbrıs'ın en taze mezeleri, mangalda hellim ve közde şeftali kebabı. Deniz manzarasında keyifli bir sofra sizi bekliyor.",
                 'address' => 'Sahil Yolu No:12, Girne / KKTC',
+                // Paket servis (M20) demosu: gel-al + teslimat açık, /order/demo çalışsın.
+                'allow_takeaway' => true,
+                'allow_delivery' => true,
+                'delivery_charge' => 40,
             ])]);
 
             $branch = Branch::firstOrCreate(['tenant_id' => $tenant->id, 'name' => 'Merkez'], ['is_active' => true, 'timezone' => 'Asia/Nicosia']);

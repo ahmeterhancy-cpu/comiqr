@@ -72,6 +72,9 @@ const THEMES = [
 /** Tema önizlemeleri zengin restoran demosu (Girne Meze) üzerinden gösterilir. */
 const THEME_PREVIEW_SLUG = 'demo';
 
+/** Paket servis (gel-al/teslimat) demo restoranda açıktır (allow_takeaway/allow_delivery). */
+const PACKAGE_PREVIEW_SLUG = 'demo';
+
 type Demo = {
   slug: string;
   name: string;
@@ -177,6 +180,52 @@ export default function MenuDesignsPage() {
               </div>
             );
           })}
+        </div>
+      </Panel>
+
+      <Panel
+        title="Paket Servis — Gel-Al & Teslimat"
+        right={<span className="text-xs text-muted">M20 · pazaryeri kanalı</span>}
+      >
+        <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 lg:flex-row lg:items-center">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-canvas text-3xl">
+            🛵
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm leading-relaxed text-muted">
+              Dikeyden bağımsız <strong>gel-al &amp; teslimat</strong> kanalı. Misafir masa QR&apos;ı olmadan,
+              işletme sayfasından sipariş verir; ad/telefon/adres girer ve <strong>kapıda</strong> (nakit/kart)
+              veya <strong>online</strong> (Tiko + kayıtlı kart) öder. İşletme başına{' '}
+              <code className="rounded bg-canvas px-1 py-0.5 text-[11px]">allow_takeaway</code> /{' '}
+              <code className="rounded bg-canvas px-1 py-0.5 text-[11px]">allow_delivery</code> ile açılır ve{' '}
+              <strong>Keşfet</strong> pazaryerinde listelenir.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {['🛍️ Gel-al', '🛵 Teslimat', '💵 Kapıda ödeme', '💳 Online (Tiko)', '🗺️ Pazaryerinde'].map((f) => (
+                <span key={f} className="rounded-md bg-canvas px-2 py-0.5 text-[11px] text-ink/70">
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col gap-2">
+            <a
+              href={`${CUSTOMER_URL}/order/${PACKAGE_PREVIEW_SLUG}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
+            >
+              Örnek paket sipariş ↗
+            </a>
+            <a
+              href={`${CUSTOMER_URL}/discover`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-medium text-ink transition hover:border-brand-500 hover:text-brand-600"
+            >
+              Pazaryeri (Keşfet) ↗
+            </a>
+          </div>
         </div>
       </Panel>
 
