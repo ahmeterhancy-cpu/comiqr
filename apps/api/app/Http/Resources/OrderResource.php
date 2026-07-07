@@ -29,8 +29,12 @@ class OrderResource extends JsonResource
             'grand_total' => $this->grand_total,
             // Money collected toward the order — principals plus tips (matches the
             // outstanding balance the POS shows: grand_total - paid_total).
-            'paid_total' => (float) $this->payments()->where('status', 'paid')
-                ->selectRaw('COALESCE(SUM(amount + tip_amount), 0) as c')->value('c'),
+            // Prefer an eager-loaded payments relation (list contexts) to avoid an
+            // N+1; fall back to a single aggregate query for single-order responses.
+            'paid_total' => $this->relationLoaded('payments')
+                ? round($this->payments->where('status', 'paid')->sum(fn ($p) => (float) $p->amount + (float) $p->tip_amount), 2)
+                : (float) $this->payments()->where('status', 'paid')
+                    ->selectRaw('COALESCE(SUM(amount + tip_amount), 0) as c')->value('c'),
             'note' => $this->note,
             'placed_at' => $this->placed_at,
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($i) => [

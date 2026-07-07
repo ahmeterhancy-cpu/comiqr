@@ -51,7 +51,7 @@ class PosController extends Controller
 
         $query = Order::query()
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-            ->with(['items.product', 'tableSession.table.diningArea'])
+            ->with(['items.product', 'tableSession.table.diningArea', 'payments'])
             ->latest('placed_at')
             ->limit(100);
 

@@ -48,6 +48,9 @@ use Illuminate\Support\Facades\Route;
 // --- Public / central (no tenant) --------------------------------------------
 Route::get('ping', fn () => response()->json(['data' => ['ok' => true, 'app' => config('app.name')]]));
 
+// A4: readiness probe — DB + cache reachability for load balancers / uptime checks.
+Route::get('health', \App\Http\Controllers\Api\HealthController::class);
+
 Route::post('auth/register-tenant', [AuthController::class, 'registerTenant'])
     ->middleware('throttle:onboarding');
 
