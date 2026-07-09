@@ -212,6 +212,18 @@ class MenuController extends Controller
                 'address' => $settings['address'] ?? null,
                 'logo' => $settings['logo'] ?? null,
                 'cover' => $settings['cover'] ?? null,
+                // Contact + social + guest WiFi (all live in settings_json; shown only when set).
+                'email' => $settings['email'] ?? null,
+                'website' => $settings['website'] ?? null,
+                'phone' => $settings['phone'] ?? null,
+                'instagram' => $settings['instagram'] ?? null,
+                'facebook' => $settings['facebook'] ?? null,
+                'x' => $settings['x'] ?? null,
+                'tiktok' => $settings['tiktok'] ?? null,
+                'youtube' => $settings['youtube'] ?? null,
+                'whatsapp' => $settings['whatsapp'] ?? null,
+                'wifi_ssid' => $settings['wifi_ssid'] ?? null,
+                'wifi_password' => $settings['wifi_password'] ?? null,
                 'theme' => $settings['theme'] ?? 'classic',
                 // Guest AI chatbot is offered only when the plan unlocks AI and a provider is configured.
                 'ai_chat' => \App\Support\Plans\PlanGate::allows($tenant, 'ai') && $this->ai->isConfigured(),

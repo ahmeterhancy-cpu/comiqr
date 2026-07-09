@@ -196,6 +196,18 @@ export interface MenuVenue {
   powered_by?: boolean;
   /** Guest AI menu assistant available (plan has AI + provider configured). */
   ai_chat?: boolean;
+  // Contact + social + guest WiFi — all optional, shown on the menu only when set.
+  email?: string | null;
+  website?: string | null;
+  phone?: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
+  x?: string | null;
+  tiktok?: string | null;
+  youtube?: string | null;
+  whatsapp?: string | null;
+  wifi_ssid?: string | null;
+  wifi_password?: string | null;
 }
 
 export interface MenuTable {

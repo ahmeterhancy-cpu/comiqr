@@ -58,6 +58,17 @@ export function RestaurantSettingsForm({
   const [timing, setTiming] = useState<string>(s.timing ?? '');
   const [description, setDescription] = useState<string>(s.description ?? '');
   const [address, setAddress] = useState<string>(s.address ?? '');
+  const [email, setEmail] = useState<string>(s.email ?? '');
+  const [website, setWebsite] = useState<string>(s.website ?? '');
+  const [phone, setPhone] = useState<string>(s.phone ?? '');
+  const [instagram, setInstagram] = useState<string>(s.instagram ?? '');
+  const [facebook, setFacebook] = useState<string>(s.facebook ?? '');
+  const [x, setX] = useState<string>(s.x ?? '');
+  const [tiktok, setTiktok] = useState<string>(s.tiktok ?? '');
+  const [youtube, setYoutube] = useState<string>(s.youtube ?? '');
+  const [whatsapp, setWhatsapp] = useState<string>(s.whatsapp ?? '');
+  const [wifiSsid, setWifiSsid] = useState<string>(s.wifi_ssid ?? '');
+  const [wifiPassword, setWifiPassword] = useState<string>(s.wifi_password ?? '');
   const [callWaiter, setCallWaiter] = useState<boolean>(s.allow_call_waiter ?? true);
   const [onTable, setOnTable] = useState<boolean>(s.allow_on_table_order ?? true);
   const [takeaway, setTakeaway] = useState<boolean>(s.allow_takeaway ?? true);
@@ -89,6 +100,17 @@ export function RestaurantSettingsForm({
           timing: timing.trim() || null,
           description: description.trim() || null,
           address: address.trim() || null,
+          email: email.trim() || null,
+          website: website.trim() || null,
+          phone: phone.trim() || null,
+          instagram: instagram.trim() || null,
+          facebook: facebook.trim() || null,
+          x: x.trim() || null,
+          tiktok: tiktok.trim() || null,
+          youtube: youtube.trim() || null,
+          whatsapp: whatsapp.trim() || null,
+          wifi_ssid: wifiSsid.trim() || null,
+          wifi_password: wifiPassword.trim() || null,
           allow_call_waiter: callWaiter,
           allow_on_table_order: onTable,
           allow_takeaway: takeaway,
@@ -181,6 +203,55 @@ export function RestaurantSettingsForm({
           </Field>
           <Field label="Adres">
             <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="İşletme adresi" />
+          </Field>
+        </div>
+      </Card>
+
+      <Card>
+        <h3 className="mb-1 text-sm font-semibold text-ink">İletişim & Sosyal Medya</h3>
+        <p className="mb-3 text-xs text-muted">Doldurduğunuz alanlar menünüzün üst kısmında müşterilere gösterilir. Boş bırakılanlar gizlenir.</p>
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="E-posta">
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@restoran.com" />
+            </Field>
+            <Field label="Web Sitesi">
+              <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="restoran.com" />
+            </Field>
+            <Field label="Telefon">
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90 5xx xxx xx xx" />
+            </Field>
+            <Field label="WhatsApp">
+              <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+90 5xx xxx xx xx" />
+            </Field>
+            <Field label="Instagram">
+              <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@kullaniciadi" />
+            </Field>
+            <Field label="Facebook">
+              <Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="facebook.com/sayfa" />
+            </Field>
+            <Field label="X (Twitter)">
+              <Input value={x} onChange={(e) => setX(e.target.value)} placeholder="@kullaniciadi" />
+            </Field>
+            <Field label="TikTok">
+              <Input value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder="@kullaniciadi" />
+            </Field>
+            <Field label="YouTube">
+              <Input value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="youtube.com/@kanal" />
+            </Field>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <h3 className="mb-1 text-sm font-semibold text-ink">Misafir WiFi</h3>
+        <p className="mb-3 text-xs text-muted">Girilirse menüde WiFi adı ve şifresi (göster/gizle ile) müşterilere sunulur.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="WiFi Adı (SSID)">
+            <Input value={wifiSsid} onChange={(e) => setWifiSsid(e.target.value)} placeholder="Guest_WiFi" />
+          </Field>
+          <Field label="WiFi Şifresi">
+            <Input value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} placeholder="••••••••" />
           </Field>
         </div>
       </Card>

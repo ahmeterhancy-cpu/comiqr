@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AllergenRef, Menu, MenuCategory, MenuProduct } from '@comiqr/shared-types';
 
 export interface MenuLabels {
@@ -42,6 +42,93 @@ export function MenuView({ menu, labels, tableCode }: { menu: Menu; labels: Menu
   if (theme === 'flipbook') return <FlipbookMenu {...props} />;
   return <ModernMenu {...props} />;
 }
+
+/* Turn a stored handle/url into an absolute link (handles bare handles & @-prefixes). */
+function normUrl(value: string, base: string, stripAt = false): string {
+  const t = value.trim();
+  if (/^https?:\/\//i.test(t)) return t;
+  return base + (stripAt ? t.replace(/^@+/, '') : t);
+}
+
+/** Contact + social links + guest WiFi under the header — renders only what's set. */
+function VenueContact({ v }: { v: Menu['venue'] }) {
+  const [showPw, setShowPw] = useState(false);
+
+  const igHandle = v.instagram
+    ? '@' + v.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@+/, '').replace(/\/+$/, '')
+    : '';
+
+  const links: { key: string; href: string; icon: ReactNode; text?: string; label: string }[] = [];
+  if (v.instagram) links.push({ key: 'ig', href: normUrl(v.instagram, 'https://instagram.com/', true), icon: <IgIcon />, text: igHandle, label: 'Instagram' });
+  if (v.email) links.push({ key: 'email', href: `mailto:${v.email}`, icon: <MailIcon />, text: v.email, label: 'E-posta' });
+  if (v.website) links.push({ key: 'web', href: normUrl(v.website, 'https://'), icon: <GlobeIcon />, text: v.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, ''), label: 'Web sitesi' });
+  if (v.phone) links.push({ key: 'phone', href: `tel:${v.phone.replace(/\s+/g, '')}`, icon: <PhoneIcon />, text: v.phone, label: 'Telefon' });
+  if (v.whatsapp) links.push({ key: 'wa', href: `https://wa.me/${v.whatsapp.replace(/[^\d]/g, '')}`, icon: <WaIcon />, label: 'WhatsApp' });
+  if (v.facebook) links.push({ key: 'fb', href: normUrl(v.facebook, 'https://facebook.com/'), icon: <FbIcon />, label: 'Facebook' });
+  if (v.x) links.push({ key: 'x', href: normUrl(v.x, 'https://x.com/', true), icon: <XIcon />, label: 'X' });
+  if (v.tiktok) links.push({ key: 'tt', href: normUrl(v.tiktok, 'https://tiktok.com/@', true), icon: <TtIcon />, label: 'TikTok' });
+  if (v.youtube) links.push({ key: 'yt', href: normUrl(v.youtube, 'https://youtube.com/'), icon: <YtIcon />, label: 'YouTube' });
+
+  const hasWifi = !!(v.wifi_ssid && v.wifi_ssid.trim());
+  if (links.length === 0 && !hasWifi) return null;
+
+  return (
+    <div className="mt-3 space-y-2">
+      {links.length > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {links.map((l) => (
+            <a
+              key={l.key}
+              href={l.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={l.label}
+              title={l.label}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+            >
+              <span className="text-brand-600">{l.icon}</span>
+              {l.text && <span className="max-w-[9rem] truncate">{l.text}</span>}
+            </a>
+          ))}
+        </div>
+      )}
+      {hasWifi && (
+        <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs text-ink shadow-[var(--shadow-card)]">
+          <span className="text-brand-600"><WifiIcon /></span>
+          <span className="font-semibold">{v.wifi_ssid}</span>
+          {v.wifi_password && (
+            <>
+              <span className="text-muted"><LockIcon /></span>
+              <span className="font-mono tracking-wide">{showPw ? v.wifi_password : '••••••••'}</span>
+              <button
+                type="button"
+                onClick={() => setShowPw((p) => !p)}
+                aria-label={showPw ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                className="text-muted transition hover:text-ink"
+              >
+                {showPw ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IgIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" /></svg>); }
+function MailIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>); }
+function GlobeIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" /></svg>); }
+function PhoneIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M5 3h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z" /></svg>); }
+function WaIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.8.8.8-2.7-.2-.3A8 8 0 0 1 12 4zm-2.7 4.3c-.2 0-.5.1-.7.4-.3.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.7 2.7 4.2 3.7 2.1.8 2.5.7 3 .6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2 0-.1-.2-.2-.5-.3l-1.7-.8c-.2-.1-.4-.1-.6.1l-.6.8c-.1.1-.3.2-.5.1-.7-.3-1.4-.6-2.1-1.6-.2-.3.2-.5.4-.8.1-.2 0-.4 0-.5l-.7-1.7c-.2-.4-.3-.3-.5-.3z" /></svg>); }
+function FbIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M13 22v-8h2.6l.4-3H13V9.2c0-.9.3-1.5 1.6-1.5H16V5.1c-.3 0-1.2-.1-2.2-.1-2.2 0-3.8 1.4-3.8 3.9V11H7.5v3H10v8h3z" /></svg>); }
+function XIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M17.5 3h3l-6.6 7.5L21.5 21h-5.8l-4.5-5.9L5.9 21H2.8l7-8L2.5 3h5.9l4.1 5.4L17.5 3zm-2 16h1.6L8.5 4.7H6.8L15.5 19z" /></svg>); }
+function TtIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M14 3c.3 2.1 1.6 3.6 3.7 3.9v2.4c-1.3.1-2.5-.3-3.7-1v5.4c0 3-2.1 5.3-5 5.3a4.9 4.9 0 0 1-5-4.9c0-2.9 2.4-5 5.3-4.8v2.5c-.3-.1-.7-.2-1-.2-1.3 0-2.3 1-2.3 2.4 0 1.3 1 2.4 2.3 2.4 1.4 0 2.4-1.1 2.4-2.6V3H14z" /></svg>); }
+function YtIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M22 8.2a2.6 2.6 0 0 0-1.8-1.8C18.6 6 12 6 12 6s-6.6 0-8.2.4A2.6 2.6 0 0 0 2 8.2 27 27 0 0 0 1.6 12 27 27 0 0 0 2 15.8a2.6 2.6 0 0 0 1.8 1.8C5.4 18 12 18 12 18s6.6 0 8.2-.4a2.6 2.6 0 0 0 1.8-1.8A27 27 0 0 0 22.4 12 27 27 0 0 0 22 8.2zM10 15V9l5.2 3L10 15z" /></svg>); }
+function WifiIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12.5a10 10 0 0 1 14 0M8 15.5a6 6 0 0 1 8 0" /><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" /></svg>); }
+function LockIcon() { return (<svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>); }
+function EyeIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>); }
+function EyeOffIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.3 4M6.1 6.1A17 17 0 0 0 2 12s3.5 7 10 7a9.5 9.5 0 0 0 3.9-.8" /></svg>); }
 
 /* ------------------------------------------------------------------ Modern */
 /* Card list with full nutrition + a sticky category nav (the default). */
@@ -140,6 +227,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
           {v.address && <span className="rounded-full bg-white px-3 py-1 text-xs text-muted shadow-[var(--shadow-card)]">📍 {v.address}</span>}
           {tableCode && <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">{tableCode}</span>}
         </div>
+        <VenueContact v={v} />
       </header>
 
       {/* Category image cards — sticky, scroll-spy highlights & centres the active one */}
