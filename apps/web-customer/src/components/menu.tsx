@@ -1,3 +1,6 @@
+'use client';
+
+import { useMemo, useState } from 'react';
 import type { AllergenRef, Menu, MenuCategory, MenuProduct } from '@comiqr/shared-types';
 
 export interface MenuLabels {
@@ -45,6 +48,38 @@ export function MenuView({ menu, labels, tableCode }: { menu: Menu; labels: Menu
 
 function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }: ThemeProps) {
   const v = menu.venue;
+  const loc = v.locale_default ?? 'tr';
+  const [search, setSearch] = useState('');
+  const [noGluten, setNoGluten] = useState(false);
+  const [noLactose, setNoLactose] = useState(false);
+
+  const glutenId = useMemo(() => menu.allergens.find((a) => /glu/i.test(a.code) || /gluten/i.test(a.name))?.id ?? null, [menu.allergens]);
+  const lactoseId = useMemo(
+    () => menu.allergens.find((a) => /lac|milk|dairy|sut/i.test(a.code) || /lakto|süt/i.test(a.name))?.id ?? null,
+    [menu.allergens],
+  );
+  const hasAllergenData = useMemo(
+    () => categories.some((c) => c.products.some((p) => (p.nutrition?.allergens?.contains?.length ?? 0) > 0)),
+    [categories],
+  );
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLocaleLowerCase(loc);
+    if (!q && !noGluten && !noLactose) return categories;
+    return categories
+      .map((c) => ({
+        ...c,
+        products: c.products.filter((p) => {
+          if (q && !p.name.toLocaleLowerCase(loc).includes(q) && !(p.description ?? '').toLocaleLowerCase(loc).includes(q)) return false;
+          const contains = p.nutrition?.allergens?.contains ?? [];
+          if (noGluten && glutenId != null && contains.includes(glutenId)) return false;
+          if (noLactose && lactoseId != null && contains.includes(lactoseId)) return false;
+          return true;
+        }),
+      }))
+      .filter((c) => c.products.length > 0);
+  }, [categories, search, noGluten, noLactose, glutenId, lactoseId, loc]);
+
   return (
     <div className="mx-auto max-w-2xl pb-16">
       {/* Nameless-style light header */}
@@ -67,10 +102,42 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
         </div>
       </header>
 
+      {/* Search + dietary filters */}
+      <div className="space-y-2.5 px-4 pb-1 pt-3">
+        <div className="flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3-3" strokeLinecap="round" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Ara…"
+            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} aria-label="Temizle" className="shrink-0 text-muted transition hover:text-ink">
+              ✕
+            </button>
+          )}
+        </div>
+        {hasAllergenData && (glutenId != null || lactoseId != null) && (
+          <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+            <span className="shrink-0 text-xs font-semibold text-muted">Alerjen</span>
+            {glutenId != null && (
+              <FilterChip active={noGluten} onClick={() => setNoGluten((x) => !x)} tone="amber">🌾 Glutensiz</FilterChip>
+            )}
+            {lactoseId != null && (
+              <FilterChip active={noLactose} onClick={() => setNoLactose((x) => !x)} tone="sky">🥛 Laktozsuz</FilterChip>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Sticky category tabs */}
-      {categories.length > 1 && (
+      {visible.length > 1 && (
         <nav className="no-scrollbar sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-4 py-3 backdrop-blur">
-          {categories.map((c, i) => (
+          {visible.map((c, i) => (
             <a
               key={c.id}
               href={`#cat-${c.id}`}
@@ -84,10 +151,12 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
         </nav>
       )}
 
-      {categories.length === 0 ? (
-        <p className="px-5 py-16 text-center text-sm text-muted">{labels.empty}</p>
+      {visible.length === 0 ? (
+        <p className="px-5 py-16 text-center text-sm text-muted">
+          {search ? `“${search}” için sonuç bulunamadı.` : labels.empty}
+        </p>
       ) : (
-        categories.map((c) => (
+        visible.map((c) => (
           <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-16 px-4 pt-6">
             <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-wider text-brand-700">{c.name}</h2>
             <div className="space-y-3">
@@ -269,4 +338,16 @@ function FlipbookMenu({ menu, labels, format, categories }: ThemeProps) {
 
 function Diet({ label }: { label: string }) {
   return <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">{label}</span>;
+}
+
+function FilterChip({ active, onClick, tone, children }: { active: boolean; onClick: () => void; tone: 'amber' | 'sky'; children: React.ReactNode }) {
+  const tones = {
+    amber: active ? 'border-amber-300 bg-amber-100 text-amber-800' : 'border-line bg-white text-muted',
+    sky: active ? 'border-sky-300 bg-sky-100 text-sky-800' : 'border-line bg-white text-muted',
+  };
+  return (
+    <button onClick={onClick} className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition ${tones[tone]}`}>
+      {children}
+    </button>
+  );
 }

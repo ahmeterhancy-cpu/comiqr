@@ -72,6 +72,38 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const [activeCat, setActiveCat] = useState<number | null>(() => categories[0]?.id ?? null);
   const [sheetProduct, setSheetProduct] = useState<MenuProduct | null>(null);
 
+  // Search + dietary filters over the menu.
+  const [search, setSearch] = useState('');
+  const [noGluten, setNoGluten] = useState(false);
+  const [noLactose, setNoLactose] = useState(false);
+
+  const glutenId = useMemo(() => menu.allergens.find((a) => /glu/i.test(a.code) || /gluten/i.test(a.name))?.id ?? null, [menu.allergens]);
+  const lactoseId = useMemo(
+    () => menu.allergens.find((a) => /lac|milk|dairy|sut/i.test(a.code) || /lakto|süt/i.test(a.name))?.id ?? null,
+    [menu.allergens],
+  );
+  const hasAllergenData = useMemo(
+    () => categories.some((c) => c.products.some((p: any) => (p.nutrition?.allergens?.contains?.length ?? 0) > 0)),
+    [categories],
+  );
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLocaleLowerCase(locale);
+    if (!q && !noGluten && !noLactose) return categories;
+    return categories
+      .map((c) => ({
+        ...c,
+        products: c.products.filter((p: any) => {
+          if (q && !p.name.toLocaleLowerCase(locale).includes(q) && !(p.description ?? '').toLocaleLowerCase(locale).includes(q)) return false;
+          const contains: number[] = p.nutrition?.allergens?.contains ?? [];
+          if (noGluten && glutenId != null && contains.includes(glutenId)) return false;
+          if (noLactose && lactoseId != null && contains.includes(lactoseId)) return false;
+          return true;
+        }),
+      }))
+      .filter((c) => c.products.length > 0);
+  }, [categories, search, noGluten, noLactose, glutenId, lactoseId, locale]);
+
   // Scroll-spy: the sticky category tabs track the section currently in view and
   // auto-scroll horizontally so the active tab stays centred as you move down.
   const navRef = useRef<HTMLElement | null>(null);
@@ -381,13 +413,45 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         </div>
       </header>
 
+      {/* Search + dietary filters */}
+      <div className="space-y-2.5 px-5 pb-1 pt-3">
+        <div className="flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3-3" strokeLinecap="round" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Ara…"
+            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} aria-label="Temizle" className="shrink-0 text-muted transition hover:text-ink">
+              ✕
+            </button>
+          )}
+        </div>
+        {hasAllergenData && (glutenId != null || lactoseId != null) && (
+          <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+            <span className="shrink-0 text-xs font-semibold text-muted">Alerjen</span>
+            {glutenId != null && (
+              <FilterChip active={noGluten} onClick={() => setNoGluten((v) => !v)} tone="amber">🌾 Glutensiz</FilterChip>
+            )}
+            {lactoseId != null && (
+              <FilterChip active={noLactose} onClick={() => setNoLactose((v) => !v)} tone="sky">🥛 Laktozsuz</FilterChip>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Sticky category tabs — scroll-spy: highlight & centre the in-view section */}
-      {categories.length > 1 && (
+      {visible.length > 1 && (
         <nav
           ref={navRef}
           className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-5 py-3 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {categories.map((c) => (
+          {visible.map((c) => (
             <TabPill
               key={c.id}
               active={activeCat === c.id}
@@ -431,7 +495,11 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         />
       )}
 
-      {categories.map((c) => (
+      {visible.length === 0 && (
+        <p className="px-5 py-16 text-center text-sm text-muted">“{search}” için sonuç bulunamadı.</p>
+      )}
+
+      {visible.map((c) => (
         <section
           key={c.id}
           ref={(el) => {
@@ -546,6 +614,18 @@ function TabPill({
         active ? 'bg-brand-500 text-white shadow-sm' : 'border border-line bg-surface text-muted hover:border-brand-300'
       }`}
     >
+      {children}
+    </button>
+  );
+}
+
+function FilterChip({ active, onClick, tone, children }: { active: boolean; onClick: () => void; tone: 'amber' | 'sky'; children: React.ReactNode }) {
+  const tones = {
+    amber: active ? 'border-amber-300 bg-amber-100 text-amber-800' : 'border-line bg-white text-muted',
+    sky: active ? 'border-sky-300 bg-sky-100 text-sky-800' : 'border-line bg-white text-muted',
+  };
+  return (
+    <button onClick={onClick} className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition ${tones[tone]}`}>
       {children}
     </button>
   );
