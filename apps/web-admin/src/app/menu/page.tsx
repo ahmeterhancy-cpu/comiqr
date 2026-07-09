@@ -10,6 +10,7 @@ import { useApi } from '@/lib/useApi';
 export default function MenuPage() {
   const { api, me, ready } = useApi();
   const [printing, setPrinting] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [importing, setImporting] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -103,6 +104,26 @@ export default function MenuPage() {
     }
   }
 
+  async function downloadPdf() {
+    setPdfBusy(true);
+    setNotice(null);
+    try {
+      const blob = await api.downloadMenuPdf();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `menu-${me?.tenant?.slug ?? 'comiqr'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setNotice('PDF indirilemedi.');
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   async function aiCopy(p: any) {
     setBusy(p.id);
     setNotice(null);
@@ -127,11 +148,16 @@ export default function MenuPage() {
 
   return (
     <AdminShell title="Menü Yönetimi">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">Kategorileri ve ürünleri yönetin, menüyü baskıya hazır PDF olarak yazdırın.</p>
-        <Button variant="ghost" onClick={handlePrintMenu} loading={printing} className="shrink-0">
-          🖨️ Yazdırılabilir Menü (PDF)
-        </Button>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">Kategorileri ve ürünleri yönetin; menüyü önizleyip yazdırın veya PDF indirin.</p>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="ghost" onClick={handlePrintMenu} loading={printing}>
+            🖨️ Yazdır / Önizle
+          </Button>
+          <Button variant="primary" onClick={downloadPdf} loading={pdfBusy}>
+            📄 PDF İndir
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-4">

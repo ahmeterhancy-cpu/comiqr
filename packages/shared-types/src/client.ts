@@ -159,6 +159,15 @@ export class ApiClient {
     });
   }
 
+  /** Baskıya hazır menü PDF'ini (sunucu-taraflı dompdf) ham blob olarak indirir. */
+  async downloadMenuPdf(): Promise<Blob> {
+    const headers = new Headers({ Accept: 'application/pdf' });
+    if (this.token) headers.set('Authorization', `Bearer ${this.token}`);
+    const res = await fetch(`${this.baseUrl}/admin/menu/pdf`, { headers });
+    if (!res.ok) throw new ApiError(res.status, `PDF oluşturulamadı (${res.status})`, {});
+    return res.blob();
+  }
+
   /** Public consumer discovery portal (M20) — active venues with a live menu. */
   discover(q?: string): Promise<DiscoverVenue[]> {
     return this.request(`/discover${q ? `?q=${encodeURIComponent(q)}` : ''}`);

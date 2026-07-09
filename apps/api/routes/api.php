@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
 use App\Http\Controllers\Api\Admin\IngredientController;
 use App\Http\Controllers\Api\Admin\IntegrationController;
+use App\Http\Controllers\Api\Admin\MenuPdfController;
 use App\Http\Controllers\Api\Admin\ModifierGroupController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
@@ -170,6 +171,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // --- Menu & recipe management (M1/M2, docs/06 §6.5/§6.6) — manager+ ---
         Route::middleware('role:manager')->group(function () {
+            // Baskıya hazır menü PDF'i (dompdf) — tek-tık indirme.
+            Route::get('admin/menu/pdf', [MenuPdfController::class, 'download'])->middleware('throttle:30,1');
+
             Route::apiResource('admin/branches', BranchController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::get('admin/allergens', fn () => response()->json([
