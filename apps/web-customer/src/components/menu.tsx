@@ -339,7 +339,7 @@ function FilterChip({ active, onClick, tone, children }: { active: boolean; onCl
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-semibold transition ${tones[tone]}`}
+      className={`shrink-0 whitespace-nowrap rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${tones[tone]}`}
     >
       {children}
     </button>
