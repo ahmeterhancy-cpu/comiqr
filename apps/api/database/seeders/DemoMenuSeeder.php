@@ -60,6 +60,7 @@ class DemoMenuSeeder extends Seeder
             $tenant->update(['settings_json' => array_merge($tenant->settings_json ?? [], [
                 'logo' => $this->emojiImg('demo/logo.svg', '🌿', '#0f766e', 240),
                 'cover' => $this->emojiImg('demo/cover.svg', '🍢', '#14284a', 1200, 480),
+                'theme' => 'modern',
                 'sub_title' => 'Girne Meze & Mangal',
                 'timing' => '11:00 - 23:00',
                 'description' => "Kıbrıs'ın en taze mezeleri, mangalda hellim ve közde şeftali kebabı. Deniz manzarasında keyifli bir sofra sizi bekliyor.",
