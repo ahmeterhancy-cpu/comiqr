@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AllergenRef, Menu, MenuCategory, MenuProduct } from '@comiqr/shared-types';
 
 export interface MenuLabels {
@@ -78,6 +78,48 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
       .filter((c) => c.products.length > 0);
   }, [categories, search, fAllergen, fGluten, fLactose, glutenId, lactoseId, loc]);
 
+  // Sticky category cards track the section in view and auto-centre the active card.
+  const navRef = useRef<HTMLElement | null>(null);
+  const cardRefs = useRef(new Map<number, HTMLElement>());
+  const [activeCat, setActiveCat] = useState<number | null>(categories[0]?.id ?? null);
+
+  useEffect(() => {
+    if (categories.length <= 1) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const triggerY = (navRef.current?.getBoundingClientRect().bottom ?? 0) + 8;
+        let cur = categories[0].id;
+        for (const c of categories) {
+          const el = document.getElementById(`cat-${c.id}`);
+          if (el && el.getBoundingClientRect().top <= triggerY) cur = c.id;
+        }
+        setActiveCat((p) => (p === cur ? p : cur));
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [categories]);
+
+  useEffect(() => {
+    if (activeCat == null) return;
+    const nav = navRef.current;
+    const card = cardRefs.current.get(activeCat);
+    if (!nav || !card) return;
+    const nr = nav.getBoundingClientRect();
+    const cr = card.getBoundingClientRect();
+    const delta = cr.left - nr.left - (nav.clientWidth - card.clientWidth) / 2;
+    if (Math.abs(delta) > 4) nav.scrollTo({ left: nav.scrollLeft + delta });
+  }, [activeCat]);
+
   return (
     <div className="mx-auto max-w-2xl pb-16">
       {/* Nameless-style light header */}
@@ -100,16 +142,26 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
         </div>
       </header>
 
-      {/* Category image cards */}
+      {/* Category image cards — sticky, scroll-spy highlights & centres the active one */}
       {categories.length > 1 && (
-        <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pt-4">
+        <nav
+          ref={navRef}
+          className="no-scrollbar sticky top-0 z-30 flex gap-3 overflow-x-auto border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur"
+        >
           {categories.map((c) => {
             const img = c.image_path || c.products?.[0]?.images?.[0];
+            const active = activeCat === c.id;
             return (
               <a
                 key={c.id}
                 href={`#cat-${c.id}`}
-                className="relative aspect-[5/4] w-36 shrink-0 overflow-hidden rounded-2xl shadow-[var(--shadow-card)]"
+                ref={(el) => {
+                  if (el) cardRefs.current.set(c.id, el);
+                  else cardRefs.current.delete(c.id);
+                }}
+                className={`relative aspect-[5/4] w-28 shrink-0 overflow-hidden rounded-2xl shadow-[var(--shadow-card)] transition ${
+                  active ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-canvas' : ''
+                }`}
               >
                 {img ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -118,13 +170,13 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
                   <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-brand-700" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-                <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-lg font-extrabold leading-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.55)]">
+                <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-sm font-extrabold leading-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.55)]">
                   {c.name}
                 </span>
               </a>
             );
           })}
-        </div>
+        </nav>
       )}
 
       {/* Search + allergen filters */}
@@ -159,7 +211,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
         </p>
       ) : (
         visible.map((c) => (
-          <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-16 px-4 pt-6">
+          <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-32 px-4 pt-6">
             <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-wider text-brand-700">{c.name}</h2>
             <div className="space-y-3">
               {c.products.map((p) => (

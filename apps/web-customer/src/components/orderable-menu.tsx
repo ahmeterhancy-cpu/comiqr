@@ -411,16 +411,26 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         </div>
       </header>
 
-      {/* Category image cards */}
+      {/* Category image cards — sticky, scroll-spy highlights & centres the active one */}
       {categories.length > 1 && (
-        <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pt-4">
+        <nav
+          ref={navRef}
+          className="no-scrollbar sticky top-0 z-30 flex gap-3 overflow-x-auto border-b border-line bg-canvas/95 px-5 py-3 backdrop-blur"
+        >
           {categories.map((c) => {
             const img = c.image_path || c.products?.[0]?.images?.[0];
+            const active = activeCat === c.id;
             return (
               <button
                 key={c.id}
+                ref={(el) => {
+                  if (el) tabRefs.current.set(c.id, el);
+                  else tabRefs.current.delete(c.id);
+                }}
                 onClick={() => goToCategory(c.id)}
-                className="relative aspect-[5/4] w-36 shrink-0 overflow-hidden rounded-2xl shadow-[var(--shadow-card)]"
+                className={`relative aspect-[5/4] w-28 shrink-0 overflow-hidden rounded-2xl shadow-[var(--shadow-card)] transition ${
+                  active ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-canvas' : ''
+                }`}
               >
                 {img ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -429,13 +439,13 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
                   <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-brand-700" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-                <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-lg font-extrabold leading-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.55)]">
+                <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-sm font-extrabold leading-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.55)]">
                   {c.name}
                 </span>
               </button>
             );
           })}
-        </div>
+        </nav>
       )}
 
       {/* Search + allergen filters */}
