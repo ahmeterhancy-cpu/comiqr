@@ -412,8 +412,8 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
       </header>
 
       {/* Search + allergen filters */}
-      <div className="flex flex-wrap items-center gap-2 px-5 pb-1 pt-3">
-        <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
+      <div className="flex flex-col gap-2 px-5 pb-1 pt-3 sm:flex-row sm:items-center">
+        <div className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
           <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3-3" strokeLinecap="round" />
@@ -430,9 +430,11 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
             </button>
           )}
         </div>
-        <FilterChip active={fAllergen} onClick={() => setFAllergen((x) => !x)} tone="red">⚠️ Allergen</FilterChip>
-        <FilterChip active={fGluten} onClick={() => setFGluten((x) => !x)} tone="amber">🌾 Gluten</FilterChip>
-        <FilterChip active={fLactose} onClick={() => setFLactose((x) => !x)} tone="sky">🥛 Lactose</FilterChip>
+        <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+          <FilterChip active={fAllergen} onClick={() => setFAllergen((x) => !x)} tone="red">⚠️ Allergen</FilterChip>
+          <FilterChip active={fGluten} onClick={() => setFGluten((x) => !x)} tone="amber">🌾 Gluten</FilterChip>
+          <FilterChip active={fLactose} onClick={() => setFLactose((x) => !x)} tone="sky">🥛 Lactose</FilterChip>
+        </div>
       </div>
 
       {/* Sticky category tabs — scroll-spy: highlight & centre the in-view section */}
