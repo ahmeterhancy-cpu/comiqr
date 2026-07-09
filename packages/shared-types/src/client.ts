@@ -237,6 +237,12 @@ export class ApiClient {
     form.append('image', file);
     return this.request(`/admin/products/${id}/media`, { method: 'POST', body: form });
   }
+  /** AI menu import — extract categories/products from up to 5 photos or a PDF. */
+  importMenuFromPhotos(files: File[]): Promise<{ categories: number; products: number }> {
+    const form = new FormData();
+    files.forEach((f) => form.append('files[]', f));
+    return this.request('/admin/ai/import-menu', { method: 'POST', body: form });
+  }
   addVariant(productId: number, body: Record<string, unknown>): Promise<any> {
     return this.request(`/admin/products/${productId}/variants`, { method: 'POST', body: JSON.stringify(body) });
   }

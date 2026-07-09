@@ -10,6 +10,7 @@ import { useApi } from '@/lib/useApi';
 export default function MenuPage() {
   const { api, me, ready } = useApi();
   const [printing, setPrinting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [ingredients, setIngredients] = useState<any[]>([]);
@@ -65,6 +66,30 @@ export default function MenuPage() {
     }
   }
 
+  async function handleImport(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setImporting(true);
+    setNotice(null);
+    try {
+      const res = await api.importMenuFromPhotos(Array.from(files).slice(0, 5));
+      setNotice(`📸 İçe aktarıldı: ${res.categories} kategori, ${res.products} ürün. Lütfen gözden geçirin.`);
+      load();
+    } catch (e: any) {
+      const s = e?.status;
+      setNotice(
+        s === 402
+          ? 'Fotoğraftan aktarma AI planı gerektirir (Pro ve üzeri).'
+          : s === 503
+            ? 'AI yapılandırılmamış (ANTHROPIC_API_KEY) veya sağlayıcı görsel okumayı desteklemiyor.'
+            : s === 422
+              ? e?.message ?? 'Menü okunamadı — daha net bir fotoğraf deneyin.'
+              : 'İçe aktarma başarısız oldu.',
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
   async function handlePrintMenu() {
     setPrinting(true);
     setNotice(null);
@@ -108,6 +133,37 @@ export default function MenuPage() {
           🖨️ Yazdırılabilir Menü (PDF)
         </Button>
       </div>
+
+      <Card className="mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-ink">📸 Menüyü Fotoğraftan Aktar</h2>
+            <p className="mt-0.5 text-xs text-muted">
+              Basılı menünün 1–5 fotoğrafını veya PDF&apos;ini yükleyin; yapay zeka kategorileri, ürünleri,
+              açıklamaları ve fiyatları çıkarıp menünüze eklesin.
+            </p>
+          </div>
+          <label
+            className={`shrink-0 cursor-pointer rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 ${
+              importing ? 'pointer-events-none opacity-60' : ''
+            }`}
+          >
+            {importing ? 'Okunuyor…' : 'Dosya Seç'}
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              multiple
+              disabled={importing}
+              className="hidden"
+              onChange={(e) => {
+                handleImport(e.target.files);
+                e.target.value = '';
+              }}
+            />
+          </label>
+        </div>
+      </Card>
+
       <AddCategory onAdd={addCategory} />
       {notice && (
         <div className="mt-4 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">{notice}</div>

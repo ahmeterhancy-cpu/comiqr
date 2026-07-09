@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\AI\AiProvider;
+use App\AI\VisionProvider;
 use App\Models\Product;
+use RuntimeException;
 
 /**
  * AI text tasks over the menu (M7, docs/04 §4.7): appetising product copy and
@@ -132,5 +134,61 @@ class AiService
         $prompt = $convo."Guest: ".trim($question)."\nAssistant:";
 
         return $this->ai->complete($system, $prompt);
+    }
+
+    /** Whether the configured provider can read images/PDF (menu import). */
+    public function supportsVision(): bool
+    {
+        return $this->ai instanceof VisionProvider && $this->ai->isConfigured();
+    }
+
+    /**
+     * Extract a structured menu from photos/PDF (Nameless-style import).
+     *
+     * @param  array<int,array{type:string,media_type:string,data:string}>  $media
+     * @return array{categories:array<int,array<string,mixed>>}
+     */
+    public function importMenuFromImages(array $media, string $locale = 'tr'): array
+    {
+        if (! $this->ai instanceof VisionProvider) {
+            throw new RuntimeException('Configured AI provider does not support image input.');
+        }
+
+        $language = self::LOCALE_NAMES[$locale] ?? $locale;
+
+        $system = 'You extract a restaurant menu from photos/PDF into STRICT JSON. Output ONLY valid JSON, '
+            .'no markdown fences, no commentary. Schema: {"categories":[{"name":string,"products":['
+            .'{"name":string,"description":string|null,"price":number,"variants":[{"name":string,"price":number}]}]}]}. '
+            ."Rules: keep the menu's original language for names/descriptions (fall back to {$language} if unclear); "
+            .'price is a plain number in the menu currency (strip symbols and thousands separators); if a dish lists '
+            .'sizes/portions, put each as a variant with its ABSOLUTE price and set the product price to the smallest '
+            .'variant; omit the variants array when there are none; never invent items that are not visible; keep the '
+            .'printed category headings and dish order.';
+
+        $raw = $this->ai->completeWithImages($system, 'Extract the full menu as JSON.', $media, 8192);
+
+        return $this->parseMenuJson($raw);
+    }
+
+    /** @return array{categories:array<int,array<string,mixed>>} */
+    private function parseMenuJson(string $raw): array
+    {
+        $s = trim($raw);
+        if (str_starts_with($s, '```')) {
+            $s = trim((string) preg_replace('/^```(?:json)?|```$/m', '', $s));
+        }
+
+        $start = strpos($s, '{');
+        $end = strrpos($s, '}');
+        if ($start === false || $end === false || $end < $start) {
+            throw new RuntimeException('AI did not return JSON.');
+        }
+
+        $data = json_decode(substr($s, $start, $end - $start + 1), true);
+        if (! is_array($data) || ! isset($data['categories']) || ! is_array($data['categories'])) {
+            throw new RuntimeException('AI returned unexpected JSON.');
+        }
+
+        return $data;
     }
 }

@@ -254,6 +254,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::middleware(['role:manager', 'plan:ai'])->group(function () {
             Route::post('admin/ai/product-copy', [AiController::class, 'productCopy'])->middleware('throttle:30,1');
             Route::post('admin/ai/translate-menu', [AiController::class, 'translateMenu'])->middleware('throttle:10,1');
+            Route::post('admin/ai/import-menu', [AiController::class, 'importMenu'])->middleware('throttle:6,1');
         });
 
         // --- AI ileri (Faz 3) — advisor: menu insights + review summary ---

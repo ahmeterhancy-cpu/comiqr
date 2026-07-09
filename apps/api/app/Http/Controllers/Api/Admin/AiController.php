@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductTranslation;
@@ -11,6 +12,7 @@ use App\Services\AiService;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -128,6 +130,111 @@ class AiController extends Controller
         );
 
         return response()->json(['data' => ['summary' => $summary, 'reviews' => $reviews->count()]]);
+    }
+
+    /**
+     * POST /admin/ai/import-menu — build the whole menu from photos/PDF (Nameless-style).
+     * Reads up to 5 images or a PDF with vision, then creates categories, products and
+     * variants for the active tenant. Manager+, plan:ai, provider must support images.
+     */
+    public function importMenu(Request $request): JsonResponse
+    {
+        $this->ensureConfigured();
+        abort_unless($this->ai->supportsVision(), 503, 'AI sağlayıcısı görsel okumayı desteklemiyor.');
+
+        $request->validate([
+            'files' => ['required', 'array', 'min:1', 'max:5'],
+            'files.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
+        ]);
+
+        $media = [];
+        foreach ($request->file('files') as $file) {
+            $mime = $file->getMimeType() ?? 'image/jpeg';
+            $media[] = [
+                'type' => $mime === 'application/pdf' ? 'document' : 'image',
+                'media_type' => $mime,
+                'data' => base64_encode((string) file_get_contents($file->getRealPath())),
+            ];
+        }
+
+        $locale = $this->tenants->get()?->locale_default ?? config('app.locale');
+
+        try {
+            $parsed = $this->ai->importMenuFromImages($media, $locale);
+        } catch (\Throwable $e) {
+            abort(422, 'Menü okunamadı: '.$e->getMessage());
+        }
+
+        $result = $this->createMenuFromParsed($parsed['categories']);
+        abort_if($result['products'] === 0, 422, 'Görselden ürün çıkarılamadı. Daha net bir fotoğraf deneyin.');
+
+        return response()->json(['data' => $result], 201);
+    }
+
+    /**
+     * Persist the AI-extracted menu. Runs inside the active tenant context (tenant.user
+     * middleware) so BelongsToTenant scopes every row. Variant prices are absolute in the
+     * AI output; stored as a delta from the product's base (smallest) price.
+     *
+     * @param  array<int,array<string,mixed>>  $categories
+     * @return array{categories:int,products:int}
+     */
+    private function createMenuFromParsed(array $categories): array
+    {
+        $catCount = 0;
+        $prodCount = 0;
+        $sort = (int) Category::query()->max('sort');
+
+        DB::transaction(function () use ($categories, &$catCount, &$prodCount, &$sort) {
+            foreach ($categories as $cat) {
+                $catName = trim((string) ($cat['name'] ?? ''));
+                if ($catName === '' || ! is_array($cat['products'] ?? null)) {
+                    continue;
+                }
+
+                $category = Category::create(['name' => $catName, 'sort' => ++$sort, 'is_active' => true]);
+                $catCount++;
+
+                $psort = 0;
+                foreach ($cat['products'] as $prod) {
+                    $name = trim((string) ($prod['name'] ?? ''));
+                    if ($name === '') {
+                        continue;
+                    }
+
+                    $variants = array_values(array_filter(
+                        is_array($prod['variants'] ?? null) ? $prod['variants'] : [],
+                        fn ($v) => is_array($v) && trim((string) ($v['name'] ?? '')) !== '',
+                    ));
+
+                    $base = (float) ($prod['price'] ?? 0);
+                    if ($variants) {
+                        $base = min(array_map(fn ($v) => (float) ($v['price'] ?? 0), $variants));
+                    }
+
+                    $product = Product::create([
+                        'category_id' => $category->id,
+                        'name' => $name,
+                        'description' => trim((string) ($prod['description'] ?? '')) ?: null,
+                        'price' => round(max($base, 0), 2),
+                        'is_active' => true,
+                        'sort' => ++$psort,
+                    ]);
+                    $prodCount++;
+
+                    foreach ($variants as $i => $v) {
+                        $product->variants()->create([
+                            'name' => trim((string) $v['name']),
+                            'price_delta' => round((float) ($v['price'] ?? 0) - $base, 2),
+                            'is_default' => $i === 0,
+                            'sort' => $i,
+                        ]);
+                    }
+                }
+            }
+        });
+
+        return ['categories' => $catCount, 'products' => $prodCount];
     }
 
     private function ensureConfigured(): void
