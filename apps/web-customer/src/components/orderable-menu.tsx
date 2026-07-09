@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ApiClient, ApiError } from '@comiqr/shared-types/client';
 import type { AllergenRef, Menu, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
+import { MenuChat } from './menu-chat';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
 
@@ -496,6 +497,8 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           }}
         />
       )}
+
+      {menu.venue?.ai_chat && <MenuChat slug={menu.venue?.slug} />}
     </div>
   );
 }

@@ -98,6 +98,7 @@ Route::get('venues/{slug}/reviews', [ReviewController::class, 'venueReviews'])->
 // --- Public menu (M1/M4) — tenant resolved from host / X-Tenant (docs/06 §6.2) ---
 Route::middleware('tenant')->group(function () {
     Route::get('menu', [MenuController::class, 'show']);
+    Route::post('menu/chat', [MenuController::class, 'chat'])->middleware('throttle:20,1');
 });
 
 // --- Public QR menu + session + ordering (M3/M4) — tenant from token ---

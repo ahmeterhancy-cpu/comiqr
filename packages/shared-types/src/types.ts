@@ -178,6 +178,7 @@ export interface AllergenRef {
 
 export interface MenuVenue {
   name: string;
+  slug?: string;
   locale_default: Locale;
   currency: string;
   sub_title?: string | null;
@@ -193,6 +194,8 @@ export interface MenuVenue {
   reviews_count?: number;
   brand_color?: string | null;
   powered_by?: boolean;
+  /** Guest AI menu assistant available (plan has AI + provider configured). */
+  ai_chat?: boolean;
 }
 
 export interface MenuTable {

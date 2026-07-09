@@ -102,4 +102,35 @@ class AiService
 
         return $this->ai->complete($system, $prompt);
     }
+
+    /**
+     * Guest-facing menu assistant: answers a diner's question strictly from the
+     * menu data (dishes, prices, allergens, diet, hours, promotions), in their
+     * own language, and never invents facts (Nameless-style chatbot).
+     *
+     * @param  array<string,mixed>  $menu  compact menu context (venue + categories)
+     * @param  array<int,array{role:string,content:string}>  $history  recent turns
+     */
+    public function menuChat(array $menu, string $question, string $locale = 'tr', array $history = []): string
+    {
+        $language = self::LOCALE_NAMES[$locale] ?? $locale;
+
+        $system = "You are the friendly digital menu assistant for a restaurant. Answer the guest ONLY "
+            ."from the MENU DATA below — dishes, prices, descriptions, allergens, dietary flags, calories, "
+            ."opening hours, location and current promotions. NEVER invent dishes, prices or facts that are "
+            ."not in the data; if something isn't there, say briefly you don't have that information and "
+            ."suggest asking the staff. Reply in {$language}, warm and concise (1-3 sentences). You may "
+            ."recommend dishes by budget, appetite or dietary needs (vegan, vegetarian, gluten-free) and "
+            ."flag 18+ items. Never mention cost, margin, or anything internal to the business.\n\n"
+            ."MENU DATA (JSON):\n".json_encode($menu, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $convo = '';
+        foreach (array_slice($history, -6) as $turn) {
+            $who = ($turn['role'] ?? 'user') === 'assistant' ? 'Assistant' : 'Guest';
+            $convo .= "{$who}: ".trim((string) ($turn['content'] ?? ''))."\n";
+        }
+        $prompt = $convo."Guest: ".trim($question)."\nAssistant:";
+
+        return $this->ai->complete($system, $prompt);
+    }
 }

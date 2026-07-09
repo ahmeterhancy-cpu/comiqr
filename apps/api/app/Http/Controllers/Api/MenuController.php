@@ -29,7 +29,86 @@ class MenuController extends Controller
     public function __construct(
         protected TenantManager $tenants,
         protected \App\Services\ReviewService $reviews,
+        protected \App\Services\AiService $ai,
     ) {}
+
+    /**
+     * POST /menu/chat — guest-facing AI menu assistant. Tenant resolved by the
+     * `tenant` middleware. Gated behind the tenant's `ai` plan feature; 503 when
+     * no AI provider is configured. Answers strictly from the menu (no ordering).
+     */
+    public function chat(Request $request): JsonResponse
+    {
+        $tenant = $this->tenants->get();
+
+        abort_unless(\App\Support\Plans\PlanGate::allows($tenant, 'ai'), 402, 'AI menü asistanı bu planda kapalı.');
+        abort_unless($this->ai->isConfigured(), 503, 'AI şu an yapılandırılmamış.');
+
+        $data = $request->validate([
+            'question' => ['required', 'string', 'max:500'],
+            'locale' => ['sometimes', 'string', 'max:8'],
+            'history' => ['sometimes', 'array', 'max:10'],
+            'history.*.role' => ['required', 'string', 'in:user,assistant'],
+            'history.*.content' => ['required', 'string', 'max:1500'],
+        ]);
+
+        $branchId = Branch::query()->where('is_active', true)->orderBy('id')->value('id');
+        $locale = $data['locale'] ?? $tenant->locale_default ?? config('app.locale');
+        app()->setLocale($locale);
+
+        $answer = $this->ai->menuChat(
+            $this->chatContext($tenant, $branchId),
+            $data['question'],
+            $locale,
+            $data['history'] ?? [],
+        );
+
+        return response()->json(['data' => ['answer' => $answer]]);
+    }
+
+    /** Compact, token-efficient menu context for the guest chatbot (no cost/margin). */
+    protected function chatContext(Tenant $tenant, ?int $branchId): array
+    {
+        $menu = $this->buildMenu($tenant, $branchId);
+        $venue = $menu['venue'];
+        $allergenNames = collect($menu['allergens'])->keyBy('id')->map(fn ($a) => $a['name']);
+
+        $categories = collect($menu['categories'])->map(fn ($c) => [
+            'category' => $c['name'],
+            'items' => collect($c['products'] ?? [])->map(function ($p) use ($allergenNames) {
+                $variants = collect($p['variants'] ?? [])->map(fn ($v) => [
+                    'name' => $v['name'],
+                    'price' => round((float) $p['price'] + (float) ($v['price_delta'] ?? 0), 2),
+                ])->values();
+                $n = $p['nutrition'] ?? null;
+
+                return array_filter([
+                    'name' => $p['name'],
+                    'price' => $variants->isEmpty() ? $p['price'] : null,
+                    'variants' => $variants->isEmpty() ? null : $variants->all(),
+                    'description' => $p['description'] ?? null,
+                    'kcal' => $n['kcal'] ?? null,
+                    'allergens' => $n
+                        ? collect($n['allergens']['contains'] ?? [])->map(fn ($id) => $allergenNames[$id] ?? null)->filter()->values()->all()
+                        : null,
+                    'diet' => $n['diet'] ?? null,
+                    'age_restricted' => ! empty($p['age_restricted']) ? true : null,
+                ], fn ($v) => $v !== null && $v !== []);
+            })->values()->all(),
+        ])->values()->all();
+
+        return [
+            'venue' => array_filter([
+                'name' => $venue['name'],
+                'hours' => $venue['timing'] ?? null,
+                'address' => $venue['address'] ?? null,
+                'about' => $venue['description'] ?? null,
+                'currency' => $venue['currency'],
+                'happy_hour_percent' => ($venue['happy_hour']['active'] ?? false) ? $venue['happy_hour']['percent'] : null,
+            ], fn ($v) => $v !== null),
+            'menu' => $categories,
+        ];
+    }
 
     /** POST /menu/{qrToken}/view — record a menu/product impression (M9). */
     public function logView(Request $request, string $qrToken): JsonResponse
@@ -120,6 +199,7 @@ class MenuController extends Controller
         return [
             'venue' => [
                 'name' => $tenant->name,
+                'slug' => $tenant->slug,
                 'rating' => $rep['average'],
                 'reviews_count' => $rep['count'],
                 'brand_color' => $whiteLabel ? ($settings['brand_color'] ?? null) : null,
@@ -133,6 +213,8 @@ class MenuController extends Controller
                 'logo' => $settings['logo'] ?? null,
                 'cover' => $settings['cover'] ?? null,
                 'theme' => $settings['theme'] ?? 'classic',
+                // Guest AI chatbot is offered only when the plan unlocks AI and a provider is configured.
+                'ai_chat' => \App\Support\Plans\PlanGate::allows($tenant, 'ai') && $this->ai->isConfigured(),
                 'vertical' => \App\Support\Restaurant\RestaurantSettings::vertical($settings),
                 'happy_hour' => [
                     'active' => \App\Support\Restaurant\HappyHour::active($settings, null, $tenant->timezone),

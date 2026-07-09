@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { MenuView } from '@/components/menu';
+import { MenuChat } from '@/components/menu-chat';
 import { fetchMenu } from '@/lib/menu';
 
 /**
@@ -45,6 +46,7 @@ export default async function VenueMenuPage({
   return (
     <>
       <MenuView menu={menu} labels={labels} />
+      {menu.venue?.ai_chat && <MenuChat slug={slug} />}
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-5 py-3 backdrop-blur">
         <a
           href={`/order/${slug}`}

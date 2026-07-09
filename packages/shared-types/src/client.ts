@@ -145,6 +145,20 @@ export class ApiClient {
     return this.request(`/menu${query}`);
   }
 
+  /** Guest AI menu assistant — answers strictly from the menu. 402 if plan lacks AI, 503 if unconfigured. */
+  menuChat(
+    slug: string | undefined,
+    question: string,
+    history: { role: 'user' | 'assistant'; content: string }[] = [],
+    locale?: string,
+  ): Promise<{ answer: string }> {
+    const query = slug ? `?tenant=${encodeURIComponent(slug)}` : '';
+    return this.request(`/menu/chat${query}`, {
+      method: 'POST',
+      body: JSON.stringify({ question, history, locale }),
+    });
+  }
+
   /** Public consumer discovery portal (M20) — active venues with a live menu. */
   discover(q?: string): Promise<DiscoverVenue[]> {
     return this.request(`/discover${q ? `?q=${encodeURIComponent(q)}` : ''}`);
