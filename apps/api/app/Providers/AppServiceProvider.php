@@ -23,14 +23,39 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TenantManager::class);
         $this->app->alias(TenantManager::class, 'tenant');
 
-        // Text AI provider (docs/04 §4.7) — Anthropic when a key is set, else null.
-        $this->app->singleton(\App\AI\AiProvider::class, function () {
-            $key = config('ai.anthropic.key');
+        // Text AI provider (docs/04 §4.7) — DeepSeek or Anthropic by config, else null.
+        $this->app->singleton(\App\AI\AiProvider::class, fn () => $this->makeAiProvider(config('ai.provider')));
 
-            return $key
-                ? new \App\AI\AnthropicProvider($key, config('ai.anthropic.model'), (int) config('ai.anthropic.max_tokens', 1024))
-                : new \App\AI\NullAiProvider;
+        // Vision provider — menu photo-import only. DeepSeek is text-only, so this is
+        // Anthropic when its key is set; otherwise a null provider (import returns 503).
+        $this->app->singleton(\App\AI\VisionProvider::class, function () {
+            $provider = $this->makeAiProvider(config('ai.vision'));
+
+            return $provider instanceof \App\AI\VisionProvider ? $provider : new \App\AI\NullAiProvider;
         });
+    }
+
+    /** Build the configured text provider, or the null provider when unkeyed. */
+    protected function makeAiProvider(?string $provider): \App\AI\AiProvider
+    {
+        if ($provider === 'deepseek' && config('ai.deepseek.key')) {
+            return new \App\AI\DeepSeekProvider(
+                config('ai.deepseek.key'),
+                config('ai.deepseek.model'),
+                config('ai.deepseek.base_url'),
+                (int) config('ai.deepseek.max_tokens', 1024),
+            );
+        }
+
+        if ($provider === 'anthropic' && config('ai.anthropic.key')) {
+            return new \App\AI\AnthropicProvider(
+                config('ai.anthropic.key'),
+                config('ai.anthropic.model'),
+                (int) config('ai.anthropic.max_tokens', 1024),
+            );
+        }
+
+        return new \App\AI\NullAiProvider;
     }
 
     /**

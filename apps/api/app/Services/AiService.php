@@ -18,7 +18,10 @@ class AiService
         'tr' => 'Turkish', 'en' => 'English', 'de' => 'German', 'ru' => 'Russian', 'ar' => 'Arabic',
     ];
 
-    public function __construct(protected AiProvider $ai) {}
+    public function __construct(
+        protected AiProvider $ai,
+        protected ?VisionProvider $vision = null,
+    ) {}
 
     public function isConfigured(): bool
     {
@@ -136,10 +139,26 @@ class AiService
         return $this->ai->complete($system, $prompt);
     }
 
-    /** Whether the configured provider can read images/PDF (menu import). */
+    /** Whether a vision-capable provider is available (menu photo-import). */
     public function supportsVision(): bool
     {
-        return $this->ai instanceof VisionProvider && $this->ai->isConfigured();
+        return $this->visionProvider() !== null;
+    }
+
+    /**
+     * The vision provider for image tasks: the text provider itself when it can see
+     * (e.g. a test fake or a future multimodal model), otherwise the dedicated vision
+     * binding (Anthropic). DeepSeek is text-only, so it uses the latter.
+     */
+    protected function visionProvider(): ?VisionProvider
+    {
+        foreach ([$this->ai, $this->vision] as $candidate) {
+            if ($candidate instanceof VisionProvider && $candidate->isConfigured()) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -150,8 +169,9 @@ class AiService
      */
     public function importMenuFromImages(array $media, string $locale = 'tr'): array
     {
-        if (! $this->ai instanceof VisionProvider) {
-            throw new RuntimeException('Configured AI provider does not support image input.');
+        $vision = $this->visionProvider();
+        if ($vision === null) {
+            throw new RuntimeException('No vision-capable AI provider is configured.');
         }
 
         $language = self::LOCALE_NAMES[$locale] ?? $locale;
@@ -165,7 +185,7 @@ class AiService
             .'variant; omit the variants array when there are none; never invent items that are not visible; keep the '
             .'printed category headings and dish order.';
 
-        $raw = $this->ai->completeWithImages($system, 'Extract the full menu as JSON.', $media, 8192);
+        $raw = $vision->completeWithImages($system, 'Extract the full menu as JSON.', $media, 8192);
 
         return $this->parseMenuJson($raw);
     }
