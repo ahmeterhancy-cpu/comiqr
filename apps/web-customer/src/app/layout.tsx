@@ -1,15 +1,13 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Inter } from 'next/font/google';
+import { Noto_Sans } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter' });
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
+const notoSans = Noto_Sans({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-noto',
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'ComiQR';
@@ -22,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#e2632a',
+  themeColor: '#4fae86',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -33,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
 
   return (
-    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} className={notoSans.variable}>
       <body className="font-sans antialiased">
         <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
       </body>

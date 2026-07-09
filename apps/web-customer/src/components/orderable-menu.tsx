@@ -307,50 +307,74 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
 
   return (
     <div className="mx-auto max-w-2xl pb-32">
-      {/* Editorial header */}
+      {/* Light Nameless-style header */}
       <header
-        className="relative overflow-hidden bg-[color:var(--color-navy)] px-6 pb-7 pt-8 text-white"
-        style={menu.venue.brand_color ? { backgroundColor: menu.venue.brand_color } : undefined}
+        className="bg-gradient-to-b from-brand-50/70 to-canvas px-5 pb-5 pt-7"
+        style={
+          /^#[0-9a-fA-F]{6}$/.test(menu.venue.brand_color ?? '')
+            ? { background: `linear-gradient(180deg, ${menu.venue.brand_color}1f, var(--color-canvas))` }
+            : undefined
+        }
       >
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
-        <div className="relative flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Menü</p>
-            <h1 className="mt-1 text-2xl font-bold leading-tight">{menu.venue.name}</h1>
-            {(menu.venue.reviews_count ?? 0) > 0 && (
-              <p className="mt-1 text-xs font-medium text-white/80">
-                ⭐ {menu.venue.rating} · {menu.venue.reviews_count} değerlendirme
-              </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            {menu.venue.logo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={menu.venue.logo} alt={menu.venue.name} className="h-14 w-14 shrink-0 rounded-2xl object-cover shadow-[var(--shadow-card)]" />
             )}
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-extrabold tracking-tight text-ink">{menu.venue.name}</h1>
+              {menu.venue.sub_title && <p className="truncate text-xs text-muted">{menu.venue.sub_title}</p>}
+              {(menu.venue.reviews_count ?? 0) > 0 && (
+                <p className="mt-0.5 text-xs font-medium text-muted">
+                  ⭐ {menu.venue.rating} · {menu.venue.reviews_count} değerlendirme
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => switchLocale(locale === 'tr' ? 'en' : 'tr')}
-              className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur"
+              className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-ink transition hover:border-brand-300"
             >
               {locale === 'tr' ? 'EN' : 'TR'}
             </button>
             {tableCode && (
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-700">{tableCode}</span>
+              <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-bold text-white">{tableCode}</span>
             )}
           </div>
         </div>
-        <div className="relative mt-5 flex items-center gap-2">
+
+        {(menu.venue.timing || menu.venue.address) && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {menu.venue.timing && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-500 ring-2 ring-brand-100" />
+                Açık · {menu.venue.timing}
+              </span>
+            )}
+            {menu.venue.address && (
+              <span className="rounded-full bg-white px-3 py-1 text-xs text-muted shadow-[var(--shadow-card)]">📍 {menu.venue.address}</span>
+            )}
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             onClick={() => callService('call-waiter', t('called'))}
-            className="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/25"
+            className="rounded-full border border-line bg-white px-4 py-1.5 text-xs font-semibold text-ink transition hover:border-brand-300 hover:text-brand-700"
           >
             {t('callWaiter')}
           </button>
           <button
             onClick={() => callService('request-bill', t('requestBill'))}
-            className="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold backdrop-blur transition hover:bg-white/25"
+            className="rounded-full border border-line bg-white px-4 py-1.5 text-xs font-semibold text-ink transition hover:border-brand-300 hover:text-brand-700"
           >
             {t('requestBill')}
           </button>
-          {service && <span className="text-xs font-medium text-white/90">✓ {service}</span>}
+          {service && <span className="text-xs font-medium text-brand-700">✓ {service}</span>}
           {hhPercent > 0 && (
-            <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-bold text-amber-950">
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
               🍹 {t('happyHour')} −%{hhPercent}
             </span>
           )}
@@ -666,13 +690,13 @@ function ProductRow({ product, qtyFor, onSet, onOpen, fmt, mt }: any) {
               <span className="ml-1.5 rounded bg-red-100 px-1 py-0.5 text-[10px] font-bold text-red-700">18+</span>
             )}
           </h3>
-          <span className="shrink-0 text-sm font-bold text-brand-600">{fmt.format(Number(product.price))}</span>
+          <span className="shrink-0 text-sm font-extrabold text-ink">{fmt.format(Number(product.price))}</span>
         </div>
         {product.description && <p className="mt-0.5 line-clamp-1 text-xs text-muted">{product.description}</p>}
         {n && (
-          <p className="mt-1 text-[11px] font-medium text-[color:var(--color-amber)]">
+          <span className="mt-1 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
             {Math.round(n.kcal)} {mt('kcal')}
-          </p>
+          </span>
         )}
       </button>
       {hasOptions || baseQty === 0 ? (

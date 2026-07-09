@@ -1,33 +1,34 @@
 @import 'tailwindcss';
 
 /*
-  ComiQR customer PWA — a clean, modern ordering menu: deep navy headers, a fresh
-  teal accent, crisp white cards on a cool light canvas. Light and premium.
+  ComiQR customer PWA — clean, modern menu inspired by Nameless: a fresh emerald
+  green accent, crisp white cards with product photos, on an airy neutral canvas.
+  Noto Sans throughout. Light and premium.
 */
 @theme {
-  --color-brand-50: #e9faf7;
-  --color-brand-100: #c6f1ea;
-  --color-brand-500: #14b8a6; /* teal accent */
-  --color-brand-600: #0d9488;
-  --color-brand-700: #0f766e;
+  --color-brand-50: #eafaf2;
+  --color-brand-100: #cdeede;
+  --color-brand-500: #4fae86; /* emerald green accent */
+  --color-brand-600: #3d9770;
+  --color-brand-700: #2f7a5c;
 
-  --color-navy: #14284a; /* header / dark surfaces */
+  --color-navy: #14342a; /* deep green-ink for dark surfaces */
 
-  --color-ink: #17253f; /* navy headings + body text */
-  --color-muted: #6b7789;
-  --color-line: #e6eaf0;
+  --color-ink: #18181b; /* near-black headings + body text */
+  --color-muted: #737373; /* neutral-500 */
+  --color-line: #ececec;
   --color-surface: #ffffff;
-  --color-canvas: #f3f5f9;
+  --color-canvas: #f7f8f7;
 
-  --color-sage: #0f9d76;
-  --color-sage-bg: #e2f5ee;
+  --color-sage: #3d9770;
+  --color-sage-bg: #eafaf2;
   --color-amber: #b45309;
   --color-amber-bg: #fdf0da;
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: var(--font-fraunces), 'Georgia', 'Times New Roman', serif;
+  --font-sans: var(--font-noto), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-noto), ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-card: 0 1px 2px rgba(20, 40, 74, 0.05), 0 10px 28px rgba(20, 40, 74, 0.06);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
 }
 
 html,
@@ -41,7 +42,15 @@ body {
   border-color: var(--color-line);
 }
 
-/* Subtle cool vignette at the top for depth. */
+/* Subtle warm-green vignette at the top for depth. */
 body {
-  background-image: radial-gradient(120% 60% at 50% -10%, rgba(20, 184, 166, 0.07), transparent 60%);
+  background-image: radial-gradient(120% 60% at 50% -10%, rgba(79, 174, 134, 0.06), transparent 60%);
+}
+
+/* Hide the scrollbar on horizontal category tab strips. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

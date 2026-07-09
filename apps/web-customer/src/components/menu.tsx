@@ -44,41 +44,52 @@ export function MenuView({ menu, labels, tableCode }: { menu: Menu; labels: Menu
 /* Card list with full nutrition + a sticky category nav (the default). */
 
 function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }: ThemeProps) {
+  const v = menu.venue;
   return (
     <div className="mx-auto max-w-2xl pb-16">
-      <header className="sticky top-0 z-10 border-b border-line bg-canvas/90 px-5 py-4 backdrop-blur">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            {menu.venue.logo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={menu.venue.logo} alt={menu.venue.name} className="h-10 w-10 rounded-lg object-cover" />
-            )}
-            <div>
-              <h1 className="text-xl font-bold text-ink">{menu.venue.name}</h1>
-              {menu.venue.sub_title && <p className="text-xs text-muted">{menu.venue.sub_title}</p>}
-            </div>
-          </div>
-          {tableCode && (
-            <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">{tableCode}</span>
-          )}
-        </div>
-        {categories.length > 1 && (
-          <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {categories.map((c) => (
-              <a key={c.id} href={`#cat-${c.id}`} className="whitespace-nowrap rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-muted">
-                {c.name}
-              </a>
-            ))}
-          </nav>
+      {/* Nameless-style light header */}
+      <header className="bg-gradient-to-b from-brand-50/70 to-canvas px-5 pb-5 pt-8 text-center">
+        {v.logo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={v.logo} alt={v.name} className="mx-auto mb-3 h-16 w-16 rounded-2xl object-cover shadow-[var(--shadow-card)]" />
         )}
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{v.name}</h1>
+        {v.sub_title && <p className="mt-0.5 text-sm text-muted">{v.sub_title}</p>}
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+          {v.timing && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-500 ring-2 ring-brand-100" />
+              Açık · {v.timing}
+            </span>
+          )}
+          {v.address && <span className="rounded-full bg-white px-3 py-1 text-xs text-muted shadow-[var(--shadow-card)]">📍 {v.address}</span>}
+          {tableCode && <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">{tableCode}</span>}
+        </div>
       </header>
+
+      {/* Sticky category tabs */}
+      {categories.length > 1 && (
+        <nav className="no-scrollbar sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-4 py-3 backdrop-blur">
+          {categories.map((c, i) => (
+            <a
+              key={c.id}
+              href={`#cat-${c.id}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-semibold transition ${
+                i === 0 ? 'bg-brand-500 text-white' : 'border border-line bg-white text-muted'
+              }`}
+            >
+              {c.name}
+            </a>
+          ))}
+        </nav>
+      )}
 
       {categories.length === 0 ? (
         <p className="px-5 py-16 text-center text-sm text-muted">{labels.empty}</p>
       ) : (
         categories.map((c) => (
-          <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-24 px-5 pt-6">
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-600">{c.name}</h2>
+          <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-16 px-4 pt-6">
+            <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-wider text-brand-700">{c.name}</h2>
             <div className="space-y-3">
               {c.products.map((p) => (
                 <ModernProduct key={p.id} product={p} allergenMap={allergenMap} labels={labels} format={format} />
@@ -93,43 +104,42 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
 
 function ModernProduct({ product, allergenMap, labels, format }: { product: MenuProduct; allergenMap: Map<number, AllergenRef>; labels: MenuLabels; format: Intl.NumberFormat }) {
   const n = product.nutrition;
+  const img = product.images?.[0];
   const contains = (n?.allergens.contains ?? []).map((id) => allergenMap.get(id)?.name).filter(Boolean);
-  const traces = (n?.allergens.traces ?? []).map((id) => allergenMap.get(id)?.name).filter(Boolean);
 
   return (
-    <article className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-semibold text-ink">{product.name}</h3>
-          {product.description && <p className="mt-0.5 text-sm text-muted">{product.description}</p>}
+    <article className="flex gap-3.5 overflow-hidden rounded-2xl border border-line bg-surface p-3 shadow-[var(--shadow-card)]">
+      {img && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={img} alt={product.name} className="h-24 w-24 shrink-0 rounded-xl object-cover" />
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-bold text-ink">
+            {product.name}
+            {product.age_restricted && (
+              <span className="ml-1.5 rounded border border-red-500 px-1 text-[10px] font-bold text-red-600 align-middle">18+</span>
+            )}
+          </h3>
+          <div className="shrink-0 font-extrabold text-ink">{format.format(Number(product.price))}</div>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="font-bold text-ink">{format.format(Number(product.price))}</div>
+        {product.description && <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted">{product.description}</p>}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {n && (
-            <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
               {Math.round(n.kcal)} {labels.kcal}
+            </span>
+          )}
+          {n?.diet.vegan && <Diet label={labels.vegan} />}
+          {n && !n.diet.vegan && n.diet.vegetarian && <Diet label={labels.vegetarian} />}
+          {n?.diet.gluten_free && <Diet label={labels.glutenFree} />}
+          {contains.length > 0 && (
+            <span className="text-[11px] text-muted">
+              {labels.contains}: {contains.join(', ')}
             </span>
           )}
         </div>
       </div>
-      {n && (
-        <div className="mt-3 border-t border-line pt-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Macro label={labels.protein} value={n.macros.protein_g} />
-            <Macro label={labels.carb} value={n.macros.carb_g} />
-            <Macro label={labels.fat} value={n.macros.fat_g} />
-            {n.diet.vegan && <Diet label={labels.vegan} />}
-            {!n.diet.vegan && n.diet.vegetarian && <Diet label={labels.vegetarian} />}
-            {n.diet.gluten_free && <Diet label={labels.glutenFree} />}
-          </div>
-          {contains.length > 0 && (
-            <p className="mt-2 text-xs text-muted">
-              <span className="font-medium text-ink/70">{labels.contains}:</span> {contains.join(', ')}
-            </p>
-          )}
-          {traces.length > 0 && <p className="mt-0.5 text-xs text-muted/80">{labels.traces}: {traces.join(', ')}</p>}
-        </div>
-      )}
     </article>
   );
 }
@@ -256,14 +266,6 @@ function FlipbookMenu({ menu, labels, format, categories }: ThemeProps) {
 }
 
 /* -------------------------------------------------------------- shared bits */
-
-function Macro({ label, value }: { label: string; value: number }) {
-  return (
-    <span className="rounded-md bg-canvas px-2 py-0.5 text-xs text-ink/70">
-      {label} <b className="text-ink">{Math.round(value)}g</b>
-    </span>
-  );
-}
 
 function Diet({ label }: { label: string }) {
   return <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">{label}</span>;
