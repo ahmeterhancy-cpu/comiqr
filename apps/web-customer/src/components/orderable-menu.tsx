@@ -411,6 +411,33 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
         </div>
       </header>
 
+      {/* Category image cards */}
+      {categories.length > 1 && (
+        <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 pt-4">
+          {categories.map((c) => {
+            const img = c.image_path || c.products?.[0]?.images?.[0];
+            return (
+              <button
+                key={c.id}
+                onClick={() => goToCategory(c.id)}
+                className="relative aspect-[5/4] w-36 shrink-0 overflow-hidden rounded-2xl shadow-[var(--shadow-card)]"
+              >
+                {img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={img} alt={c.name} className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-brand-700" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+                <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-lg font-extrabold leading-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.55)]">
+                  {c.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Search + allergen filters */}
       <div className="flex flex-col gap-2 px-5 pb-1 pt-3 sm:flex-row sm:items-center">
         <div className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
@@ -436,28 +463,6 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
           <FilterChip active={fLactose} onClick={() => setFLactose((x) => !x)} tone="sky">🥛 Lactose</FilterChip>
         </div>
       </div>
-
-      {/* Sticky category tabs — scroll-spy: highlight & centre the in-view section */}
-      {visible.length > 1 && (
-        <nav
-          ref={navRef}
-          className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-canvas/90 px-5 py-3 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {visible.map((c) => (
-            <TabPill
-              key={c.id}
-              active={activeCat === c.id}
-              onClick={() => goToCategory(c.id)}
-              refCb={(el) => {
-                if (el) tabRefs.current.set(c.id, el);
-                else tabRefs.current.delete(c.id);
-              }}
-            >
-              {c.name}
-            </TabPill>
-          ))}
-        </nav>
-      )}
 
       {order && (
         <OrderPanel
@@ -584,30 +589,6 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
 
       {menu.venue?.ai_chat && <MenuChat slug={menu.venue?.slug} />}
     </div>
-  );
-}
-
-function TabPill({
-  active,
-  onClick,
-  refCb,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  refCb?: (el: HTMLButtonElement | null) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      ref={refCb}
-      onClick={onClick}
-      className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-        active ? 'bg-brand-500 text-white shadow-sm' : 'border border-line bg-surface text-muted hover:border-brand-300'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

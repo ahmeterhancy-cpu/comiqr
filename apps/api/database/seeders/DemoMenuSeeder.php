@@ -158,8 +158,24 @@ class DemoMenuSeeder extends Seeder
 
             $products = [];
             $sort = 1;
+            // Category cover images (emoji on a rich dark ground so the white name pops).
+            $catCover = [
+                'Çorbalar' => ['🍲', '#7c2d12'],
+                'Mezeler' => ['🫒', '#3f6212'],
+                'Sıcak Başlangıçlar' => ['🧆', '#9a3412'],
+                'Salatalar' => ['🥗', '#166534'],
+                'Pideler' => ['🫓', '#854d0e'],
+                'Ana Yemekler' => ['🍖', '#7f1d1d'],
+                'Makarnalar' => ['🍝', '#b45309'],
+                'Deniz Ürünleri' => ['🦐', '#0e7490'],
+                'Tatlılar' => ['🍮', '#9d174d'],
+                'İçecekler' => ['🥤', '#1d4ed8'],
+                'Şaraplar & İçkiler' => ['🍷', '#6b21a8'],
+            ];
             foreach ($menu as $catName => $dishes) {
-                $cat = Category::updateOrCreate(['tenant_id' => $tenant->id, 'name' => $catName], ['sort' => $sort++, 'is_active' => true]);
+                [$emoji, $bg] = $catCover[$catName] ?? ['🍽️', '#334155'];
+                $cover = $this->emojiImg('demo/cat-'.Str::slug($catName).'.svg', $emoji, $bg, 500, 400);
+                $cat = Category::updateOrCreate(['tenant_id' => $tenant->id, 'name' => $catName], ['sort' => $sort++, 'is_active' => true, 'image_path' => $cover]);
                 foreach ($dishes as $d) {
                     $products[$d[0]] = $this->dish($cat, $d[0], $d[1], $d[2], $d[3], $d[4], $d[5], $d[6], $d[7] ?? false);
                 }
