@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { AdminShell } from '@/components/AdminShell';
 import { RecipeEditor } from '@/components/RecipeEditor';
 import { Button, Card, Input } from '@/components/ui';
+import { printMenu } from '@/lib/print-menu';
 import { useApi } from '@/lib/useApi';
 
 export default function MenuPage() {
-  const { api, ready } = useApi();
+  const { api, me, ready } = useApi();
+  const [printing, setPrinting] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [ingredients, setIngredients] = useState<any[]>([]);
@@ -63,6 +65,19 @@ export default function MenuPage() {
     }
   }
 
+  async function handlePrintMenu() {
+    setPrinting(true);
+    setNotice(null);
+    try {
+      const menu = await api.menu(me?.tenant?.slug);
+      printMenu(menu);
+    } catch {
+      setNotice('Menü yüklenemedi — yazdırılamadı.');
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   async function aiCopy(p: any) {
     setBusy(p.id);
     setNotice(null);
@@ -87,6 +102,12 @@ export default function MenuPage() {
 
   return (
     <AdminShell title="Menü Yönetimi">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted">Kategorileri ve ürünleri yönetin, menüyü baskıya hazır PDF olarak yazdırın.</p>
+        <Button variant="ghost" onClick={handlePrintMenu} loading={printing} className="shrink-0">
+          🖨️ Yazdırılabilir Menü (PDF)
+        </Button>
+      </div>
       <AddCategory onAdd={addCategory} />
       {notice && (
         <div className="mt-4 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">{notice}</div>
