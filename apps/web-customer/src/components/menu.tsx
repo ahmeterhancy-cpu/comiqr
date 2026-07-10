@@ -104,61 +104,11 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
   const hasWifi = !!(v.wifi_ssid && v.wifi_ssid.trim());
   if (info.length === 0 && socials.length === 0 && !hasWifi) return null;
 
-  const count = info.length + socials.length + (hasWifi ? 1 : 0);
+  const contactCount = info.length + socials.length;
 
   return (
-    <div className="mx-auto mt-3 max-w-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="mx-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
-      >
-        <span className="text-brand-600"><ContactIcon /></span>
-        İletişim
-        <span className="text-muted">({count})</span>
-        <ChevronIcon open={open} />
-      </button>
-      {open && (
-        <div className="mt-2 space-y-2">
-      {info.length > 0 && (
-        // Two even columns on mobile keep the text pills aligned; inline-wrap on wider screens.
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
-          {info.map((l) => (
-            <a
-              key={l.key}
-              href={l.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={l.label}
-              title={l.label}
-              className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700 sm:w-auto ${
-                l.wide ? 'col-span-2' : ''
-              }`}
-            >
-              <span className="shrink-0 text-brand-600">{l.icon}</span>
-              {l.text && <span className="truncate">{l.text}</span>}
-            </a>
-          ))}
-        </div>
-      )}
-      {socials.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {socials.map((l) => (
-            <a
-              key={l.key}
-              href={l.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={l.label}
-              title={l.label}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600 shadow-[var(--shadow-card)] transition hover:text-brand-700"
-            >
-              {l.icon}
-            </a>
-          ))}
-        </div>
-      )}
+    <div className="mx-auto mt-3 max-w-sm space-y-2">
+      {/* Guest WiFi — always visible (not tucked inside the collapsible contact section). */}
       {hasWifi && (
         <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs text-ink shadow-[var(--shadow-card)]">
           <span className="text-brand-600"><WifiIcon /></span>
@@ -179,6 +129,61 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
           )}
         </div>
       )}
+      {contactCount > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="mx-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+          >
+            <span className="text-brand-600"><ContactIcon /></span>
+            İletişim
+            <span className="text-muted">({contactCount})</span>
+            <ChevronIcon open={open} />
+          </button>
+          {open && (
+            <div className="mt-2 space-y-2">
+              {info.length > 0 && (
+                // Two even columns on mobile keep the text pills aligned; inline-wrap on wider screens.
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
+                  {info.map((l) => (
+                    <a
+                      key={l.key}
+                      href={l.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={l.label}
+                      title={l.label}
+                      className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700 sm:w-auto ${
+                        l.wide ? 'col-span-2' : ''
+                      }`}
+                    >
+                      <span className="shrink-0 text-brand-600">{l.icon}</span>
+                      {l.text && <span className="truncate">{l.text}</span>}
+                    </a>
+                  ))}
+                </div>
+              )}
+              {socials.length > 0 && (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {socials.map((l) => (
+                    <a
+                      key={l.key}
+                      href={l.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={l.label}
+                      title={l.label}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600 shadow-[var(--shadow-card)] transition hover:text-brand-700"
+                    >
+                      {l.icon}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
