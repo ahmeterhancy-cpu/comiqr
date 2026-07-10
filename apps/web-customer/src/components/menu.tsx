@@ -322,7 +322,6 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
                   ))}
                 {tableCode && <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-semibold text-white">{tableCode}</span>}
               </div>
-              {v.sub_title && <p className="mt-0.5 truncate text-sm text-muted">{v.sub_title}</p>}
               {!hasWeekHours(v.hours) && v.timing && (
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
                   <ClockIcon />
