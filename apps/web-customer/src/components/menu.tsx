@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useLocale } from 'next-intl';
 import type { AllergenRef, Menu, MenuCategory, MenuProduct } from '@comiqr/shared-types';
 
 export interface MenuLabels {
@@ -78,18 +79,15 @@ function WeekHours({ hours, loc, openNow }: { hours: WeekHour[]; loc: string; op
   );
 }
 
-/** Contact + social links + guest WiFi under the header — renders only what's set. */
-function VenueContact({ v }: { v: Menu['venue'] }) {
-  const [showPw, setShowPw] = useState(false);
-  const [open, setOpen] = useState(false);
+type VLink = { key: string; href: string; icon: ReactNode; text?: string; label: string; wide?: boolean };
 
+/** Build the venue's contact + social links (WiFi renders separately). */
+function venueLinks(v: Menu['venue']): { info: VLink[]; socials: VLink[] } {
   const igHandle = v.instagram
     ? '@' + v.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@+/, '').replace(/\/+$/, '')
     : '';
-
-  type Link = { key: string; href: string; icon: ReactNode; text?: string; label: string; wide?: boolean };
-  const info: Link[] = []; // links carrying a label (address, instagram handle, email, …)
-  const socials: Link[] = []; // icon-only social buttons
+  const info: VLink[] = []; // links carrying a label (address, instagram handle, email, …)
+  const socials: VLink[] = []; // icon-only social buttons
   if (v.address) info.push({ key: 'addr', href: `https://maps.google.com/?q=${encodeURIComponent(v.address)}`, icon: <PinIcon />, text: v.address, label: 'Adres', wide: true });
   if (v.instagram) info.push({ key: 'ig', href: normUrl(v.instagram, 'https://instagram.com/', true), icon: <IgIcon />, text: igHandle, label: 'Instagram' });
   if (v.email) info.push({ key: 'email', href: `mailto:${v.email}`, icon: <MailIcon />, text: v.email, label: 'E-posta' });
@@ -100,91 +98,139 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
   if (v.x) socials.push({ key: 'x', href: normUrl(v.x, 'https://x.com/', true), icon: <XIcon />, label: 'X' });
   if (v.tiktok) socials.push({ key: 'tt', href: normUrl(v.tiktok, 'https://tiktok.com/@', true), icon: <TtIcon />, label: 'TikTok' });
   if (v.youtube) socials.push({ key: 'yt', href: normUrl(v.youtube, 'https://youtube.com/'), icon: <YtIcon />, label: 'YouTube' });
+  return { info, socials };
+}
 
-  const hasWifi = !!(v.wifi_ssid && v.wifi_ssid.trim());
-  if (info.length === 0 && socials.length === 0 && !hasWifi) return null;
+const LOCALES: { code: string; label: string }[] = [
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'en', label: 'English' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'ar', label: 'العربية' },
+];
 
-  const contactCount = info.length + socials.length;
-
+/** Language picker (cookie-based; refreshes to re-render in the chosen locale). Sits in the cover overlay. */
+function LocaleSwitcher() {
+  const active = useLocale();
+  const [open, setOpen] = useState(false);
+  const current = LOCALES.find((l) => l.code === active) ?? LOCALES[1];
+  const pick = (code: string) => {
+    document.cookie = `locale=${code}; path=/; max-age=31536000; samesite=lax`;
+    window.location.reload();
+  };
   return (
-    <div className="mx-auto mt-3 max-w-sm space-y-2">
-      {/* Guest WiFi — always visible (not tucked inside the collapsible contact section). */}
-      {hasWifi && (
-        <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs text-ink shadow-[var(--shadow-card)]">
-          <span className="text-brand-600"><WifiIcon /></span>
-          <span className="font-semibold">{v.wifi_ssid}</span>
-          {v.wifi_password && (
-            <>
-              <span className="text-muted"><LockIcon /></span>
-              <span className="font-mono tracking-wide">{showPw ? v.wifi_password : '••••••••'}</span>
-              <button
-                type="button"
-                onClick={() => setShowPw((p) => !p)}
-                aria-label={showPw ? 'Şifreyi gizle' : 'Şifreyi göster'}
-                className="text-muted transition hover:text-ink"
-              >
-                {showPw ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </>
-          )}
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex items-center gap-1.5 rounded-xl bg-white/95 px-3 py-2 text-sm font-medium text-ink shadow-lg backdrop-blur"
+      >
+        <GlobeIcon />
+        <span>{current.label}</span>
+        <ChevronIcon open={open} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-40 mt-1 w-36 overflow-hidden rounded-xl bg-white py-1 shadow-xl">
+          {LOCALES.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              onClick={() => pick(l.code)}
+              className={`block w-full px-3 py-2 text-left text-sm ${l.code === active ? 'bg-brand-50 font-semibold text-brand-700' : 'text-ink hover:bg-canvas'}`}
+            >
+              {l.label}
+            </button>
+          ))}
         </div>
       )}
-      {contactCount > 0 && (
-        <div>
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            aria-expanded={open}
-            className="mx-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
-          >
-            <span className="text-brand-600"><ContactIcon /></span>
-            İletişim
-            <span className="text-muted">({contactCount})</span>
-            <ChevronIcon open={open} />
-          </button>
-          {open && (
-            <div className="mt-2 space-y-2">
-              {info.length > 0 && (
-                // Two even columns on mobile keep the text pills aligned; inline-wrap on wider screens.
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
-                  {info.map((l) => (
-                    <a
-                      key={l.key}
-                      href={l.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={l.label}
-                      title={l.label}
-                      className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700 sm:w-auto ${
-                        l.wide ? 'col-span-2' : ''
-                      }`}
-                    >
-                      <span className="shrink-0 text-brand-600">{l.icon}</span>
-                      {l.text && <span className="truncate">{l.text}</span>}
-                    </a>
-                  ))}
-                </div>
-              )}
-              {socials.length > 0 && (
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {socials.map((l) => (
-                    <a
-                      key={l.key}
-                      href={l.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={l.label}
-                      title={l.label}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600 shadow-[var(--shadow-card)] transition hover:text-brand-700"
-                    >
-                      {l.icon}
-                    </a>
-                  ))}
-                </div>
-              )}
+    </div>
+  );
+}
+
+/** Contact + social links dropdown. Sits in the cover overlay bar. */
+function ContactMenu({ v }: { v: Menu['venue'] }) {
+  const [open, setOpen] = useState(false);
+  const { info, socials } = venueLinks(v);
+  if (info.length === 0 && socials.length === 0) return null;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-label="İletişim"
+        className="flex items-center gap-1.5 rounded-xl bg-white/95 px-3 py-2 text-ink shadow-lg backdrop-blur"
+      >
+        <ContactIcon />
+        <ChevronIcon open={open} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-40 mt-1 w-[min(20rem,calc(100vw-2rem))] space-y-2 rounded-2xl bg-white p-3 shadow-xl">
+          {info.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {info.map((l) => (
+                <a
+                  key={l.key}
+                  href={l.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={l.label}
+                  title={l.label}
+                  className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full bg-canvas px-3 py-1.5 text-xs font-medium text-ink transition hover:text-brand-700 ${
+                    l.wide ? 'col-span-2' : ''
+                  }`}
+                >
+                  <span className="shrink-0 text-brand-600">{l.icon}</span>
+                  {l.text && <span className="truncate">{l.text}</span>}
+                </a>
+              ))}
+            </div>
+          )}
+          {socials.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {socials.map((l) => (
+                <a
+                  key={l.key}
+                  href={l.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={l.label}
+                  title={l.label}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-brand-600 transition hover:text-brand-700"
+                >
+                  {l.icon}
+                </a>
+              ))}
             </div>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Guest WiFi chip — always visible under the header. */
+function WifiChip({ v }: { v: Menu['venue'] }) {
+  const [showPw, setShowPw] = useState(false);
+  if (!(v.wifi_ssid && v.wifi_ssid.trim())) return null;
+  return (
+    <div className="mx-auto mt-3 flex w-fit max-w-full items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs text-ink shadow-[var(--shadow-card)]">
+      <span className="text-brand-600"><WifiIcon /></span>
+      <span className="font-semibold">{v.wifi_ssid}</span>
+      {v.wifi_password && (
+        <>
+          <span className="text-muted"><LockIcon /></span>
+          <span className="font-mono tracking-wide">{showPw ? v.wifi_password : '••••••••'}</span>
+          <button
+            type="button"
+            onClick={() => setShowPw((p) => !p)}
+            aria-label={showPw ? 'Şifreyi gizle' : 'Şifreyi göster'}
+            className="text-muted transition hover:text-ink"
+          >
+            {showPw ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+        </>
       )}
     </div>
   );
@@ -288,11 +334,22 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
 
   return (
     <div className="mx-auto max-w-2xl pb-16">
-      {/* Nameless-style header: cover on top, then logo + name + status + hours */}
+      {/* Nameless-style header: cover on top (with language + contact overlay), then logo + name + status + hours */}
       <header className="bg-gradient-to-b from-brand-50/70 to-canvas pb-5">
-        {v.cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={v.cover} alt={v.name} className="h-44 w-full rounded-b-3xl object-cover sm:h-52" />
+        {v.cover ? (
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={v.cover} alt={v.name} className="h-44 w-full rounded-b-3xl object-cover sm:h-52" />
+            <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-2 p-3">
+              <LocaleSwitcher />
+              <ContactMenu v={v} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start justify-end gap-2 px-5 pt-4">
+            <LocaleSwitcher />
+            <ContactMenu v={v} />
+          </div>
         )}
         <div className="px-5 pt-4">
           <div className="flex items-center gap-3 text-left">
@@ -336,7 +393,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
             </div>
           </div>
           {hoursOpen && hasWeekHours(v.hours) && <WeekHours hours={v.hours!} loc={loc} openNow={v.open_now} />}
-          <VenueContact v={v} />
+          <WifiChip v={v} />
         </div>
       </header>
 
