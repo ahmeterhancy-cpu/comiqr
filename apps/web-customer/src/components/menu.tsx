@@ -339,7 +339,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
         {v.cover ? (
           <div className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={v.cover} alt={v.name} className="h-44 w-full rounded-b-3xl object-cover sm:h-52" />
+            <img src={v.cover} alt={v.name} className="h-60 w-full rounded-b-3xl object-cover sm:h-80" />
             <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-2 p-3">
               <LocaleSwitcher />
               <ContactMenu v={v} />
