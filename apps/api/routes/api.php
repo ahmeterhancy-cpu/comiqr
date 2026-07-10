@@ -100,6 +100,9 @@ Route::get('venues/{slug}/reviews', [ReviewController::class, 'venueReviews'])->
 Route::middleware('tenant')->group(function () {
     Route::get('menu', [MenuController::class, 'show']);
     Route::post('menu/chat', [MenuController::class, 'chat'])->middleware('throttle:20,1');
+    // Service calls from the slug menu (no scanned token): customer picks a table code.
+    Route::post('service/call-waiter', [SessionController::class, 'callWaiterByCode'])->middleware('throttle:20,1');
+    Route::post('service/request-bill', [SessionController::class, 'requestBillByCode'])->middleware('throttle:20,1');
 });
 
 // --- Public QR menu + session + ordering (M3/M4) — tenant from token ---

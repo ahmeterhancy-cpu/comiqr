@@ -227,6 +227,8 @@ class MenuController extends Controller
                 'whatsapp' => $settings['whatsapp'] ?? null,
                 'wifi_ssid' => $settings['wifi_ssid'] ?? null,
                 'wifi_password' => $settings['wifi_password'] ?? null,
+                // Table service (call waiter / request bill) — owner can disable.
+                'allow_call_waiter' => \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_call_waiter'),
                 'theme' => $settings['theme'] ?? 'classic',
                 // Guest AI chatbot is offered only when the plan unlocks AI and a provider is configured.
                 'ai_chat' => \App\Support\Plans\PlanGate::allows($tenant, 'ai') && $this->ai->isConfigured(),
@@ -238,6 +240,12 @@ class MenuController extends Controller
             ],
             'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
             'categories' => CategoryResource::collection($categories)->resolve(),
+            // Active table codes for the "select your table → call waiter/bill" flow (M4).
+            'tables' => Table::query()
+                ->where('is_active', true)
+                ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+                ->orderBy('code')
+                ->pluck('code'),
         ];
     }
 

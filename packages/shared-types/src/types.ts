@@ -212,6 +212,8 @@ export interface MenuVenue {
   whatsapp?: string | null;
   wifi_ssid?: string | null;
   wifi_password?: string | null;
+  /** Table service (call waiter / request bill) enabled by the owner. */
+  allow_call_waiter?: boolean;
 }
 
 export interface MenuTable {
@@ -228,6 +230,8 @@ export interface Menu {
   categories: MenuCategory[];
   /** Present only on the QR-token menu entry (GET /menu/{qrToken}). */
   table?: MenuTable;
+  /** Active table codes for the slug menu's "pick a table → call waiter/bill" flow. */
+  tables?: string[];
 }
 
 // --- Hotel vertical (Faz 3) — front-desk room folio ---

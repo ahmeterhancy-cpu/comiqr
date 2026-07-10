@@ -236,6 +236,107 @@ function WifiChip({ v }: { v: Menu['venue'] }) {
   );
 }
 
+const SERVICE_API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
+
+/** Call waiter / request bill from the slug menu — customer picks their table code. */
+function ServiceCall({ slug, tables }: { slug: string; tables: string[] }) {
+  const [mode, setMode] = useState<null | 'call-waiter' | 'request-bill'>(null);
+  const [table, setTable] = useState<string>(tables[0] ?? '');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const title = mode === 'request-bill' ? 'Hesap İste' : 'Garson Çağır';
+
+  const submit = async () => {
+    if (!table || !mode) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${SERVICE_API}/service/${mode}?tenant=${encodeURIComponent(slug)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ table }),
+      });
+      if (!res.ok) throw new Error();
+      setDone(`${mode === 'request-bill' ? 'Hesap istendi' : 'Garson çağrıldı'} · Masa ${table}`);
+      setMode(null);
+      setTimeout(() => setDone(null), 4000);
+    } catch {
+      setError('Gönderilemedi, tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="mt-3 flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => { setMode('call-waiter'); setError(null); }}
+          className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+        >
+          <BellIcon /> Garson Çağır
+        </button>
+        <button
+          type="button"
+          onClick={() => { setMode('request-bill'); setError(null); }}
+          className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+        >
+          <ReceiptIcon /> Hesap İste
+        </button>
+      </div>
+      {done && <p className="mt-2 text-center text-xs font-semibold text-emerald-600">✓ {done}</p>}
+
+      {mode && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={() => !busy && setMode(null)}
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-canvas p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-ink">{title}</h3>
+            <p className="mt-0.5 text-sm text-muted">Lütfen masanızı seçin</p>
+            <label className="mt-3 block">
+              <span className="mb-1 block text-xs font-medium text-muted">Masa</span>
+              <select
+                value={table}
+                onChange={(e) => setTable(e.target.value)}
+                className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+              >
+                {tables.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+            {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setMode(null)}
+                disabled={busy}
+                className="flex-1 rounded-lg border border-line py-2 text-sm font-semibold text-muted"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={busy || !table}
+                className="flex-1 rounded-lg bg-brand-500 py-2 text-sm font-semibold"
+                style={{ color: '#ffffff' }}
+              >
+                {busy ? 'Gönderiliyor…' : title}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function BellIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>); }
+function ReceiptIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3l-2 1-2-1-2 1-2-1-2 1z" /><path d="M9 8h6M9 12h6" strokeLinecap="round" /></svg>); }
 function ContactIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" /></svg>); }
 function ClockIcon() { return (<svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>); }
 function PinIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z" /><circle cx="12" cy="11" r="2" /></svg>); }
@@ -394,6 +495,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
           </div>
           {hoursOpen && hasWeekHours(v.hours) && <WeekHours hours={v.hours!} loc={loc} openNow={v.open_now} />}
           <WifiChip v={v} />
+          {v.allow_call_waiter && v.slug && (menu.tables?.length ?? 0) > 0 && <ServiceCall slug={v.slug} tables={menu.tables!} />}
         </div>
       </header>
 

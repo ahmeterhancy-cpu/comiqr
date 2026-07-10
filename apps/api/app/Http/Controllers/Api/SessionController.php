@@ -59,6 +59,51 @@ class SessionController extends Controller
         return response()->json(['data' => ['requested' => true]]);
     }
 
+    /** POST /service/call-waiter — slug menu: resolve the table by the code the customer picked. */
+    public function callWaiterByCode(Request $request): JsonResponse
+    {
+        $table = $this->resolveByCode($request);
+        $this->openSessionFor($table)?->update(['waiter_called_at' => now()]);
+        WaiterCalled::dispatch($table->branch_id, $table->id, $table->code);
+
+        return response()->json(['data' => ['called' => true, 'table' => $table->code]]);
+    }
+
+    /** POST /service/request-bill — slug menu counterpart of callWaiterByCode. */
+    public function requestBillByCode(Request $request): JsonResponse
+    {
+        $table = $this->resolveByCode($request);
+        $this->openSessionFor($table)?->update(['bill_requested_at' => now()]);
+        BillRequested::dispatch($table->branch_id, $table->id, $table->code);
+
+        return response()->json(['data' => ['requested' => true, 'table' => $table->code]]);
+    }
+
+    /**
+     * Resolve the active tenant's table from the posted `table` code (tenant set by
+     * the `tenant` middleware). 403 when the owner disabled table service.
+     */
+    private function resolveByCode(Request $request): \App\Models\Table
+    {
+        $tenant = app(\App\Support\Tenancy\TenantManager::class)->get();
+        abort_if($tenant === null, 404, 'Not found.');
+        abort_unless(
+            \App\Support\Restaurant\RestaurantSettings::allows($tenant->settings_json ?? [], 'allow_call_waiter'),
+            403,
+            'Masa servisi kapalı.',
+        );
+
+        $data = $request->validate(['table' => ['required', 'string', 'max:60']]);
+
+        $table = \App\Models\Table::where('code', $data['table'])
+            ->where('is_active', true)
+            ->first();
+
+        abort_if($table === null, 404, 'Masa bulunamadı.');
+
+        return $table;
+    }
+
     private function openSessionFor(\App\Models\Table $table): ?TableSession
     {
         return TableSession::firstOrCreate(
