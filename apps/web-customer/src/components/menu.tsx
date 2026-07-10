@@ -215,7 +215,7 @@ function WifiChip({ v }: { v: Menu['venue'] }) {
   const [showPw, setShowPw] = useState(false);
   if (!(v.wifi_ssid && v.wifi_ssid.trim())) return null;
   return (
-    <div className="mx-auto mt-3 flex w-fit max-w-full items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs text-ink shadow-[var(--shadow-card)]">
+    <div className="mx-auto mt-3 flex w-full max-w-sm items-center justify-center gap-2 rounded-full bg-white px-3.5 py-2 text-xs text-ink shadow-[var(--shadow-card)]">
       <span className="text-brand-600"><WifiIcon /></span>
       <span className="font-semibold">{v.wifi_ssid}</span>
       {v.wifi_password && (
@@ -270,23 +270,23 @@ function ServiceCall({ slug, tables }: { slug: string; tables: string[] }) {
 
   return (
     <>
-      <div className="mt-3 flex items-center justify-center gap-2">
+      <div className="mx-auto mt-3 grid max-w-sm grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => { setMode('call-waiter'); setError(null); }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+          className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
         >
           <BellIcon /> Garson Çağır
         </button>
         <button
           type="button"
           onClick={() => { setMode('request-bill'); setError(null); }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+          className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
         >
           <ReceiptIcon /> Hesap İste
         </button>
       </div>
-      {done && <p className="mt-2 text-center text-xs font-semibold text-emerald-600">✓ {done}</p>}
+      {done && <p className="mx-auto mt-2 max-w-sm text-center text-xs font-semibold text-emerald-600">✓ {done}</p>}
 
       {mode && (
         <div
