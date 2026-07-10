@@ -53,6 +53,7 @@ function normUrl(value: string, base: string, stripAt = false): string {
 /** Contact + social links + guest WiFi under the header — renders only what's set. */
 function VenueContact({ v }: { v: Menu['venue'] }) {
   const [showPw, setShowPw] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const igHandle = v.instagram
     ? '@' + v.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@+/, '').replace(/\/+$/, '')
@@ -74,8 +75,23 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
   const hasWifi = !!(v.wifi_ssid && v.wifi_ssid.trim());
   if (info.length === 0 && socials.length === 0 && !hasWifi) return null;
 
+  const count = info.length + socials.length + (hasWifi ? 1 : 0);
+
   return (
-    <div className="mx-auto mt-3 max-w-sm space-y-2">
+    <div className="mx-auto mt-3 max-w-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="mx-auto flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+      >
+        <span className="text-brand-600"><ContactIcon /></span>
+        İletişim
+        <span className="text-muted">({count})</span>
+        <ChevronIcon open={open} />
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
       {info.length > 0 && (
         // Two even columns on mobile keep the text pills aligned; inline-wrap on wider screens.
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
@@ -134,10 +150,14 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
           )}
         </div>
       )}
+        </div>
+      )}
     </div>
   );
 }
 
+function ContactIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" /></svg>); }
+function ChevronIcon({ open }: { open: boolean }) { return (<svg viewBox="0 0 24 24" className={`h-3.5 w-3.5 text-muted transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>); }
 function IgIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" /></svg>); }
 function MailIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>); }
 function GlobeIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" /></svg>); }
