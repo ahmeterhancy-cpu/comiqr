@@ -19,6 +19,11 @@ class RestaurantSettings
             'settings_json.vertical' => ['sometimes', Rule::in(self::VERTICALS)],
             'settings_json.sub_title' => ['sometimes', 'nullable', 'string', 'max:120'],
             'settings_json.timing' => ['sometimes', 'nullable', 'string', 'max:120'],
+            // Per-day working hours (index 0=Mon..6=Sun).
+            'settings_json.hours' => ['sometimes', 'nullable', 'array', 'max:7'],
+            'settings_json.hours.*.closed' => ['sometimes', 'boolean'],
+            'settings_json.hours.*.open' => ['sometimes', 'nullable', 'date_format:H:i'],
+            'settings_json.hours.*.close' => ['sometimes', 'nullable', 'date_format:H:i'],
             'settings_json.description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'settings_json.address' => ['sometimes', 'nullable', 'string', 'max:500'],
             // Contact + social links + guest WiFi (shown on the public menu when set).

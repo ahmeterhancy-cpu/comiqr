@@ -50,6 +50,34 @@ function normUrl(value: string, base: string, stripAt = false): string {
   return base + (stripAt ? t.replace(/^@+/, '') : t);
 }
 
+type WeekHour = { closed: boolean; open: string | null; close: string | null; today: boolean };
+
+function hasWeekHours(hours: Menu['venue']['hours']): hours is WeekHour[] {
+  return Array.isArray(hours) && hours.length === 7;
+}
+
+/** Localised weekday name; i: 0=Mon..6=Sun (2024-01-01 was a Monday). */
+function dayName(i: number, loc: string): string {
+  return new Intl.DateTimeFormat(loc || 'tr', { weekday: 'long' }).format(new Date(2024, 0, 1 + i));
+}
+
+/** Per-day working-hours table; highlights today (green when open, red when closed now). */
+function WeekHours({ hours, loc, openNow }: { hours: WeekHour[]; loc: string; openNow?: boolean | null }) {
+  const todayColor = openNow ? 'text-emerald-600' : 'text-red-500';
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 rounded-2xl bg-white px-4 py-3 text-sm shadow-[var(--shadow-card)] sm:grid-cols-2">
+      {hours.map((h, i) => (
+        <div key={i} className={`flex items-center justify-between gap-3 ${h.today ? 'font-semibold' : ''}`}>
+          <span className={h.today ? todayColor : 'text-ink'}>{dayName(i, loc)}</span>
+          <span className={h.closed ? 'text-muted' : h.today ? todayColor : 'text-ink'}>
+            {h.closed || !h.open || !h.close ? 'Kapalı' : `${h.open} – ${h.close}`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Contact + social links + guest WiFi under the header — renders only what's set. */
 function VenueContact({ v }: { v: Menu['venue'] }) {
   const [showPw, setShowPw] = useState(false);
@@ -181,6 +209,7 @@ function EyeOffIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fil
 function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }: ThemeProps) {
   const v = menu.venue;
   const loc = v.locale_default ?? 'tr';
+  const [hoursOpen, setHoursOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [fAllergen, setFAllergen] = useState(false);
   const [fGluten, setFGluten] = useState(false);
@@ -273,16 +302,28 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h1 className="text-xl font-extrabold tracking-tight text-ink">{v.name}</h1>
-                {v.open_now != null && (
-                  <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${v.open_now ? 'text-emerald-600' : 'text-red-500'}`}>
-                    <span className={`h-2 w-2 rounded-full ${v.open_now ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                    {v.open_now ? 'Açık' : 'Kapalı'}
-                  </span>
-                )}
+                {v.open_now != null &&
+                  (hasWeekHours(v.hours) ? (
+                    <button
+                      type="button"
+                      onClick={() => setHoursOpen((o) => !o)}
+                      aria-expanded={hoursOpen}
+                      className={`inline-flex items-center gap-1.5 text-sm font-semibold ${v.open_now ? 'text-emerald-600' : 'text-red-500'}`}
+                    >
+                      <span className={`h-2 w-2 rounded-full ${v.open_now ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                      {v.open_now ? 'Açık' : 'Kapalı'}
+                      <ChevronIcon open={hoursOpen} />
+                    </button>
+                  ) : (
+                    <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${v.open_now ? 'text-emerald-600' : 'text-red-500'}`}>
+                      <span className={`h-2 w-2 rounded-full ${v.open_now ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                      {v.open_now ? 'Açık' : 'Kapalı'}
+                    </span>
+                  ))}
                 {tableCode && <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-semibold text-white">{tableCode}</span>}
               </div>
               {v.sub_title && <p className="mt-0.5 truncate text-sm text-muted">{v.sub_title}</p>}
-              {v.timing && (
+              {!hasWeekHours(v.hours) && v.timing && (
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
                   <ClockIcon />
                   <span>{v.timing}</span>
@@ -290,6 +331,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
               )}
             </div>
           </div>
+          {hoursOpen && hasWeekHours(v.hours) && <WeekHours hours={v.hours!} loc={loc} openNow={v.open_now} />}
           <VenueContact v={v} />
         </div>
       </header>

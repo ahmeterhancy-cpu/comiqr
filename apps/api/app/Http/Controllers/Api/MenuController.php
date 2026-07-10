@@ -208,7 +208,9 @@ class MenuController extends Controller
                 'currency' => $tenant->currency,
                 'sub_title' => $settings['sub_title'] ?? null,
                 'timing' => $settings['timing'] ?? null,
-                'open_now' => self::openNow($settings['timing'] ?? null, $tenant->timezone),
+                'hours' => self::weekHours($settings, $tenant->timezone),
+                'open_now' => self::openNowFromHours($settings, $tenant->timezone)
+                    ?? self::openNow($settings['timing'] ?? null, $tenant->timezone),
                 'description' => $settings['description'] ?? null,
                 'address' => $settings['address'] ?? null,
                 'logo' => $settings['logo'] ?? null,
@@ -268,5 +270,88 @@ class MenuController extends Controller
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Normalise the per-day working hours (index 0=Mon..6=Sun) for the venue payload,
+     * marking the current day in the tenant's timezone. Returns null when unconfigured.
+     */
+    private static function weekHours(?array $settings, ?string $tz): ?array
+    {
+        $raw = $settings['hours'] ?? null;
+        if (! is_array($raw) || count($raw) === 0) {
+            return null;
+        }
+
+        try {
+            $todayIdx = (int) \Illuminate\Support\Carbon::now($tz ?: config('app.timezone'))->dayOfWeekIso - 1;
+        } catch (\Throwable) {
+            $todayIdx = -1;
+        }
+
+        $out = [];
+        for ($i = 0; $i < 7; $i++) {
+            $d = is_array($raw[$i] ?? null) ? $raw[$i] : [];
+            $closed = (bool) ($d['closed'] ?? false);
+            $out[] = [
+                'closed' => $closed,
+                'open' => $closed ? null : ($d['open'] ?? null),
+                'close' => $closed ? null : ($d['close'] ?? null),
+                'today' => $i === $todayIdx,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Open/closed right now from the structured per-day `hours`, accounting for
+     * overnight windows that spill from the previous day. Null when unconfigured.
+     */
+    private static function openNowFromHours(?array $settings, ?string $tz): ?bool
+    {
+        $raw = $settings['hours'] ?? null;
+        if (! is_array($raw) || count($raw) === 0) {
+            return null;
+        }
+
+        try {
+            $now = \Illuminate\Support\Carbon::now($tz ?: config('app.timezone'));
+            $cur = $now->hour * 60 + $now->minute;
+            $todayIdx = (int) $now->dayOfWeekIso - 1;
+            $yestIdx = ($todayIdx + 6) % 7;
+
+            // eveningOnly=false → normal/evening part of the day; eveningOnly=true → morning spill of an overnight window.
+            $inWindow = static function ($d, int $cur, bool $morningSpill): bool {
+                if (! is_array($d) || ($d['closed'] ?? false)) {
+                    return false;
+                }
+                $o = self::toMinutes($d['open'] ?? null);
+                $c = self::toMinutes($d['close'] ?? null);
+                if ($o === null || $c === null || $o === $c) {
+                    return false;
+                }
+                if ($c > $o) {
+                    return ! $morningSpill && $cur >= $o && $cur < $c;
+                }
+
+                // overnight (close < open): [open, 24:00) today, [00:00, close) next morning
+                return $morningSpill ? ($cur < $c) : ($cur >= $o);
+            };
+
+            return $inWindow($raw[$todayIdx] ?? null, $cur, false)
+                || $inWindow($raw[$yestIdx] ?? null, $cur, true);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private static function toMinutes(?string $t): ?int
+    {
+        if (! $t || ! preg_match('/^(\d{1,2}):(\d{2})$/', $t, $m)) {
+            return null;
+        }
+
+        return ((int) $m[1]) * 60 + ((int) $m[2]);
     }
 }

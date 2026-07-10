@@ -183,8 +183,10 @@ export interface MenuVenue {
   currency: string;
   sub_title?: string | null;
   timing?: string | null;
-  /** Whether the venue is open right now (computed from `timing` in the tenant tz). null = unknown/unparseable. */
+  /** Whether the venue is open right now (computed from `hours`/`timing` in the tenant tz). null = unknown. */
   open_now?: boolean | null;
+  /** Per-day working hours, index 0=Mon..6=Sun; `today` marks the current day (tenant tz). null when not configured. */
+  hours?: { closed: boolean; open: string | null; close: string | null; today: boolean }[] | null;
   description?: string | null;
   address?: string | null;
   logo?: string | null;

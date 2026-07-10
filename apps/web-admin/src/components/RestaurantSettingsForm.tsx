@@ -17,6 +17,9 @@ const THEMES: [string, string][] = [
   ['modern', 'Modern'],
 ];
 
+type DayHours = { closed: boolean; open: string; close: string };
+const DAY_LABELS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
 const VERTICALS: [string, string, string][] = [
   ['restaurant', 'Restoran / Kafe', 'Masa siparişi, gel-al, teslimat'],
   ['hotel', 'Otel', 'Oda servisi + odaya yansıt (folyo)'],
@@ -55,7 +58,13 @@ export function RestaurantSettingsForm({
   const [cover, setCover] = useState<string | null>(s.cover ?? null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [subTitle, setSubTitle] = useState<string>(s.sub_title ?? '');
-  const [timing, setTiming] = useState<string>(s.timing ?? '');
+  const [hours, setHours] = useState<DayHours[]>(
+    Array.isArray(s.hours) && s.hours.length === 7
+      ? s.hours.map((d: any) => ({ closed: !!d?.closed, open: d?.open ?? '09:00', close: d?.close ?? '22:00' }))
+      : Array.from({ length: 7 }, (_, i) => ({ closed: i === 6, open: '09:00', close: '22:00' })),
+  );
+  const setDay = (i: number, patch: Partial<DayHours>) =>
+    setHours((prev) => prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
   const [description, setDescription] = useState<string>(s.description ?? '');
   const [address, setAddress] = useState<string>(s.address ?? '');
   const [email, setEmail] = useState<string>(s.email ?? '');
@@ -97,7 +106,7 @@ export function RestaurantSettingsForm({
         settings_json: {
           vertical,
           sub_title: subTitle.trim() || null,
-          timing: timing.trim() || null,
+          hours: hours.map((d) => (d.closed ? { closed: true } : { closed: false, open: d.open, close: d.close })),
           description: description.trim() || null,
           address: address.trim() || null,
           email: email.trim() || null,
@@ -185,14 +194,37 @@ export function RestaurantSettingsForm({
               })}
             </div>
           </Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Alt Başlık">
-              <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
-            </Field>
-            <Field label="Çalışma Saatleri">
-              <Input value={timing} onChange={(e) => setTiming(e.target.value)} placeholder="09:00 - 23:00" />
-            </Field>
-          </div>
+          <Field label="Alt Başlık">
+            <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
+          </Field>
+          <Field label="Çalışma Saatleri">
+            <div className="space-y-1.5">
+              {hours.map((d, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-sm text-ink">{DAY_LABELS[i]}</span>
+                  <button
+                    type="button"
+                    onClick={() => setDay(i, { closed: !d.closed })}
+                    className={`w-16 shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${
+                      d.closed ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'
+                    }`}
+                  >
+                    {d.closed ? 'Kapalı' : 'Açık'}
+                  </button>
+                  {d.closed ? (
+                    <span className="text-xs text-muted">Kapalı</span>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <Input type="time" value={d.open} onChange={(e) => setDay(i, { open: e.target.value })} className="w-28" />
+                      <span className="text-muted">–</span>
+                      <Input type="time" value={d.close} onChange={(e) => setDay(i, { close: e.target.value })} className="w-28" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted">Gece yarısını geçen saatler desteklenir (ör. 20:00 – 02:00). Kapanış 00:00 = gece yarısı.</p>
+          </Field>
           <Field label="Açıklama">
             <textarea
               value={description}
