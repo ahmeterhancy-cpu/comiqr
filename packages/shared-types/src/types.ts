@@ -214,6 +214,8 @@ export interface MenuVenue {
   wifi_password?: string | null;
   /** Table service (call waiter / request bill) enabled by the owner. */
   allow_call_waiter?: boolean;
+  /** "Add to cart" ordering available (plan + at least one order channel enabled). */
+  can_order?: boolean;
 }
 
 export interface MenuTable {

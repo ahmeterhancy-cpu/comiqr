@@ -229,6 +229,11 @@ class MenuController extends Controller
                 'wifi_password' => $settings['wifi_password'] ?? null,
                 // Table service (call waiter / request bill) — owner can disable.
                 'allow_call_waiter' => \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_call_waiter'),
+                // "Add to cart" ordering available (plan unlocks it + at least one order channel on).
+                'can_order' => \App\Support\Plans\PlanGate::allows($tenant, 'ordering')
+                    && (\App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_on_table_order')
+                        || \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_takeaway')
+                        || \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_delivery')),
                 'theme' => $settings['theme'] ?? 'classic',
                 // Guest AI chatbot is offered only when the plan unlocks AI and a provider is configured.
                 'ai_chat' => \App\Support\Plans\PlanGate::allows($tenant, 'ai') && $this->ai->isConfigured(),

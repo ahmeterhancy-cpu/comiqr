@@ -47,15 +47,21 @@ export default async function VenueMenuPage({
     <>
       <MenuView menu={menu} labels={labels} />
       {menu.venue?.ai_chat && <MenuChat slug={slug} />}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-5 py-3 backdrop-blur">
+      {/* Cart / order shortcut — only when the "add to cart" ordering module is enabled. */}
+      {menu.venue?.can_order && (
         <a
           href={`/order/${slug}`}
-          className="mx-auto block max-w-2xl rounded-xl bg-brand-500 py-3 text-center text-sm font-semibold text-white"
+          aria-label="Sipariş / Sepet"
+          className="fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 shadow-lg transition hover:bg-brand-600 active:scale-95"
           style={{ color: '#ffffff' }}
         >
-          Paket Servis Sipariş Ver
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="20" r="1.4" />
+            <circle cx="19" cy="20" r="1.4" />
+            <path d="M2 3h3l2.2 12.3a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.2L22 7H6.2" />
+          </svg>
         </a>
-      </div>
+      )}
     </>
   );
 }
