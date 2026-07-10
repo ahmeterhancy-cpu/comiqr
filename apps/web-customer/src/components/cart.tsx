@@ -2,16 +2,30 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-/** Minimal cart line shared (via localStorage) between the slug menu and /order checkout. */
-export type CartLine = { id: number; name: string; price: number; qty: number };
+/** A cart line shared (via localStorage) between the slug menu and /order checkout. */
+export type CartLine = {
+  key: string; // productId::variantId::sortedModifierIds
+  id: number; // product id
+  name: string;
+  variantId?: number;
+  variantName?: string;
+  modifierIds: number[];
+  modifierNames: string[];
+  price: number; // unit price (base + variant + modifiers)
+  qty: number;
+};
 
-const key = (slug: string) => `cq-cart:${slug}`;
+export function lineKey(productId: number, variantId: number | undefined, modifierIds: number[]): string {
+  return `${productId}::${variantId ?? 0}::${[...modifierIds].sort((a, b) => a - b).join(',')}`;
+}
+
+const storeKey = (slug: string) => `cq-cart:${slug}`;
 const EVT = 'cq-cart-changed';
 
 export function readCart(slug: string): CartLine[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = window.localStorage.getItem(key(slug));
+    const raw = window.localStorage.getItem(storeKey(slug));
     const val = raw ? JSON.parse(raw) : [];
     return Array.isArray(val) ? val : [];
   } catch {
@@ -21,7 +35,7 @@ export function readCart(slug: string): CartLine[] {
 
 function writeCart(slug: string, lines: CartLine[]) {
   try {
-    window.localStorage.setItem(key(slug), JSON.stringify(lines));
+    window.localStorage.setItem(storeKey(slug), JSON.stringify(lines));
     window.dispatchEvent(new CustomEvent(EVT, { detail: slug }));
   } catch {
     /* ignore quota / private-mode errors */
@@ -30,7 +44,7 @@ function writeCart(slug: string, lines: CartLine[]) {
 
 export function clearCart(slug: string) {
   try {
-    window.localStorage.removeItem(key(slug));
+    window.localStorage.removeItem(storeKey(slug));
     window.dispatchEvent(new CustomEvent(EVT, { detail: slug }));
   } catch {
     /* ignore */
@@ -53,24 +67,25 @@ export function useCart(slug: string) {
   }, [slug]);
 
   const setQty = useCallback(
-    (item: Omit<CartLine, 'qty'>, qty: number) => {
+    (line: Omit<CartLine, 'qty'>, qty: number) => {
       const cur = readCart(slug);
-      const idx = cur.findIndex((l) => l.id === item.id);
+      const idx = cur.findIndex((l) => l.key === line.key);
       let next: CartLine[];
-      if (qty <= 0) next = cur.filter((l) => l.id !== item.id);
-      else if (idx >= 0) next = cur.map((l) => (l.id === item.id ? { ...l, qty } : l));
-      else next = [...cur, { ...item, qty }];
+      if (qty <= 0) next = cur.filter((l) => l.key !== line.key);
+      else if (idx >= 0) next = cur.map((l) => (l.key === line.key ? { ...l, ...line, qty } : l));
+      else next = [...cur, { ...line, qty }];
       writeCart(slug, next);
       setLines(next);
     },
     [slug],
   );
 
-  const qtyOf = useCallback((id: number) => lines.find((l) => l.id === id)?.qty ?? 0, [lines]);
+  const qtyOfKey = useCallback((key: string) => lines.find((l) => l.key === key)?.qty ?? 0, [lines]);
+  const qtyOfProduct = useCallback((id: number) => lines.filter((l) => l.id === id).reduce((s, l) => s + l.qty, 0), [lines]);
   const count = lines.reduce((s, l) => s + l.qty, 0);
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
 
-  return { lines, count, total, qtyOf, setQty, clear: () => clearCart(slug) };
+  return { lines, count, total, qtyOfKey, qtyOfProduct, setQty, clear: () => clearCart(slug) };
 }
 
 /** Floating cart button + bottom-sheet listing what the guest added. */
@@ -123,20 +138,24 @@ export function CartFab({ slug, currency, locale }: { slug: string; currency?: s
               <div className="px-5 py-12 text-center text-sm text-muted">Sepetiniz boş.</div>
             ) : (
               <div className="max-h-[55vh] divide-y divide-line overflow-y-auto px-5">
-                {lines.map((l) => (
-                  <div key={l.id} className="flex items-center gap-3 py-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-ink">{l.name}</p>
-                      <p className="text-xs text-muted">{fmt.format(l.price)}</p>
+                {lines.map((l) => {
+                  const extras = [l.variantName, ...l.modifierNames].filter(Boolean).join(', ');
+                  return (
+                    <div key={l.key} className="flex items-center gap-3 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-ink">{l.name}</p>
+                        {extras && <p className="truncate text-[11px] text-muted">{extras}</p>}
+                        <p className="text-xs text-muted">{fmt.format(l.price)}</p>
+                      </div>
+                      <div className="flex items-center gap-2 rounded-full bg-brand-500 px-1.5 py-1" style={{ color: '#ffffff' }}>
+                        <button type="button" onClick={() => setQty(l, l.qty - 1)} aria-label="Azalt" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">−</button>
+                        <span className="min-w-5 text-center text-sm font-bold">{l.qty}</span>
+                        <button type="button" onClick={() => setQty(l, l.qty + 1)} aria-label="Artır" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">+</button>
+                      </div>
+                      <div className="w-16 shrink-0 text-right text-sm font-bold text-ink">{fmt.format(l.price * l.qty)}</div>
                     </div>
-                    <div className="flex items-center gap-2 rounded-full bg-brand-500 px-1.5 py-1" style={{ color: '#ffffff' }}>
-                      <button type="button" onClick={() => setQty(l, l.qty - 1)} aria-label="Azalt" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">−</button>
-                      <span className="min-w-5 text-center text-sm font-bold">{l.qty}</span>
-                      <button type="button" onClick={() => setQty(l, l.qty + 1)} aria-label="Artır" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">+</button>
-                    </div>
-                    <div className="w-16 shrink-0 text-right text-sm font-bold text-ink">{fmt.format(l.price * l.qty)}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

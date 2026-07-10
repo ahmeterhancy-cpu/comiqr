@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
-import type { AllergenRef, Menu, MenuCategory, MenuProduct } from '@comiqr/shared-types';
-import { useCart } from './cart';
+import type { AllergenRef, Menu, MenuCategory, MenuModifier, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
+import { lineKey, useCart, type CartLine } from './cart';
 
 export interface MenuLabels {
   kcal: string;
@@ -363,6 +363,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
   const v = menu.venue;
   const loc = v.locale_default ?? 'tr';
   const cart = useCart(v.slug ?? '');
+  const [optionsProduct, setOptionsProduct] = useState<MenuProduct | null>(null);
   const [hoursOpen, setHoursOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [fAllergen, setFAllergen] = useState(false);
@@ -573,21 +574,43 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
           <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-32 px-4 pt-6">
             <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-wider text-brand-700">{c.name}</h2>
             <div className="space-y-3">
-              {c.products.map((p) => (
-                <ModernProduct
-                  key={p.id}
-                  product={p}
-                  allergenMap={allergenMap}
-                  labels={labels}
-                  format={format}
-                  canOrder={!!v.can_order}
-                  qty={cart.qtyOf(p.id)}
-                  onQty={(q) => cart.setQty({ id: p.id, name: p.name, price: Number(p.price) }, q)}
-                />
-              ))}
+              {c.products.map((p) => {
+                const baseKey = lineKey(p.id, undefined, []);
+                return (
+                  <ModernProduct
+                    key={p.id}
+                    product={p}
+                    allergenMap={allergenMap}
+                    labels={labels}
+                    format={format}
+                    canOrder={!!v.can_order}
+                    baseQty={cart.qtyOfKey(baseKey)}
+                    productQty={cart.qtyOfProduct(p.id)}
+                    onQuick={(q) =>
+                      cart.setQty(
+                        { key: baseKey, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
+                        q,
+                      )
+                    }
+                    onOptions={() => setOptionsProduct(p)}
+                  />
+                );
+              })}
             </div>
           </section>
         ))
+      )}
+      {optionsProduct && (
+        <ProductOptionsSheet
+          product={optionsProduct}
+          format={format}
+          currentQty={(key) => cart.qtyOfKey(key)}
+          onClose={() => setOptionsProduct(null)}
+          onAdd={(line) => {
+            cart.setQty(line, cart.qtyOfKey(line.key) + 1);
+            setOptionsProduct(null);
+          }}
+        />
       )}
     </div>
   );
@@ -599,40 +622,46 @@ function ModernProduct({
   labels,
   format,
   canOrder,
-  qty,
-  onQty,
+  baseQty,
+  productQty,
+  onQuick,
+  onOptions,
 }: {
   product: MenuProduct;
   allergenMap: Map<number, AllergenRef>;
   labels: MenuLabels;
   format: Intl.NumberFormat;
   canOrder?: boolean;
-  qty?: number;
-  onQty?: (qty: number) => void;
+  baseQty?: number;
+  productQty?: number;
+  onQuick?: (qty: number) => void;
+  onOptions?: () => void;
 }) {
   const n = product.nutrition;
   const img = product.images?.[0];
   const contains = (n?.allergens.contains ?? []).map((id) => allergenMap.get(id)?.name).filter(Boolean);
-  const count = qty ?? 0;
+  const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
+  const base = baseQty ?? 0;
+  const total = productQty ?? 0;
 
   return (
-    <article className="flex gap-3.5 overflow-hidden rounded-2xl border border-line bg-surface p-3 shadow-[var(--shadow-card)]">
+    <article className="flex gap-4 rounded-2xl border border-line bg-surface p-3.5 shadow-[var(--shadow-card)]">
       {img && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={img} alt={product.name} className="h-24 w-24 shrink-0 rounded-xl object-cover" />
+        <img src={img} alt={product.name} className="h-20 w-20 shrink-0 self-start rounded-2xl object-cover sm:h-24 sm:w-24" />
       )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-bold text-ink">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-bold leading-tight text-ink">
             {product.name}
             {product.age_restricted && (
-              <span className="ml-1.5 rounded border border-red-500 px-1 text-[10px] font-bold text-red-600 align-middle">18+</span>
+              <span className="ml-1.5 rounded border border-red-500 px-1 align-middle text-[10px] font-bold text-red-600">18+</span>
             )}
           </h3>
           <div className="shrink-0 font-extrabold text-ink">{format.format(Number(product.price))}</div>
         </div>
-        {product.description && <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted">{product.description}</p>}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {product.description && <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted">{product.description}</p>}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
           {n && (
             <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
               {Math.round(n.kcal)} {labels.kcal}
@@ -642,29 +671,45 @@ function ModernProduct({
           {n && !n.diet.vegan && n.diet.vegetarian && <Diet label={labels.vegetarian} />}
           {n?.diet.gluten_free && <Diet label={labels.glutenFree} />}
           {contains.length > 0 && (
-            <span className="text-[11px] text-muted">
+            <span className="w-full text-[11px] text-muted">
               {labels.contains}: {contains.join(', ')}
             </span>
           )}
         </div>
-        {canOrder && onQty && (
-          <div className="mt-2.5 flex justify-end">
-            {count === 0 ? (
+        {canOrder && (
+          <div className="mt-3 flex items-end justify-end">
+            {!hasOptions && onQuick ? (
+              base === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onQuick(1)}
+                  className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-4 py-1.5 text-sm font-semibold"
+                  style={{ color: '#ffffff' }}
+                >
+                  <PlusIcon /> Ekle
+                </button>
+              ) : (
+                <div className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-1.5 py-1" style={{ color: '#ffffff' }}>
+                  <button type="button" onClick={() => onQuick(base - 1)} aria-label="Azalt" className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm font-bold">−</button>
+                  <span className="min-w-5 text-center text-sm font-bold">{base}</span>
+                  <button type="button" onClick={() => onQuick(base + 1)} aria-label="Artır" className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm font-bold">+</button>
+                </div>
+              )
+            ) : hasOptions && onOptions ? (
               <button
                 type="button"
-                onClick={() => onQty(1)}
-                className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold"
+                onClick={onOptions}
+                className="relative inline-flex items-center gap-1 rounded-full bg-brand-500 px-4 py-1.5 text-sm font-semibold"
                 style={{ color: '#ffffff' }}
               >
-                <BellIconPlus /> Ekle
+                <PlusIcon /> Ekle
+                {total > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full border-2 border-surface bg-red-500 px-1 text-[11px] font-bold" style={{ color: '#ffffff' }}>
+                    {total}
+                  </span>
+                )}
               </button>
-            ) : (
-              <div className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-1.5 py-1" style={{ color: '#ffffff' }}>
-                <button type="button" onClick={() => onQty(count - 1)} aria-label="Azalt" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 text-sm font-bold">−</button>
-                <span className="min-w-5 text-center text-sm font-bold">{count}</span>
-                <button type="button" onClick={() => onQty(count + 1)} aria-label="Artır" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 text-sm font-bold">+</button>
-              </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>
@@ -672,7 +717,137 @@ function ModernProduct({
   );
 }
 
-function BellIconPlus() { return (<svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>); }
+function PlusIcon() { return (<svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>); }
+
+/** Bottom-sheet to pick a product's variant + modifiers before adding to cart. */
+function ProductOptionsSheet({
+  product,
+  format,
+  currentQty,
+  onClose,
+  onAdd,
+}: {
+  product: MenuProduct;
+  format: Intl.NumberFormat;
+  currentQty: (key: string) => number;
+  onClose: () => void;
+  onAdd: (line: Omit<CartLine, 'qty'>) => void;
+}) {
+  const variants = product.variants ?? [];
+  const groups: MenuModifierGroup[] = product.modifier_groups ?? [];
+  const [variantId, setVariantId] = useState<number | undefined>(variants.find((v) => v.is_default)?.id ?? variants[0]?.id);
+  const [selected, setSelected] = useState<Record<number, number[]>>({});
+
+  const variant = variants.find((v) => v.id === variantId);
+  const chosen = groups.flatMap((g) =>
+    (selected[g.id] ?? []).map((id) => g.modifiers.find((m) => m.id === id)).filter(Boolean),
+  ) as MenuModifier[];
+  const modifierIds = chosen.map((m) => m.id);
+  const unitPrice = Number(product.price) + Number(variant?.price_delta ?? 0) + chosen.reduce((s, m) => s + Number(m.price_delta), 0);
+  const missingRequired = groups.some((g) => (selected[g.id] ?? []).length < (g.is_required ? Math.max(1, g.min_select) : g.min_select));
+  const inCart = currentQty(lineKey(product.id, variantId, modifierIds));
+
+  function toggle(g: MenuModifierGroup, id: number) {
+    setSelected((prev) => {
+      const cur = prev[g.id] ?? [];
+      let next: number[];
+      if (g.max_select <= 1) next = cur.includes(id) ? (g.is_required ? cur : []) : [id];
+      else if (cur.includes(id)) next = cur.filter((x) => x !== id);
+      else if (cur.length < g.max_select) next = [...cur, id];
+      else next = cur;
+      return { ...prev, [g.id]: next };
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+      <div className="max-h-[88vh] w-full max-w-md overflow-hidden rounded-t-3xl bg-canvas sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-ink">{product.name}</h3>
+            {product.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted">{product.description}</p>}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Kapat" className="shrink-0 text-muted hover:text-ink">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+
+        <div className="max-h-[55vh] space-y-4 overflow-y-auto px-5 py-4">
+          {variants.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Seçenek</p>
+              <div className="flex flex-wrap gap-2">
+                {variants.map((vr) => (
+                  <button
+                    key={vr.id}
+                    type="button"
+                    onClick={() => setVariantId(vr.id)}
+                    className={`rounded-full px-3.5 py-1.5 text-sm font-medium ${vr.id === variantId ? 'bg-brand-500' : 'border border-line text-muted'}`}
+                    style={vr.id === variantId ? { color: '#ffffff' } : undefined}
+                  >
+                    {vr.name}
+                    {Number(vr.price_delta) ? ` +${format.format(Number(vr.price_delta))}` : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {groups.map((g) => (
+            <div key={g.id}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                {g.name} {g.is_required && <span className="text-red-500">*</span>}
+                {g.max_select > 1 && <span className="ml-1 normal-case text-[11px] font-normal">(en fazla {g.max_select})</span>}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {g.modifiers.map((m) => {
+                  const on = (selected[g.id] ?? []).includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => toggle(g, m.id)}
+                      className={`rounded-full px-3.5 py-1.5 text-sm font-medium ${on ? 'bg-brand-500' : 'border border-line text-muted'}`}
+                      style={on ? { color: '#ffffff' } : undefined}
+                    >
+                      {m.name}
+                      {Number(m.price_delta) ? ` +${format.format(Number(m.price_delta))}` : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-line px-5 py-4">
+          {missingRequired && <p className="mb-2 text-center text-xs text-red-500">Lütfen zorunlu (*) seçimleri yapın</p>}
+          <button
+            type="button"
+            disabled={missingRequired}
+            onClick={() =>
+              onAdd({
+                key: lineKey(product.id, variantId, modifierIds),
+                id: product.id,
+                name: product.name,
+                variantId,
+                variantName: variant?.name,
+                modifierIds,
+                modifierNames: chosen.map((m) => m.name),
+                price: unitPrice,
+              })
+            }
+            className="flex w-full items-center justify-between rounded-xl bg-brand-500 px-5 py-3 text-sm font-bold disabled:opacity-40"
+            style={{ color: '#ffffff' }}
+          >
+            <span>Sepete Ekle{inCart > 0 ? ` · sepette ${inCart}` : ''}</span>
+            <span>{format.format(unitPrice)}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ----------------------------------------------------------------- Classic */
 /* Image-forward: cover hero + logo + about, product photos in each card. */

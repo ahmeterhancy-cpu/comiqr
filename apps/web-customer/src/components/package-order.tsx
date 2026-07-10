@@ -84,8 +84,16 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
     for (const s of stored) {
       const product = byId.get(s.id);
       if (!product) continue;
-      const k = lineKey(product.id, undefined, []);
-      next[k] = { key: k, product, qty: s.qty, modifierIds: [], modifierNames: [], unitPrice: Number(product.price) };
+      next[s.key] = {
+        key: s.key,
+        product,
+        qty: s.qty,
+        variantId: s.variantId,
+        variantName: s.variantName,
+        modifierIds: s.modifierIds ?? [],
+        modifierNames: s.modifierNames ?? [],
+        unitPrice: s.price,
+      };
     }
     if (Object.keys(next).length > 0) setCart(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
