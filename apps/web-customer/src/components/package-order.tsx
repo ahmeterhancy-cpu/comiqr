@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ApiClient } from '@comiqr/shared-types/client';
 import type { Menu, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
+import { clearCart, readCart } from './cart';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
 
@@ -72,6 +73,28 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
       active = false;
     };
   }, [step, method, phone, api, slug]);
+
+  // Hydrate the checkout cart from the quick-cart the guest built on the slug menu.
+  useEffect(() => {
+    const stored = readCart(slug);
+    if (stored.length === 0) return;
+    const byId = new Map<number, MenuProduct>();
+    menu.categories.forEach((c) => c.products.forEach((p) => byId.set(p.id, p)));
+    const next: Record<string, CartLine> = {};
+    for (const s of stored) {
+      const product = byId.get(s.id);
+      if (!product) continue;
+      const k = lineKey(product.id, undefined, []);
+      next[k] = { key: k, product, qty: s.qty, modifierIds: [], modifierNames: [], unitPrice: Number(product.price) };
+    }
+    if (Object.keys(next).length > 0) setCart(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Clear the shared quick-cart once the order is placed.
+  useEffect(() => {
+    if (done) clearCart(slug);
+  }, [done, slug]);
 
   function qtyFor(productId: number, variantId: number | undefined, modifierIds: number[]) {
     return cart[lineKey(productId, variantId, modifierIds)]?.qty ?? 0;

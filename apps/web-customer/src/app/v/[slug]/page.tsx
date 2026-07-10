@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { MenuView } from '@/components/menu';
 import { MenuChat } from '@/components/menu-chat';
+import { CartFab } from '@/components/cart';
 import { fetchMenu } from '@/lib/menu';
 
 /**
@@ -47,20 +48,9 @@ export default async function VenueMenuPage({
     <>
       <MenuView menu={menu} labels={labels} />
       {menu.venue?.ai_chat && <MenuChat slug={slug} />}
-      {/* Cart / order shortcut — only when the "add to cart" ordering module is enabled. */}
+      {/* Cart shortcut — only when the "add to cart" ordering module is enabled. */}
       {menu.venue?.can_order && (
-        <a
-          href={`/order/${slug}`}
-          aria-label="Sipariş / Sepet"
-          className="fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 shadow-lg transition hover:bg-brand-600 active:scale-95"
-          style={{ color: '#ffffff' }}
-        >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="9" cy="20" r="1.4" />
-            <circle cx="19" cy="20" r="1.4" />
-            <path d="M2 3h3l2.2 12.3a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.2L22 7H6.2" />
-          </svg>
-        </a>
+        <CartFab slug={slug} currency={menu.venue.currency} locale={menu.venue.locale_default} />
       )}
     </>
   );

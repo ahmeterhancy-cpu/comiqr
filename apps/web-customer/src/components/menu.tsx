@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
 import type { AllergenRef, Menu, MenuCategory, MenuProduct } from '@comiqr/shared-types';
+import { useCart } from './cart';
 
 export interface MenuLabels {
   kcal: string;
@@ -361,6 +362,7 @@ function EyeOffIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fil
 function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }: ThemeProps) {
   const v = menu.venue;
   const loc = v.locale_default ?? 'tr';
+  const cart = useCart(v.slug ?? '');
   const [hoursOpen, setHoursOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [fAllergen, setFAllergen] = useState(false);
@@ -572,7 +574,16 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
             <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-wider text-brand-700">{c.name}</h2>
             <div className="space-y-3">
               {c.products.map((p) => (
-                <ModernProduct key={p.id} product={p} allergenMap={allergenMap} labels={labels} format={format} />
+                <ModernProduct
+                  key={p.id}
+                  product={p}
+                  allergenMap={allergenMap}
+                  labels={labels}
+                  format={format}
+                  canOrder={!!v.can_order}
+                  qty={cart.qtyOf(p.id)}
+                  onQty={(q) => cart.setQty({ id: p.id, name: p.name, price: Number(p.price) }, q)}
+                />
               ))}
             </div>
           </section>
@@ -582,10 +593,27 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
   );
 }
 
-function ModernProduct({ product, allergenMap, labels, format }: { product: MenuProduct; allergenMap: Map<number, AllergenRef>; labels: MenuLabels; format: Intl.NumberFormat }) {
+function ModernProduct({
+  product,
+  allergenMap,
+  labels,
+  format,
+  canOrder,
+  qty,
+  onQty,
+}: {
+  product: MenuProduct;
+  allergenMap: Map<number, AllergenRef>;
+  labels: MenuLabels;
+  format: Intl.NumberFormat;
+  canOrder?: boolean;
+  qty?: number;
+  onQty?: (qty: number) => void;
+}) {
   const n = product.nutrition;
   const img = product.images?.[0];
   const contains = (n?.allergens.contains ?? []).map((id) => allergenMap.get(id)?.name).filter(Boolean);
+  const count = qty ?? 0;
 
   return (
     <article className="flex gap-3.5 overflow-hidden rounded-2xl border border-line bg-surface p-3 shadow-[var(--shadow-card)]">
@@ -619,10 +647,32 @@ function ModernProduct({ product, allergenMap, labels, format }: { product: Menu
             </span>
           )}
         </div>
+        {canOrder && onQty && (
+          <div className="mt-2.5 flex justify-end">
+            {count === 0 ? (
+              <button
+                type="button"
+                onClick={() => onQty(1)}
+                className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold"
+                style={{ color: '#ffffff' }}
+              >
+                <BellIconPlus /> Ekle
+              </button>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-1.5 py-1" style={{ color: '#ffffff' }}>
+                <button type="button" onClick={() => onQty(count - 1)} aria-label="Azalt" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 text-sm font-bold">−</button>
+                <span className="min-w-5 text-center text-sm font-bold">{count}</span>
+                <button type="button" onClick={() => onQty(count + 1)} aria-label="Artır" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 text-sm font-bold">+</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
 }
+
+function BellIconPlus() { return (<svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>); }
 
 /* ----------------------------------------------------------------- Classic */
 /* Image-forward: cover hero + logo + about, product photos in each card. */
