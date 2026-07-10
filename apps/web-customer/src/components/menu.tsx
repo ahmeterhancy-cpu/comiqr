@@ -364,6 +364,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
   const loc = v.locale_default ?? 'tr';
   const cart = useCart(v.slug ?? '');
   const [optionsProduct, setOptionsProduct] = useState<MenuProduct | null>(null);
+  const [detailProduct, setDetailProduct] = useState<MenuProduct | null>(null);
   const [hoursOpen, setHoursOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [fAllergen, setFAllergen] = useState(false);
@@ -593,12 +594,44 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
                       )
                     }
                     onOptions={() => setOptionsProduct(p)}
+                    onDetail={() => setDetailProduct(p)}
                   />
                 );
               })}
             </div>
           </section>
         ))
+      )}
+      {detailProduct && (
+        <ProductDetailSheet
+          product={detailProduct}
+          format={format}
+          allergenMap={allergenMap}
+          labels={labels}
+          canOrder={!!v.can_order}
+          baseQty={cart.qtyOfKey(lineKey(detailProduct.id, undefined, []))}
+          productQty={cart.qtyOfProduct(detailProduct.id)}
+          onQuick={(q) =>
+            cart.setQty(
+              {
+                key: lineKey(detailProduct.id, undefined, []),
+                id: detailProduct.id,
+                name: detailProduct.name,
+                price: Number(detailProduct.price),
+                variantId: undefined,
+                variantName: undefined,
+                modifierIds: [],
+                modifierNames: [],
+              },
+              q,
+            )
+          }
+          onOptions={() => {
+            setOptionsProduct(detailProduct);
+            setDetailProduct(null);
+          }}
+          onClose={() => setDetailProduct(null)}
+        />
       )}
       {optionsProduct && (
         <ProductOptionsSheet
@@ -626,6 +659,7 @@ function ModernProduct({
   productQty,
   onQuick,
   onOptions,
+  onDetail,
 }: {
   product: MenuProduct;
   allergenMap: Map<number, AllergenRef>;
@@ -636,6 +670,7 @@ function ModernProduct({
   productQty?: number;
   onQuick?: (qty: number) => void;
   onOptions?: () => void;
+  onDetail?: () => void;
 }) {
   const n = product.nutrition;
   const img = product.images?.[0];
@@ -645,7 +680,10 @@ function ModernProduct({
   const total = productQty ?? 0;
 
   return (
-    <article className="flex gap-4 rounded-2xl border border-line bg-surface p-3.5 shadow-[var(--shadow-card)]">
+    <article
+      onClick={onDetail}
+      className="flex cursor-pointer gap-4 rounded-2xl border border-line bg-surface p-3.5 shadow-[var(--shadow-card)] transition hover:border-brand-300"
+    >
       {img && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={img} alt={product.name} className="h-20 w-20 shrink-0 self-start rounded-2xl object-cover sm:h-24 sm:w-24" />
@@ -677,7 +715,7 @@ function ModernProduct({
           )}
         </div>
         {canOrder && (
-          <div className="mt-3 flex items-end justify-end">
+          <div className="mt-3 flex items-end justify-end" onClick={(e) => e.stopPropagation()}>
             {!hasOptions && onQuick ? (
               base === 0 ? (
                 <button
@@ -847,6 +885,153 @@ function ProductOptionsSheet({
       </div>
     </div>
   );
+}
+
+/** Product detail modal — image, allergens, description, ingredient recipe (name + grams), price + add. */
+function ProductDetailSheet({
+  product,
+  format,
+  allergenMap,
+  labels,
+  canOrder,
+  baseQty,
+  productQty,
+  onQuick,
+  onOptions,
+  onClose,
+}: {
+  product: MenuProduct;
+  format: Intl.NumberFormat;
+  allergenMap: Map<number, AllergenRef>;
+  labels: MenuLabels;
+  canOrder?: boolean;
+  baseQty?: number;
+  productQty?: number;
+  onQuick?: (qty: number) => void;
+  onOptions?: () => void;
+  onClose: () => void;
+}) {
+  const n = product.nutrition;
+  const img = product.images?.[0];
+  const allergens = (n?.allergens.contains ?? []).map((id) => allergenMap.get(id)).filter(Boolean) as AllergenRef[];
+  const recipe = product.recipe ?? [];
+  const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
+  const base = baseQty ?? 0;
+  const total = productQty ?? 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center" onClick={onClose}>
+      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-canvas sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="relative shrink-0">
+          {img ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={img} alt={product.name} className="h-56 w-full object-cover" />
+          ) : (
+            <div className="h-20 w-full bg-gradient-to-br from-brand-500 to-brand-700" />
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Kapat"
+            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-ink shadow-lg backdrop-blur"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <h2 className="text-xl font-extrabold text-ink">
+            {product.name}
+            {product.age_restricted && <span className="ml-2 rounded border border-red-500 px-1 align-middle text-[11px] font-bold text-red-600">18+</span>}
+          </h2>
+
+          {(allergens.length > 0 || n) && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {n && (
+                <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">
+                  {Math.round(n.kcal)} {labels.kcal}
+                </span>
+              )}
+              {n?.diet.vegan && <Diet label={labels.vegan} />}
+              {n && !n.diet.vegan && n.diet.vegetarian && <Diet label={labels.vegetarian} />}
+              {n?.diet.gluten_free && <Diet label={labels.glutenFree} />}
+              {allergens.map((a) => (
+                <span key={a.id} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                  {a.icon && <span>{a.icon}</span>}
+                  {a.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {product.description && <p className="mt-3 text-sm leading-relaxed text-muted">{product.description}</p>}
+
+          {recipe.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">İçindekiler</p>
+              <div className="flex flex-wrap gap-1.5">
+                {recipe.map((r, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs text-ink">
+                    <span className="font-medium">{r.name}</span>
+                    <span className="text-muted">
+                      {fmtAmount(r.quantity)} {r.unit}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {n && (
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <NutBox v={Math.round(n.macros.protein_g)} label={labels.protein} />
+              <NutBox v={Math.round(n.macros.carb_g)} label={labels.carb} />
+              <NutBox v={Math.round(n.macros.fat_g)} label={labels.fat} />
+            </div>
+          )}
+        </div>
+
+        {canOrder && (
+          <div className="shrink-0 border-t border-line px-5 py-4">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">Fiyat</span>
+              <span className="text-lg font-extrabold text-ink">{format.format(Number(product.price))}</span>
+            </div>
+            {hasOptions && onOptions ? (
+              <button type="button" onClick={onOptions} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-3 text-sm font-bold" style={{ color: '#ffffff' }}>
+                <PlusIcon /> Seçenekleri Seç{total > 0 ? ` · sepette ${total}` : ''}
+              </button>
+            ) : onQuick ? (
+              base === 0 ? (
+                <button type="button" onClick={() => onQuick(1)} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-3 text-sm font-bold" style={{ color: '#ffffff' }}>
+                  <PlusIcon /> Sepete Ekle
+                </button>
+              ) : (
+                <div className="flex items-center justify-between rounded-xl bg-brand-500 px-2 py-2" style={{ color: '#ffffff' }}>
+                  <button type="button" onClick={() => onQuick(base - 1)} aria-label="Azalt" className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">−</button>
+                  <span className="text-base font-bold">{base}</span>
+                  <button type="button" onClick={() => onQuick(base + 1)} aria-label="Artır" className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">+</button>
+                </div>
+              )
+            ) : null}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NutBox({ v, label }: { v: number; label: string }) {
+  return (
+    <div className="rounded-xl bg-white py-2 shadow-[var(--shadow-card)]">
+      <div className="text-sm font-bold text-ink">{v}g</div>
+      <div className="text-[10px] uppercase text-muted">{label}</div>
+    </div>
+  );
+}
+
+function fmtAmount(q: number): string {
+  return Number.isInteger(q) ? String(q) : String(Number(q.toFixed(2)));
 }
 
 /* ----------------------------------------------------------------- Classic */

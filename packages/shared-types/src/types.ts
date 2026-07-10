@@ -156,6 +156,8 @@ export interface MenuProduct {
   variants: MenuVariant[];
   modifier_groups: MenuModifierGroup[];
   nutrition: NutritionInfo | null;
+  /** Ingredient recipe (name + amount) shown in the product detail; empty/absent when not entered. */
+  recipe?: { name: string; quantity: number; unit: string }[];
 }
 
 export interface MenuCategory {

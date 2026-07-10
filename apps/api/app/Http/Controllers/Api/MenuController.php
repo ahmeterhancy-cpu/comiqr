@@ -187,6 +187,7 @@ class MenuController extends Controller
                 'products.variants',
                 'products.modifierGroups.modifiers',
                 'products.nutritionSummary',
+                'products.recipe.items.ingredient',
             ])
             ->orderBy('sort')
             ->get();

@@ -34,6 +34,17 @@ class ProductResource extends JsonResource
             'variants' => VariantResource::collection($this->whenLoaded('variants')),
             'modifier_groups' => ModifierGroupResource::collection($this->whenLoaded('modifierGroups')),
             'nutrition' => $showNutrition ? new NutritionSummaryResource($summary) : null,
+            // Ingredient recipe (name + amount) for the customer product detail — shown when entered.
+            'recipe' => $this->whenLoaded('recipe', fn () => $this->recipe
+                ? $this->recipe->items
+                    ->map(fn ($it) => [
+                        'name' => $it->ingredient?->name,
+                        'quantity' => (float) $it->quantity,
+                        'unit' => $it->unit,
+                    ])
+                    ->filter(fn ($r) => $r['name'] !== null)
+                    ->values()
+                : []),
         ];
     }
 }
