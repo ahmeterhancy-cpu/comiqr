@@ -208,6 +208,7 @@ class MenuController extends Controller
                 'currency' => $tenant->currency,
                 'sub_title' => $settings['sub_title'] ?? null,
                 'timing' => $settings['timing'] ?? null,
+                'open_now' => self::openNow($settings['timing'] ?? null, $tenant->timezone),
                 'description' => $settings['description'] ?? null,
                 'address' => $settings['address'] ?? null,
                 'logo' => $settings['logo'] ?? null,
@@ -236,5 +237,36 @@ class MenuController extends Controller
             'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
             'categories' => CategoryResource::collection($categories)->resolve(),
         ];
+    }
+
+    /**
+     * Is the venue open right now, based on the free-text working-hours string
+     * (e.g. "11:00 - 23:00") evaluated in the tenant's timezone? Handles overnight
+     * ranges (22:00 - 02:00). Returns null when the string can't be parsed.
+     */
+    private static function openNow(?string $timing, ?string $tz): ?bool
+    {
+        if (! $timing || ! preg_match('/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/u', $timing, $m)) {
+            return null;
+        }
+
+        try {
+            $now = \Illuminate\Support\Carbon::now($tz ?: config('app.timezone'));
+            $cur = $now->hour * 60 + $now->minute;
+            [$sh, $sm] = array_map('intval', explode(':', $m[1]));
+            [$eh, $em] = array_map('intval', explode(':', $m[2]));
+            $start = $sh * 60 + $sm;
+            $end = $eh * 60 + $em;
+
+            if ($start === $end) {
+                return null; // 24h or ambiguous — don't guess
+            }
+
+            return $end > $start
+                ? ($cur >= $start && $cur < $end)
+                : ($cur >= $start || $cur < $end); // overnight window
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

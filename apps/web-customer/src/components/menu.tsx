@@ -59,9 +59,10 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
     ? '@' + v.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@+/, '').replace(/\/+$/, '')
     : '';
 
-  type Link = { key: string; href: string; icon: ReactNode; text?: string; label: string };
-  const info: Link[] = []; // links carrying a label (instagram handle, email, …)
+  type Link = { key: string; href: string; icon: ReactNode; text?: string; label: string; wide?: boolean };
+  const info: Link[] = []; // links carrying a label (address, instagram handle, email, …)
   const socials: Link[] = []; // icon-only social buttons
+  if (v.address) info.push({ key: 'addr', href: `https://maps.google.com/?q=${encodeURIComponent(v.address)}`, icon: <PinIcon />, text: v.address, label: 'Adres', wide: true });
   if (v.instagram) info.push({ key: 'ig', href: normUrl(v.instagram, 'https://instagram.com/', true), icon: <IgIcon />, text: igHandle, label: 'Instagram' });
   if (v.email) info.push({ key: 'email', href: `mailto:${v.email}`, icon: <MailIcon />, text: v.email, label: 'E-posta' });
   if (v.website) info.push({ key: 'web', href: normUrl(v.website, 'https://'), icon: <GlobeIcon />, text: v.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, ''), label: 'Web sitesi' });
@@ -95,7 +96,7 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
       {info.length > 0 && (
         // Two even columns on mobile keep the text pills aligned; inline-wrap on wider screens.
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
-          {info.map((l, i) => (
+          {info.map((l) => (
             <a
               key={l.key}
               href={l.href}
@@ -104,7 +105,7 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
               aria-label={l.label}
               title={l.label}
               className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700 sm:w-auto ${
-                info.length % 2 === 1 && i === info.length - 1 ? 'col-span-2' : ''
+                l.wide ? 'col-span-2' : ''
               }`}
             >
               <span className="shrink-0 text-brand-600">{l.icon}</span>
@@ -157,6 +158,8 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
 }
 
 function ContactIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" /></svg>); }
+function ClockIcon() { return (<svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>); }
+function PinIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z" /><circle cx="12" cy="11" r="2" /></svg>); }
 function ChevronIcon({ open }: { open: boolean }) { return (<svg viewBox="0 0 24 24" className={`h-3.5 w-3.5 text-muted transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>); }
 function IgIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" /></svg>); }
 function MailIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>); }
@@ -251,25 +254,44 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
 
   return (
     <div className="mx-auto max-w-2xl pb-16">
-      {/* Nameless-style light header */}
-      <header className="bg-gradient-to-b from-brand-50/70 to-canvas px-5 pb-5 pt-8 text-center">
-        {v.logo && (
+      {/* Nameless-style header: cover on top, then logo + name + status + hours */}
+      <header className="bg-gradient-to-b from-brand-50/70 to-canvas pb-5">
+        {v.cover && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={v.logo} alt={v.name} className="mx-auto mb-3 h-16 w-16 rounded-2xl object-cover shadow-[var(--shadow-card)]" />
+          <img src={v.cover} alt={v.name} className="h-44 w-full rounded-b-3xl object-cover sm:h-52" />
         )}
-        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{v.name}</h1>
-        {v.sub_title && <p className="mt-0.5 text-sm text-muted">{v.sub_title}</p>}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          {v.timing && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-500 ring-2 ring-brand-100" />
-              Açık · {v.timing}
-            </span>
-          )}
-          {v.address && <span className="rounded-full bg-white px-3 py-1 text-xs text-muted shadow-[var(--shadow-card)]">📍 {v.address}</span>}
-          {tableCode && <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">{tableCode}</span>}
+        <div className="px-5 pt-4">
+          <div className="flex items-center gap-3 text-left">
+            {v.logo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={v.logo}
+                alt={v.name}
+                className="h-16 w-16 shrink-0 rounded-2xl border border-line bg-white object-cover shadow-[var(--shadow-card)]"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <h1 className="text-xl font-extrabold tracking-tight text-ink">{v.name}</h1>
+                {v.open_now != null && (
+                  <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${v.open_now ? 'text-emerald-600' : 'text-red-500'}`}>
+                    <span className={`h-2 w-2 rounded-full ${v.open_now ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    {v.open_now ? 'Açık' : 'Kapalı'}
+                  </span>
+                )}
+                {tableCode && <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-semibold text-white">{tableCode}</span>}
+              </div>
+              {v.sub_title && <p className="mt-0.5 truncate text-sm text-muted">{v.sub_title}</p>}
+              {v.timing && (
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
+                  <ClockIcon />
+                  <span>{v.timing}</span>
+                </p>
+              )}
+            </div>
+          </div>
+          <VenueContact v={v} />
         </div>
-        <VenueContact v={v} />
       </header>
 
       {/* Category image cards — sticky, scroll-spy highlights & centres the active one */}
