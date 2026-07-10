@@ -58,25 +58,28 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
     ? '@' + v.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@+/, '').replace(/\/+$/, '')
     : '';
 
-  const links: { key: string; href: string; icon: ReactNode; text?: string; label: string }[] = [];
-  if (v.instagram) links.push({ key: 'ig', href: normUrl(v.instagram, 'https://instagram.com/', true), icon: <IgIcon />, text: igHandle, label: 'Instagram' });
-  if (v.email) links.push({ key: 'email', href: `mailto:${v.email}`, icon: <MailIcon />, text: v.email, label: 'E-posta' });
-  if (v.website) links.push({ key: 'web', href: normUrl(v.website, 'https://'), icon: <GlobeIcon />, text: v.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, ''), label: 'Web sitesi' });
-  if (v.phone) links.push({ key: 'phone', href: `tel:${v.phone.replace(/\s+/g, '')}`, icon: <PhoneIcon />, text: v.phone, label: 'Telefon' });
-  if (v.whatsapp) links.push({ key: 'wa', href: `https://wa.me/${v.whatsapp.replace(/[^\d]/g, '')}`, icon: <WaIcon />, label: 'WhatsApp' });
-  if (v.facebook) links.push({ key: 'fb', href: normUrl(v.facebook, 'https://facebook.com/'), icon: <FbIcon />, label: 'Facebook' });
-  if (v.x) links.push({ key: 'x', href: normUrl(v.x, 'https://x.com/', true), icon: <XIcon />, label: 'X' });
-  if (v.tiktok) links.push({ key: 'tt', href: normUrl(v.tiktok, 'https://tiktok.com/@', true), icon: <TtIcon />, label: 'TikTok' });
-  if (v.youtube) links.push({ key: 'yt', href: normUrl(v.youtube, 'https://youtube.com/'), icon: <YtIcon />, label: 'YouTube' });
+  type Link = { key: string; href: string; icon: ReactNode; text?: string; label: string };
+  const info: Link[] = []; // links carrying a label (instagram handle, email, …)
+  const socials: Link[] = []; // icon-only social buttons
+  if (v.instagram) info.push({ key: 'ig', href: normUrl(v.instagram, 'https://instagram.com/', true), icon: <IgIcon />, text: igHandle, label: 'Instagram' });
+  if (v.email) info.push({ key: 'email', href: `mailto:${v.email}`, icon: <MailIcon />, text: v.email, label: 'E-posta' });
+  if (v.website) info.push({ key: 'web', href: normUrl(v.website, 'https://'), icon: <GlobeIcon />, text: v.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, ''), label: 'Web sitesi' });
+  if (v.phone) info.push({ key: 'phone', href: `tel:${v.phone.replace(/\s+/g, '')}`, icon: <PhoneIcon />, text: v.phone, label: 'Telefon' });
+  if (v.whatsapp) socials.push({ key: 'wa', href: `https://wa.me/${v.whatsapp.replace(/[^\d]/g, '')}`, icon: <WaIcon />, label: 'WhatsApp' });
+  if (v.facebook) socials.push({ key: 'fb', href: normUrl(v.facebook, 'https://facebook.com/'), icon: <FbIcon />, label: 'Facebook' });
+  if (v.x) socials.push({ key: 'x', href: normUrl(v.x, 'https://x.com/', true), icon: <XIcon />, label: 'X' });
+  if (v.tiktok) socials.push({ key: 'tt', href: normUrl(v.tiktok, 'https://tiktok.com/@', true), icon: <TtIcon />, label: 'TikTok' });
+  if (v.youtube) socials.push({ key: 'yt', href: normUrl(v.youtube, 'https://youtube.com/'), icon: <YtIcon />, label: 'YouTube' });
 
   const hasWifi = !!(v.wifi_ssid && v.wifi_ssid.trim());
-  if (links.length === 0 && !hasWifi) return null;
+  if (info.length === 0 && socials.length === 0 && !hasWifi) return null;
 
   return (
-    <div className="mt-3 space-y-2">
-      {links.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {links.map((l) => (
+    <div className="mx-auto mt-3 max-w-sm space-y-2">
+      {info.length > 0 && (
+        // Two even columns on mobile keep the text pills aligned; inline-wrap on wider screens.
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
+          {info.map((l, i) => (
             <a
               key={l.key}
               href={l.href}
@@ -84,10 +87,29 @@ function VenueContact({ v }: { v: Menu['venue'] }) {
               rel="noopener noreferrer"
               aria-label={l.label}
               title={l.label}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+              className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700 sm:w-auto ${
+                info.length % 2 === 1 && i === info.length - 1 ? 'col-span-2' : ''
+              }`}
             >
-              <span className="text-brand-600">{l.icon}</span>
-              {l.text && <span className="max-w-[9rem] truncate">{l.text}</span>}
+              <span className="shrink-0 text-brand-600">{l.icon}</span>
+              {l.text && <span className="truncate">{l.text}</span>}
+            </a>
+          ))}
+        </div>
+      )}
+      {socials.length > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {socials.map((l) => (
+            <a
+              key={l.key}
+              href={l.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={l.label}
+              title={l.label}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600 shadow-[var(--shadow-card)] transition hover:text-brand-700"
+            >
+              {l.icon}
             </a>
           ))}
         </div>
