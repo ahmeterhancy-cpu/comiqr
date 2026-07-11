@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Input } from '@/components/ui';
 import { ThemeThumb } from '@/components/ThemeThumb';
+import { ImageCropperField } from '@/components/ImageCropperField';
 import type { createApi } from '@/lib/api';
 
 type Api = ReturnType<typeof createApi>;
@@ -129,12 +130,11 @@ export function OnboardingWizard({
   const [whatsapp, setWhatsapp] = useState<string>(s.whatsapp ?? '');
   const [wifiSsid, setWifiSsid] = useState<string>(s.wifi_ssid ?? '');
   const [wifiPassword, setWifiPassword] = useState<string>(s.wifi_password ?? '');
-  // Step 5 — appearance
+  // Steps 5–7 — theme + logo + cover
   const [theme, setTheme] = useState<string>(s.theme ?? 'classic');
   const [logo, setLogo] = useState<string | null>(s.logo ?? null);
   const [cover, setCover] = useState<string | null>(s.cover ?? null);
-  const [uploading, setUploading] = useState<string | null>(null);
-  // Step 6 — order preferences
+  // Step 8 — order preferences
   const [callWaiter, setCallWaiter] = useState<boolean>(s.allow_call_waiter ?? true);
   const [onTable, setOnTable] = useState<boolean>(s.allow_on_table_order ?? true);
   const [takeaway, setTakeaway] = useState<boolean>(s.allow_takeaway ?? true);
@@ -187,22 +187,8 @@ export function OnboardingWizard({
     }).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   }, []);
 
-  const STEPS = ['Temel Bilgiler', 'İletişim & Adres', 'Çalışma Saatleri', 'Sosyal Medya & WiFi', 'Görünüm', 'Sipariş Tercihleri', 'İşletme Yetkilisi'];
+  const STEPS = ['Temel Bilgiler', 'İletişim & Adres', 'Çalışma Saatleri', 'Sosyal Medya & WiFi', 'Menü Teması', 'Logo', 'Kapak Görseli', 'Sipariş Tercihleri', 'İşletme Yetkilisi'];
   const isLast = step === STEPS.length - 1;
-
-  async function upload(type: 'logo' | 'cover', file: File) {
-    setUploading(type);
-    setError(null);
-    try {
-      const res = await api.uploadRestaurantMedia(type, file);
-      if (type === 'logo') setLogo(res.url);
-      else setCover(res.url);
-    } catch {
-      setError('Görsel yüklenemedi.');
-    } finally {
-      setUploading(null);
-    }
-  }
 
   /** Persist the current step, then advance (or finish). */
   async function next() {
@@ -246,8 +232,12 @@ export function OnboardingWizard({
           },
         } as any);
       } else if (step === 4) {
-        await api.updateTenant({ settings_json: { theme, logo, cover } } as any);
+        await api.updateTenant({ settings_json: { theme } } as any);
       } else if (step === 5) {
+        await api.updateTenant({ settings_json: { logo } } as any);
+      } else if (step === 6) {
+        await api.updateTenant({ settings_json: { cover } } as any);
+      } else if (step === 7) {
         await api.updateTenant({
           settings_json: {
             allow_call_waiter: callWaiter,
@@ -257,7 +247,7 @@ export function OnboardingWizard({
             allow_online_payment: online,
           },
         } as any);
-      } else if (step === 6) {
+      } else if (step === 8) {
         if (!authName.trim()) {
           setError('Yetkili ad soyad gerekli.');
           setBusy(false);
@@ -274,7 +264,7 @@ export function OnboardingWizard({
               tax_office: authTaxOffice.trim() || null,
               tax_no: authTaxNo.trim() || null,
             },
-            onboarding: { completed: true, step: 7 },
+            onboarding: { completed: true, step: 9 },
           },
         } as any);
         onDone();
@@ -459,28 +449,36 @@ export function OnboardingWizard({
           )}
 
           {step === 4 && (
-            <div className="space-y-5">
-              <div>
-                <span className="mb-2 block text-xs font-medium text-muted">Menü Teması</span>
-                <div className="grid grid-cols-3 gap-3">
-                  {THEMES.map(([val, label]) => (
-                    <div key={val} className={`overflow-hidden rounded-xl border transition ${theme === val ? 'border-brand-500 ring-2 ring-brand-200' : 'border-line hover:border-brand-300'}`}>
-                      <button type="button" onClick={() => setTheme(val)} className="block w-full bg-canvas p-2" title={`${label} temasını seç`}>
-                        <ThemeThumb theme={val} />
-                      </button>
-                      <div className={`py-1.5 text-center text-xs font-semibold ${theme === val ? 'bg-brand-500 text-white' : 'bg-surface text-muted'}`}>{label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ImageUpload label="Logo" url={logo} busy={uploading === 'logo'} onPick={(f) => upload('logo', f)} />
-                <ImageUpload label="Kapak Görseli" url={cover} busy={uploading === 'cover'} onPick={(f) => upload('cover', f)} wide />
+            <div>
+              <p className="mb-3 text-sm text-muted">Menünüzün müşterilere görüneceği düzeni seçin. Sonradan Ayarlar’dan değiştirebilirsiniz.</p>
+              <div className="grid grid-cols-3 gap-3">
+                {THEMES.map(([val, label]) => (
+                  <div key={val} className={`overflow-hidden rounded-xl border transition ${theme === val ? 'border-brand-500 ring-2 ring-brand-200' : 'border-line hover:border-brand-300'}`}>
+                    <button type="button" onClick={() => setTheme(val)} className="block w-full bg-canvas p-2" title={`${label} temasını seç`}>
+                      <ThemeThumb theme={val} />
+                    </button>
+                    <div className={`py-1.5 text-center text-xs font-semibold ${theme === val ? 'bg-brand-500 text-white' : 'bg-surface text-muted'}`}>{label}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {step === 5 && (
+            <div>
+              <p className="mb-3 text-sm text-muted">İşletmenizin logosu. Kare olarak menü başlığında görünür — yükleyip konumlandırabilirsiniz.</p>
+              <ImageCropperField kind="logo" aspect={1} url={logo} onChange={setLogo} upload={(f) => api.uploadRestaurantMedia('logo', f)} />
+            </div>
+          )}
+
+          {step === 6 && (
+            <div>
+              <p className="mb-3 text-sm text-muted">Menünüzün en üstünde görünen geniş kapak görseli. Yükleyip kadrajını ayarlayın.</p>
+              <ImageCropperField kind="cover" aspect={3} url={cover} onChange={setCover} upload={(f) => api.uploadRestaurantMedia('cover', f)} />
+            </div>
+          )}
+
+          {step === 7 && (
             <div className="space-y-1">
               <p className="mb-2 text-sm text-muted">Müşterilerin menüden neler yapabileceğini seçin. Sonradan Ayarlar’dan değiştirebilirsiniz.</p>
               <div className="divide-y divide-line">
@@ -494,7 +492,7 @@ export function OnboardingWizard({
             </div>
           )}
 
-          {step === 6 && (
+          {step === 8 && (
             <div className="space-y-4">
               <p className="text-sm text-muted">İşletmeden sorumlu yetkili ve fatura bilgileri. Bu bilgiler yalnızca yönetim/fatura amacıyla kullanılır, menüde gösterilmez.</p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -564,26 +562,6 @@ function Field({ label, hint, required, children }: { label: string; hint?: stri
       {children}
       {hint && <span className="mt-1 block text-[11px] text-muted">{hint}</span>}
     </label>
-  );
-}
-
-function ImageUpload({ label, url, busy, onPick, wide }: { label: string; url: string | null; busy: boolean; onPick: (file: File) => void; wide?: boolean }) {
-  return (
-    <div>
-      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
-      <div className={`mb-2 overflow-hidden rounded-lg border border-line bg-canvas ${wide ? 'aspect-[3/1]' : 'aspect-square max-w-[120px]'}`}>
-        {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt={label} className="h-full w-full object-cover" />
-        ) : (
-          <div className="grid h-full place-items-center text-xs text-muted">—</div>
-        )}
-      </div>
-      <label className="inline-block cursor-pointer rounded-md border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-canvas">
-        {busy ? 'Yükleniyor…' : 'Görsel Yükle'}
-        <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])} />
-      </label>
-    </div>
   );
 }
 
