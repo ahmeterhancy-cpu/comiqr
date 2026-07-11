@@ -197,7 +197,12 @@ export default function MenuPage() {
         categories={categories}
         api={api as any}
         selectedId={selectedCat}
-        onSelect={setSelectedCat}
+        onSelect={(id) => {
+          setSelectedCat(id);
+          requestAnimationFrame(() =>
+            document.getElementById(`cat-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+          );
+        }}
         onChanged={load}
       />
 
@@ -206,9 +211,13 @@ export default function MenuPage() {
       )}
 
       <div className="mt-6 space-y-6">
-        {categories.filter((c) => c.id === selectedCat).map((c) => (
-          <Card key={c.id}>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-600">{c.name} · Ürünler</h2>
+        {categories.map((c) => (
+          <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
+          <Card className={selectedCat === c.id ? 'ring-2 ring-brand-200' : ''}>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-600">
+              {c.name} · Ürünler
+              {!c.is_active && <span className="ml-2 rounded bg-canvas px-1.5 py-0.5 text-[10px] font-bold text-muted">Kapalı</span>}
+            </h2>
             <ul className="divide-y divide-line">
               {products
                 .filter((p) => p.category_id === c.id)
@@ -286,6 +295,7 @@ export default function MenuPage() {
             </ul>
             <AddProduct categoryId={c.id} onAdd={addProduct} />
           </Card>
+          </div>
         ))}
       </div>
     </AdminShell>
