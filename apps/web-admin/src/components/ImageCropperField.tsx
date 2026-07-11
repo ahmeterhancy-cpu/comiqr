@@ -24,6 +24,7 @@ export function ImageCropperField({
   const [picked, setPicked] = useState<string | null>(null); // object URL being cropped
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   function pick(file?: File | null) {
@@ -87,16 +88,30 @@ export function ImageCropperField({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!dragOver) setDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+          }}
           onDrop={(e) => {
             e.preventDefault();
+            setDragOver(false);
             pick(e.dataTransfer.files?.[0]);
           }}
-          className={`grid w-full place-items-center rounded-2xl border-2 border-dashed border-line bg-canvas text-center transition hover:border-brand-400 hover:bg-brand-50/40 ${aspect === 1 ? 'aspect-square max-h-[300px]' : 'aspect-[3/1]'}`}
+          className={`grid w-full place-items-center rounded-2xl border-2 border-dashed text-center transition ${
+            dragOver ? 'border-brand-500 bg-brand-50 ring-4 ring-brand-100' : 'border-line bg-canvas hover:border-brand-400 hover:bg-brand-50/40'
+          } ${aspect === 1 ? 'aspect-square max-h-[300px]' : 'aspect-[3/1]'}`}
         >
           <div className="px-6 py-8">
-            <svg viewBox="0 0 24 24" className="mx-auto h-8 w-8 text-muted" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
-            <div className="mt-2 text-sm font-semibold text-ink">Yüklemek için tıklayın veya sürükleyip bırakın</div>
+            <svg viewBox="0 0 24 24" className={`mx-auto h-8 w-8 transition ${dragOver ? 'text-brand-600' : 'text-muted'}`} fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
+            <div className="mt-2 text-sm font-semibold text-ink">{dragOver ? 'Bırakın, yükleyelim' : 'Yüklemek için tıklayın veya sürükleyip bırakın'}</div>
             <div className="mt-0.5 text-xs text-muted">JPG, JPEG, PNG, WebP · Maks. 50MB</div>
           </div>
         </button>
@@ -204,9 +219,26 @@ function Cropper({
     <div className="fixed inset-0 z-[60] flex flex-col bg-black/85">
       {/* Toolbar */}
       <div className="flex items-center gap-4 px-5 py-4">
-        <div className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 shadow">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M11 8v6M8 11h6" /></svg>
-          <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={(e) => onZoom(Number(e.target.value))} className="w-40 accent-[#14b8a6]" />
+        <div className="flex items-center gap-1.5 rounded-xl bg-white/95 px-2 py-1.5 shadow">
+          <button
+            type="button"
+            onClick={() => onZoom(Math.max(1, Math.round((zoom - 0.2) * 100) / 100))}
+            disabled={zoom <= 1}
+            aria-label="Uzaklaştır"
+            className="grid h-8 w-8 place-items-center rounded-lg text-ink transition hover:bg-canvas disabled:opacity-40"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><path d="M5 12h14" /></svg>
+          </button>
+          <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={(e) => onZoom(Number(e.target.value))} className="w-36 accent-[#14b8a6]" />
+          <button
+            type="button"
+            onClick={() => onZoom(Math.min(3, Math.round((zoom + 0.2) * 100) / 100))}
+            disabled={zoom >= 3}
+            aria-label="Yakınlaştır"
+            className="grid h-8 w-8 place-items-center rounded-lg text-ink transition hover:bg-canvas disabled:opacity-40"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+          </button>
         </div>
         <div className="flex-1" />
         <button type="button" onClick={save} disabled={busy || !nat} aria-label="Kaydet" className="grid h-11 w-11 place-items-center rounded-xl bg-white text-ink shadow transition hover:bg-canvas disabled:opacity-50">
