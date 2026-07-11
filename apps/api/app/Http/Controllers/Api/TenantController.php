@@ -66,7 +66,7 @@ class TenantController extends Controller
 
         $data = $request->validate(['country' => ['required', 'string', 'size:2']]);
         $code = strtoupper($data['country']);
-        [$currency, $tz, $locale] = self::REGIONS[$code] ?? ['EUR', 'Europe/Istanbul', 'en'];
+        [$currency, $tz, $locale] = \App\Support\Geo\Countries::region($code);
 
         $tenant = $this->tenants->get();
         $settings = $tenant->settings_json ?? [];
@@ -91,26 +91,4 @@ class TenantController extends Controller
 
         return response()->json(['data' => ['country' => $code, 'currency' => $currency, 'timezone' => $tz, 'locale' => $locale]]);
     }
-
-    /** country ISO2 → [currency, timezone, default locale]. */
-    private const REGIONS = [
-        'CY' => ['TRY', 'Asia/Nicosia', 'tr'],
-        'TR' => ['TRY', 'Europe/Istanbul', 'tr'],
-        'DE' => ['EUR', 'Europe/Berlin', 'de'],
-        'GB' => ['GBP', 'Europe/London', 'en'],
-        'US' => ['USD', 'America/New_York', 'en'],
-        'RU' => ['RUB', 'Europe/Moscow', 'ru'],
-        'AE' => ['AED', 'Asia/Dubai', 'ar'],
-        'SA' => ['SAR', 'Asia/Riyadh', 'ar'],
-        'QA' => ['QAR', 'Asia/Qatar', 'ar'],
-        'KW' => ['KWD', 'Asia/Kuwait', 'ar'],
-        'AZ' => ['AZN', 'Asia/Baku', 'tr'],
-        'FR' => ['EUR', 'Europe/Paris', 'en'],
-        'NL' => ['EUR', 'Europe/Amsterdam', 'en'],
-        'IT' => ['EUR', 'Europe/Rome', 'en'],
-        'ES' => ['EUR', 'Europe/Madrid', 'en'],
-        'GR' => ['EUR', 'Europe/Athens', 'en'],
-        'UA' => ['UAH', 'Europe/Kyiv', 'ru'],
-        'EG' => ['EGP', 'Africa/Cairo', 'ar'],
-    ];
 }
