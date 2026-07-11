@@ -58,10 +58,10 @@ export default function DashboardPage() {
 
       {stats && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Tarama (30g)" value={String(stats.scans)} accent />
-          <Stat label="Sipariş" value={String(stats.orders)} accent />
-          <Stat label="Ciro" value={`${stats.revenue} ${currency}`} accent />
-          <Stat label="Ort. Sipariş" value={`${stats.avg_order_value} ${currency}`} accent />
+          <KpiCard label="Tarama (30g)" value={String(stats.scans)} spark="a" icon="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 12a2.5 2.5 0 100-.01" />
+          <KpiCard label="Sipariş" value={String(stats.orders)} spark="b" icon="M2 3h3l2.2 12.3a1.5 1.5 0 001.5 1.2h8.6a1.5 1.5 0 001.5-1.2L22 7H6.2M9 20a1 1 0 100 .01M19 20a1 1 0 100 .01" />
+          <KpiCard label="Ciro" value={`${stats.revenue} ${currency}`} spark="c" icon="M12 3v18M8 7h6a3 3 0 010 6H9a3 3 0 000 6h7" />
+          <KpiCard label="Ort. Sipariş" value={`${stats.avg_order_value} ${currency}`} spark="d" icon="M3 3v18h18M7 14l3-4 4 3 4-6" />
         </div>
       )}
 
@@ -180,9 +180,43 @@ function MenuHeatmap({ heatmap, currency }: { heatmap: any; currency: string }) 
   );
 }
 
+const SPARKS: Record<string, string> = {
+  a: 'M0 30 C 20 26, 32 12, 52 18 S 96 34, 120 22 S 168 6, 200 14',
+  b: 'M0 22 C 24 28, 40 10, 64 16 S 108 30, 132 18 S 172 8, 200 20',
+  c: 'M0 34 C 22 24, 44 26, 66 16 S 112 6, 140 18 S 176 26, 200 10',
+  d: 'M0 28 C 20 22, 36 30, 58 20 S 104 8, 128 18 S 170 12, 200 8',
+};
+
+function KpiCard({ label, value, icon, spark }: { label: string; value: string; icon: string; spark: string }) {
+  const line = SPARKS[spark] ?? SPARKS.a;
+  return (
+    <div className="rounded-2xl border border-line bg-surface p-5 shadow-sm transition hover:shadow-md">
+      <div className="flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white shadow-md" style={{ background: 'linear-gradient(135deg,#14b8a6,#0ea5e9)' }}>
+          <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={icon} /></svg>
+        </span>
+        <div className="min-w-0">
+          <div className="text-xs font-semibold text-muted">{label}</div>
+          <div className="mt-0.5 truncate text-2xl font-extrabold tracking-tight text-ink">{value}</div>
+        </div>
+      </div>
+      <svg viewBox="0 0 200 40" className="mt-3 h-10 w-full" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`sf-${spark}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#14b8a6" stopOpacity="0.22" />
+            <stop offset="1" stopColor="#14b8a6" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={`${line} L200 40 L0 40 Z`} fill={`url(#sf-${spark})`} />
+        <path d={line} fill="none" stroke="#14b8a6" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
+
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className={`rounded-xl border border-line p-4 ${accent ? 'bg-brand-50' : 'bg-surface'}`}>
+    <div className={`rounded-2xl border border-line p-4 ${accent ? 'bg-brand-50' : 'bg-surface'}`}>
       <div className="text-xs font-medium uppercase tracking-wide text-muted">{label}</div>
       <div className="mt-1 truncate text-lg font-semibold text-ink">{value}</div>
     </div>
