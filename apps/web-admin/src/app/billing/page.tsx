@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { PlanOption } from '@comiqr/shared-types';
 import { ApiError } from '@comiqr/shared-types/client';
-import { Button, Card, Field, Input } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { useApi } from '@/lib/useApi';
 
 const ORANGE: CSSProperties = {
@@ -43,7 +43,6 @@ function BillingInner() {
   const [status, setStatus] = useState<Status | null>(null);
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [selected, setSelected] = useState<string | null>(null);
-  const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +55,6 @@ function BillingInner() {
       .then(([p, s]) => {
         setPlans(p);
         setStatus(s);
-        setPhone(s.owner_phone ?? '');
         const payable = p.filter((x) => Number(x.price_monthly) > 0);
         setSelected(s.plan_code && payable.some((x) => x.code === s.plan_code) ? s.plan_code : payable[0]?.code ?? null);
       })
@@ -76,7 +74,7 @@ function BillingInner() {
     setBusy(true);
     setError(null);
     try {
-      const res = await api.subscribe({ plan: chosen.code, billing_cycle: cycle, phone: phone.trim() || undefined });
+      const res = await api.subscribe({ plan: chosen.code, billing_cycle: cycle });
       setCheckout(res);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Ödeme başlatılamadı, tekrar deneyin.');
@@ -250,15 +248,11 @@ function BillingInner() {
               })}
             </div>
 
-            {/* Optional contact + continue to card entry */}
+            {/* Continue to card entry */}
             <Card className="mt-6">
-              <Field label="İletişim telefonu (opsiyonel)" hint="Ödeme bildirimleri için kullanılır.">
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="+90 5xx xxx xx xx" />
-              </Field>
+              {error && <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-              {error && <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-
-              <div className="mt-5 flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-4">
                 <div className="text-sm text-muted">
                   {chosen ? (
                     <>Tahsil edilecek: <b className="text-ink">{amount} {chosen.currency}</b> / {cycle === 'yearly' ? 'yıl' : 'ay'}</>
