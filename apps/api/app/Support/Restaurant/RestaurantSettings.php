@@ -17,6 +17,10 @@ class RestaurantSettings
     {
         return [
             'settings_json.vertical' => ['sometimes', Rule::in(self::VERTICALS)],
+            // First-run setup wizard progress marker (owner onboarding).
+            'settings_json.onboarding' => ['sometimes', 'nullable', 'array'],
+            'settings_json.onboarding.completed' => ['sometimes', 'boolean'],
+            'settings_json.onboarding.step' => ['sometimes', 'integer', 'min:0', 'max:6'],
             'settings_json.sub_title' => ['sometimes', 'nullable', 'string', 'max:120'],
             'settings_json.timing' => ['sometimes', 'nullable', 'string', 'max:120'],
             // Per-day working hours (index 0=Mon..6=Sun).
