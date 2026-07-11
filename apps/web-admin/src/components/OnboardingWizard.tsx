@@ -39,6 +39,24 @@ const COUNTRY_CCY: Record<string, string> = {
   IE: 'EUR', FI: 'EUR', LU: 'EUR', SK: 'EUR', SI: 'EUR', EE: 'EUR', LV: 'EUR', LT: 'EUR', MT: 'EUR',
 };
 
+// Supported UI / menu languages (must match the API's locale allow-list).
+const LOCALES: [string, string][] = [
+  ['tr', 'Türkçe'],
+  ['en', 'English'],
+  ['de', 'Deutsch'],
+  ['ru', 'Русский'],
+  ['ar', 'العربية'],
+];
+
+// Convenience: a country suggests a default UI language (mirrors Countries::localeFor).
+function localeForCountry(code: string): string | undefined {
+  if (['TR', 'CY', 'AZ'].includes(code)) return 'tr';
+  if (['DE', 'AT'].includes(code)) return 'de';
+  if (['RU', 'BY', 'KZ', 'KG', 'UZ', 'TJ', 'TM', 'UA', 'MD'].includes(code)) return 'ru';
+  if (['SA', 'AE', 'QA', 'KW', 'BH', 'OM', 'JO', 'EG', 'IQ', 'SY', 'LB', 'LY', 'DZ', 'MA', 'TN', 'SD', 'YE', 'PS'].includes(code)) return 'ar';
+  return undefined; // leave the current choice; the menu defaults to English elsewhere
+}
+
 // All countries (ISO 3166-1 alpha-2); Turkish names + flags generated at runtime.
 const CODES =
   'AD AE AF AG AI AL AM AO AR AT AU AW AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GT GU GW GY HK HN HR HT HU ID IE IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MQ MR MT MU MV MW MX MY MZ NA NC NE NG NI NL NO NP NR NZ OM PA PE PF PG PH PK PL PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WS XK YE ZA ZM ZW'.split(
@@ -75,13 +93,17 @@ export function OnboardingWizard({
   const [vertical, setVertical] = useState<string>(s.vertical ?? 'restaurant');
   const [country, setCountry] = useState<string>(s.country ?? '');
   const [currency, setCurrency] = useState<string>(tenant?.currency ?? 'EUR');
+  const [locale, setLocale] = useState<string>(tenant?.locale_default ?? 'tr');
   const [subTitle, setSubTitle] = useState<string>(s.sub_title ?? '');
 
-  // Picking a country nudges the currency to that country's default (still overridable).
+  // Picking a country nudges currency + default language to that country's defaults
+  // (both still overridable by the owner).
   const onCountry = (code: string) => {
     setCountry(code);
-    const def = COUNTRY_CCY[code];
-    if (def) setCurrency(def);
+    const ccy = COUNTRY_CCY[code];
+    if (ccy) setCurrency(ccy);
+    const loc = localeForCountry(code);
+    if (loc) setLocale(loc);
   };
   // Step 2 — contact & address
   const [address, setAddress] = useState<string>(s.address ?? '');
@@ -187,6 +209,7 @@ export function OnboardingWizard({
         await api.updateTenant({
           name: name.trim(),
           currency,
+          locale_default: locale,
           settings_json: { vertical, sub_title: subTitle.trim() || null },
         } as any);
       } else if (step === 1) {
@@ -317,9 +340,25 @@ export function OnboardingWizard({
                   </div>
                 </Field>
               </div>
-              <Field label="Alt Başlık" hint="Menü başlığının altında görünür.">
-                <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
-              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Varsayılan Dil" required hint="Menü ilk bu dilde açılır.">
+                  <div className="relative">
+                    <select
+                      value={locale}
+                      onChange={(e) => setLocale(e.target.value)}
+                      className="w-full appearance-none rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand-500"
+                    >
+                      {LOCALES.map(([val, label]) => (
+                        <option key={val} value={val}>{label}</option>
+                      ))}
+                    </select>
+                    <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                  </div>
+                </Field>
+                <Field label="Alt Başlık" hint="Menü başlığının altında görünür.">
+                  <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
+                </Field>
+              </div>
             </div>
           )}
 
