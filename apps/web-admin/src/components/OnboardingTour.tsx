@@ -14,8 +14,26 @@ const STEPS: Step[] = [
     cta: 'Devam',
   },
   {
+    title: 'Mekanınızı hazırlayın',
+    body: 'Sol menüdeki “Ayarlar”dan işletme adınızı, adresinizi, çalışma saatlerinizi ve logonuzu girin.',
+    pos: 'left',
+    cta: 'Devam',
+  },
+  {
+    title: 'Menünüzü oluşturun',
+    body: 'Sol menüdeki “Menü”den kategori ve ürünleri ekleyin — ya da fotoğraftan otomatik içe aktarın.',
+    pos: 'left',
+    cta: 'Devam',
+  },
+  {
+    title: 'Başka neler yapabileceğinize bakın',
+    body: 'Sipariş, garson çağırma, kampanya, sadakat ve entegrasyonlar — hepsi sol menüde sizi bekliyor.',
+    pos: 'left',
+    cta: 'Devam',
+  },
+  {
     title: 'ComiQR’a hoş geldiniz',
-    body: 'ComiQR, dijital menünüzü yönetmek için bir sistemdir. Menünüzü burada oluşturup güncellersiniz; misafirleriniz QR kodunu okutup telefonlarında açar. Hadi birlikte kuralım.',
+    body: 'Sağ üstten hesabınıza, bildirimlere ve profil ayarlarına ulaşırsınız. Her şey hazır — hadi başlayalım!',
     pos: 'center',
     cta: 'Başlayalım',
   },
