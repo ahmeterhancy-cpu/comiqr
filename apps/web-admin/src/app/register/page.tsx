@@ -63,7 +63,7 @@ export default function RegisterPage() {
         vertical,
       });
       setSession(res.token, res.user);
-      router.replace('/dashboard');
+      router.replace('/onboarding');
     } catch (err) {
       if (err instanceof ApiError) {
         const flat: Record<string, string> = {};

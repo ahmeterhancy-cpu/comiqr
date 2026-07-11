@@ -55,4 +55,62 @@ class TenantController extends Controller
 
         return response()->json(['data' => new TenantResource($tenant->fresh('plan'))]);
     }
+
+    /**
+     * POST /tenant/region — set the tenant's regional settings (currency, timezone,
+     * default locale) from a country. Used by the post-signup onboarding step.
+     */
+    public function region(Request $request): JsonResponse
+    {
+        abort_unless($this->tenants->check(), 403, 'No active tenant.');
+
+        $data = $request->validate(['country' => ['required', 'string', 'size:2']]);
+        $code = strtoupper($data['country']);
+        [$currency, $tz, $locale] = self::REGIONS[$code] ?? ['EUR', 'Europe/Istanbul', 'en'];
+
+        $tenant = $this->tenants->get();
+        $settings = $tenant->settings_json ?? [];
+        $settings['country'] = $code;
+
+        $tenant->update([
+            'currency' => $currency,
+            'timezone' => $tz,
+            'locale_default' => $locale,
+            'settings_json' => $settings,
+        ]);
+
+        AuditLog::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $request->user()->id,
+            'action' => 'tenant.region_set',
+            'subject_type' => $tenant::class,
+            'subject_id' => $tenant->id,
+            'meta_json' => ['country' => $code, 'currency' => $currency, 'timezone' => $tz],
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json(['data' => ['country' => $code, 'currency' => $currency, 'timezone' => $tz, 'locale' => $locale]]);
+    }
+
+    /** country ISO2 → [currency, timezone, default locale]. */
+    private const REGIONS = [
+        'CY' => ['TRY', 'Asia/Nicosia', 'tr'],
+        'TR' => ['TRY', 'Europe/Istanbul', 'tr'],
+        'DE' => ['EUR', 'Europe/Berlin', 'de'],
+        'GB' => ['GBP', 'Europe/London', 'en'],
+        'US' => ['USD', 'America/New_York', 'en'],
+        'RU' => ['RUB', 'Europe/Moscow', 'ru'],
+        'AE' => ['AED', 'Asia/Dubai', 'ar'],
+        'SA' => ['SAR', 'Asia/Riyadh', 'ar'],
+        'QA' => ['QAR', 'Asia/Qatar', 'ar'],
+        'KW' => ['KWD', 'Asia/Kuwait', 'ar'],
+        'AZ' => ['AZN', 'Asia/Baku', 'tr'],
+        'FR' => ['EUR', 'Europe/Paris', 'en'],
+        'NL' => ['EUR', 'Europe/Amsterdam', 'en'],
+        'IT' => ['EUR', 'Europe/Rome', 'en'],
+        'ES' => ['EUR', 'Europe/Madrid', 'en'],
+        'GR' => ['EUR', 'Europe/Athens', 'en'],
+        'UA' => ['UAH', 'Europe/Kyiv', 'ru'],
+        'EG' => ['EGP', 'Africa/Cairo', 'ar'],
+    ];
 }

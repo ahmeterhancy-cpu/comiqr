@@ -172,6 +172,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('tenant.user')->group(function () {
         Route::get('tenant', [TenantController::class, 'show']);
         Route::patch('tenant', [TenantController::class, 'update'])->middleware('role:manager');
+        Route::post('tenant/region', [TenantController::class, 'region'])->middleware('role:manager');
         Route::post('tenant/media', [RestaurantMediaController::class, 'upload'])->middleware('role:manager');
 
         // Owner self-serve SaaS subscription (Tiko recurring) — manager+.

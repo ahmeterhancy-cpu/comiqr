@@ -135,6 +135,11 @@ export class ApiClient {
     return this.request('/subscription', { method: 'POST', body: JSON.stringify(body) });
   }
 
+  /** Set regional settings (currency/timezone/locale) from a country — onboarding. */
+  setRegion(country: string): Promise<{ country: string; currency: string; timezone: string; locale: string }> {
+    return this.request('/tenant/region', { method: 'POST', body: JSON.stringify({ country }) });
+  }
+
   // --- Staff / sub-users (owner & managers) ---
   staff(): Promise<StaffUser[]> {
     return this.request('/staff');
