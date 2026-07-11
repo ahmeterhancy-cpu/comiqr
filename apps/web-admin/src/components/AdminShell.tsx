@@ -253,14 +253,6 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
 
       <TrialCard />
 
-      <div className="mt-4 rounded-2xl bg-white/5 p-3.5">
-        <div className="flex items-center gap-2 text-xs font-bold text-white">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,.25)]" />
-          Sistem Durumu
-        </div>
-        <div className="mt-0.5 text-[11px] text-slate-400">Tüm sistemler çalışıyor</div>
-      </div>
-
       <button onClick={logout} className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white">
         <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
         {nav('logout')}
