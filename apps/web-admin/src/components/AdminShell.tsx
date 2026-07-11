@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { SetupGuide } from './SetupGuide';
 import { createApi } from '@/lib/api';
 import { clearSession, getImpersonator, getToken, getUser, returnToImpersonator } from '@/lib/auth';
 import { getActiveBranchId, setActiveBranchId } from '@/lib/branch';
@@ -228,6 +229,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
             {title && <h1 className="truncate text-lg font-bold text-ink">{title}</h1>}
           </div>
           <div className="flex items-center gap-2.5">
+            <SetupGuide />
             <LangSwitcher />
             <button aria-label="Ara" className="grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-ink">
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></svg>
