@@ -21,6 +21,7 @@ const NAV = [
   { key: 'coupons', href: '/coupons' },
   { key: 'campaigns', href: '/campaigns' },
   { key: 'integrations', href: '/integrations' },
+  { key: 'users', href: '/users' },
   { key: 'billing', href: '/billing' },
   { key: 'settings', href: '/settings' },
 ] as const;
@@ -38,6 +39,7 @@ const ICONS: Record<string, string> = {
   coupons: 'M3 8v4l9 9 9-9-9-9H6a3 3 0 0 0-3 3zM8 8h.01',
   campaigns: 'M3 11v2l13 5V6zM16 9a3 3 0 0 1 0 6M6 13v5h3',
   integrations: 'M9 2v4M15 2v4M7 6h10v4a5 5 0 0 1-10 0zM12 15v5',
+  users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
   billing: 'M3 7h18v10H3zM3 11h18M7 15h4',
   settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 14H2.4a2 2 0 1 1 0-4h.2A1.6 1.6 0 0 0 4 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 2.6h.1A1.6 1.6 0 0 0 10 1.1V1a2 2 0 1 1 4 0v.2A1.6 1.6 0 0 0 17 2.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.6 1z',
   hotel: 'M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 14h18M6 10V8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2',

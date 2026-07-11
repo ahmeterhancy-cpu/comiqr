@@ -99,6 +99,19 @@ export interface MeResult {
   tenant: Tenant | null;
 }
 
+export type StaffRole = 'manager' | 'waiter' | 'kitchen';
+
+export interface StaffUser {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: StaffRole | 'owner';
+  role_label: string;
+  is_active: boolean;
+  is_owner: boolean;
+}
+
 export interface SlugAvailability {
   slug: string;
   available: boolean;

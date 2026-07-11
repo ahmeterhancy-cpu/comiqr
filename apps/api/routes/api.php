@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SessionController;
+use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\TenantController;
@@ -176,6 +177,14 @@ Route::middleware('auth:sanctum')->group(function () {
         // Owner self-serve SaaS subscription (Tiko recurring) — manager+.
         Route::get('subscription', [SubscriptionController::class, 'show']);
         Route::post('subscription', [SubscriptionController::class, 'start'])->middleware('role:manager');
+
+        // Staff / sub-users — owner & managers manage tenant users (manager+).
+        Route::middleware('role:manager')->group(function () {
+            Route::get('staff', [StaffController::class, 'index']);
+            Route::post('staff', [StaffController::class, 'store']);
+            Route::patch('staff/{id}', [StaffController::class, 'update']);
+            Route::delete('staff/{id}', [StaffController::class, 'destroy']);
+        });
 
         // --- Menu & recipe management (M1/M2, docs/06 §6.5/§6.6) — manager+ ---
         Route::middleware('role:manager')->group(function () {

@@ -19,6 +19,8 @@ import type {
   Review,
   RegisterTenantResult,
   SlugAvailability,
+  StaffRole,
+  StaffUser,
   Tenant,
 } from './types';
 
@@ -131,6 +133,23 @@ export class ApiClient {
     sms_sent: boolean;
   }> {
     return this.request('/subscription', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  // --- Staff / sub-users (owner & managers) ---
+  staff(): Promise<StaffUser[]> {
+    return this.request('/staff');
+  }
+
+  createStaff(body: { name: string; email: string; phone?: string; password: string; role: StaffRole }): Promise<StaffUser> {
+    return this.request('/staff', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  updateStaff(id: number, body: Partial<{ name: string; phone: string; role: StaffRole; is_active: boolean; password: string }>): Promise<StaffUser> {
+    return this.request(`/staff/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+
+  deleteStaff(id: number): Promise<{ deleted: boolean }> {
+    return this.request(`/staff/${id}`, { method: 'DELETE' });
   }
 
   logout(): Promise<{ message: string }> {
