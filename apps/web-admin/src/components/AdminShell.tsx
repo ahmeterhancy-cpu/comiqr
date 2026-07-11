@@ -9,7 +9,10 @@ import { createApi } from '@/lib/api';
 import { clearSession, getImpersonator, getToken, getUser, returnToImpersonator } from '@/lib/auth';
 import { getActiveBranchId, setActiveBranchId } from '@/lib/branch';
 
-const NAV = [
+type NavLeaf = { key: string; href: string };
+type NavNode = NavLeaf | { key: string; children: NavLeaf[] };
+
+const NAV: NavNode[] = [
   { key: 'dashboard', href: '/dashboard' },
   { key: 'menu', href: '/menu' },
   { key: 'ingredients', href: '/ingredients' },
@@ -19,13 +22,18 @@ const NAV = [
   { key: 'branches', href: '/branches' },
   { key: 'customers', href: '/customers' },
   { key: 'reviews', href: '/reviews' },
-  { key: 'coupons', href: '/coupons' },
-  { key: 'campaigns', href: '/campaigns' },
+  {
+    key: 'marketing',
+    children: [
+      { key: 'coupons', href: '/coupons' },
+      { key: 'campaigns', href: '/campaigns' },
+    ],
+  },
   { key: 'integrations', href: '/integrations' },
   { key: 'users', href: '/users' },
   { key: 'billing', href: '/billing' },
   { key: 'settings', href: '/settings' },
-] as const;
+];
 
 const ICONS: Record<string, string> = {
   dashboard: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
@@ -39,6 +47,7 @@ const ICONS: Record<string, string> = {
   reviews: 'M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z',
   coupons: 'M3 8v4l9 9 9-9-9-9H6a3 3 0 0 0-3 3zM8 8h.01',
   campaigns: 'M3 11v2l13 5V6zM16 9a3 3 0 0 1 0 6M6 13v5h3',
+  marketing: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z',
   integrations: 'M9 2v4M15 2v4M7 6h10v4a5 5 0 0 1-10 0zM12 15v5',
   users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
   billing: 'M3 7h18v10H3zM3 11h18M7 15h4',
@@ -51,6 +60,49 @@ function NavIcon({ k }: { k: string }) {
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
       <path d={ICONS[k] ?? ICONS.dashboard} />
     </svg>
+  );
+}
+
+/** Collapsible sidebar group (e.g. Pazarlama → Kuponlar, Kampanyalar). */
+function NavGroup({ node, pathname, onNavigate }: { node: { key: string; children: NavLeaf[] }; pathname: string; onNavigate: () => void }) {
+  const nav = useTranslations('nav');
+  const hasActive = node.children.some((c) => c.href === pathname);
+  const [expanded, setExpanded] = useState(hasActive);
+  useEffect(() => {
+    if (hasActive) setExpanded(true);
+  }, [hasActive]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((o) => !o)}
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${hasActive ? 'text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+      >
+        <NavIcon k={node.key} />
+        {nav(node.key as never)}
+        <svg viewBox="0 0 24 24" className={`ml-auto h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+      </button>
+      {expanded && (
+        <div className="mt-1 space-y-1 border-l border-white/10 pl-3">
+          {node.children.map((c) => {
+            const active = pathname === c.href;
+            return (
+              <Link
+                key={c.key}
+                href={c.href}
+                onClick={onNavigate}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition ${active ? 'text-white shadow-lg' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                style={active ? { background: 'linear-gradient(135deg,#14b8a6,#0ea5e9)' } : undefined}
+              >
+                <NavIcon k={c.key} />
+                {nav(c.key as never)}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -140,9 +192,9 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
     window.location.reload();
   }
 
-  const navItems: { key: string; href: string }[] = NAV.map((n) => ({ key: n.key, href: n.href }));
+  const navItems: NavNode[] = [...NAV];
   if (['hotel', 'beach'].includes(vertical)) {
-    const at = navItems.findIndex((i) => i.href === '/settings');
+    const at = navItems.findIndex((i) => 'href' in i && i.href === '/settings');
     navItems.splice(at < 0 ? navItems.length : at, 0, { key: 'hotel', href: '/hotel' });
   }
 
@@ -171,6 +223,9 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
 
       <nav className="no-scrollbar mt-5 flex-1 space-y-1 overflow-y-auto">
         {navItems.map((it) => {
+          if ('children' in it) {
+            return <NavGroup key={it.key} node={it} pathname={pathname} onNavigate={() => setOpen(false)} />;
+          }
           const active = pathname === it.href;
           return (
             <Link
