@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -14,6 +17,7 @@ use Illuminate\Validation\Rule;
  */
 class CategoryController extends Controller
 {
+    public function __construct(protected TenantManager $tenants) {}
     public function index(Request $request): JsonResponse
     {
         $categories = Category::query()
@@ -48,6 +52,42 @@ class CategoryController extends Controller
         Category::findOrFail($category)->delete();
 
         return response()->json(['data' => ['deleted' => true]]);
+    }
+
+    /** POST /admin/categories/reorder — persist a new drag-and-drop order. */
+    public function reorder(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        // Tenant scope guarantees we only touch this tenant's categories.
+        foreach (array_values($data['ids']) as $index => $id) {
+            Category::where('id', $id)->update(['sort' => $index]);
+        }
+
+        return response()->json(['data' => ['ok' => true]]);
+    }
+
+    /**
+     * POST /admin/categories/media — upload a category cover image; returns its URL.
+     * Not tied to a category id, so it works while creating a brand-new category
+     * (the URL is then saved via create/update image_path). Mirrors RestaurantMedia.
+     */
+    public function uploadMedia(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ]);
+
+        abort_unless($this->tenants->check(), 403, 'No active tenant.');
+        $tenant = $this->tenants->get();
+
+        $path = 'categories/'.$tenant->id.'/'.Str::uuid().'.'.$request->file('image')->extension();
+        Storage::disk('public')->put($path, $request->file('image')->getContent());
+
+        return response()->json(['data' => ['url' => url('/v1/media/'.$path)]], 201);
     }
 
     private function validateData(Request $request, ?int $id = null): array

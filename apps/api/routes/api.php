@@ -204,6 +204,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 'data' => \App\Models\Allergen::orderBy('id')->get(['id', 'code', 'name']),
             ]));
 
+            Route::post('admin/categories/reorder', [CategoryController::class, 'reorder']);
+            Route::post('admin/categories/media', [CategoryController::class, 'uploadMedia']);
             Route::apiResource('admin/categories', CategoryController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 

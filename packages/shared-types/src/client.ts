@@ -284,6 +284,16 @@ export class ApiClient {
   deleteCategory(id: number): Promise<any> {
     return this.request(`/admin/categories/${id}`, { method: 'DELETE' });
   }
+  /** Persist a new drag-and-drop category order (array of ids, first = top). */
+  reorderCategories(ids: number[]): Promise<{ ok: boolean }> {
+    return this.request('/admin/categories/reorder', { method: 'POST', body: JSON.stringify({ ids }) });
+  }
+  /** Upload a category cover image; returns its URL to store as image_path. */
+  uploadCategoryImage(file: File): Promise<{ url: string }> {
+    const form = new FormData();
+    form.append('image', file);
+    return this.request('/admin/categories/media', { method: 'POST', body: form });
+  }
   adminProducts(categoryId?: number): Promise<any[]> {
     return this.request(`/admin/products${categoryId ? `?category_id=${categoryId}` : ''}`);
   }

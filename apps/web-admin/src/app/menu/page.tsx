@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { AdminShell } from '@/components/AdminShell';
+import { CategoryManager } from '@/components/CategoryManager';
 import { RecipeEditor } from '@/components/RecipeEditor';
 import { Button, Card, Input } from '@/components/ui';
 import { printMenu } from '@/lib/print-menu';
@@ -20,6 +21,7 @@ export default function MenuPage() {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selectedCat, setSelectedCat] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const [cats, prods, ings, mods] = await Promise.all([
@@ -32,6 +34,7 @@ export default function MenuPage() {
     setProducts(prods);
     setIngredients(ings);
     setModifierGroups(mods);
+    setSelectedCat((prev) => (prev && cats.some((c: any) => c.id === prev) ? prev : cats[0]?.id ?? null));
     setLoading(false);
   }, [api]);
 
@@ -39,10 +42,6 @@ export default function MenuPage() {
     if (ready) load();
   }, [ready, load]);
 
-  async function addCategory(name: string) {
-    await api.createCategory({ name });
-    load();
-  }
   async function addProduct(categoryId: number, name: string, price: number) {
     await api.createProduct({ category_id: categoryId, name, price });
     load();
@@ -190,15 +189,26 @@ export default function MenuPage() {
         </div>
       </Card>
 
-      <AddCategory onAdd={addCategory} />
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-sm font-bold text-ink">Kategoriler</h2>
+        <span className="text-xs text-muted">Sürükleyerek sıralayın · aç/kapa için düğmeye tıklayın</span>
+      </div>
+      <CategoryManager
+        categories={categories}
+        api={api as any}
+        selectedId={selectedCat}
+        onSelect={setSelectedCat}
+        onChanged={load}
+      />
+
       {notice && (
         <div className="mt-4 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">{notice}</div>
       )}
 
       <div className="mt-6 space-y-6">
-        {categories.map((c) => (
+        {categories.filter((c) => c.id === selectedCat).map((c) => (
           <Card key={c.id}>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-600">{c.name}</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-600">{c.name} · Ürünler</h2>
             <ul className="divide-y divide-line">
               {products
                 .filter((p) => p.category_id === c.id)
@@ -279,27 +289,6 @@ export default function MenuPage() {
         ))}
       </div>
     </AdminShell>
-  );
-}
-
-function AddCategory({ onAdd }: { onAdd: (name: string) => void }) {
-  const [name, setName] = useState('');
-  return (
-    <Card>
-      <form
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (name.trim()) {
-            onAdd(name.trim());
-            setName('');
-          }
-        }}
-      >
-        <Input placeholder="Yeni kategori adı" value={name} onChange={(e) => setName(e.target.value)} />
-        <Button type="submit">Kategori Ekle</Button>
-      </form>
-    </Card>
   );
 }
 

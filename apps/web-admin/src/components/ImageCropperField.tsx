@@ -15,7 +15,7 @@ export function ImageCropperField({
   onChange,
   upload,
 }: {
-  kind: 'logo' | 'cover';
+  kind: 'logo' | 'cover' | 'category';
   aspect: number; // width / height of the crop frame (1 = square, 3 = wide banner)
   url: string | null;
   onChange: (url: string | null) => void;
@@ -45,7 +45,8 @@ export function ImageCropperField({
     setBusy(true);
     setError(null);
     try {
-      const file = new File([blob], `${kind}.${kind === 'logo' ? 'png' : 'jpg'}`, { type: blob.type });
+      const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+      const file = new File([blob], `${kind}.${ext}`, { type: blob.type });
       const res = await upload(file);
       onChange(res.url);
       setPicked(null);
