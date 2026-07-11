@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { SetupGuide } from './SetupGuide';
+import { TrialCard } from './TrialCard';
 import { createApi } from '@/lib/api';
 import { clearSession, getImpersonator, getToken, getUser, returnToImpersonator } from '@/lib/auth';
 import { getActiveBranchId, setActiveBranchId } from '@/lib/branch';
@@ -249,6 +250,8 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
           );
         })}
       </nav>
+
+      <TrialCard />
 
       <div className="mt-4 rounded-2xl bg-white/5 p-3.5">
         <div className="flex items-center gap-2 text-xs font-bold text-white">
