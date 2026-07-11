@@ -12,6 +12,7 @@ Artisan::command('inspire', function () {
  * Housekeeping (B1) — keeps operational tables from growing unbounded. Requires a
  * `* * * * * php artisan schedule:run` cron in production.
  */
+Schedule::command('subscriptions:enforce-grace')->dailyAt('03:00'); // past_due grace expired → downgrade to Free
 Schedule::command('sanctum:prune-expired --hours=24')->daily();   // stale personal access tokens
 Schedule::command('queue:prune-failed --hours=168')->daily();     // failed jobs older than 7 days
 Schedule::command('model:prune')->daily();                        // any Prunable models
