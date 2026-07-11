@@ -20,7 +20,8 @@
     "hotel": "Folio",
     "users": "Users",
     "billing": "Billing",
-    "settings": "Settings",
+    "settingsGroup": "Settings",
+    "settings": "Business Settings",
     "logout": "Log out"
   },
   "auth": {

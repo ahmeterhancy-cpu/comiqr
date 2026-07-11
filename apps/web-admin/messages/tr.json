@@ -20,7 +20,8 @@
     "hotel": "Folyo",
     "users": "Kullanıcılar",
     "billing": "Abonelik",
-    "settings": "Ayarlar",
+    "settingsGroup": "Ayarlar",
+    "settings": "İşletme Ayarları",
     "logout": "Çıkış"
   },
   "auth": {

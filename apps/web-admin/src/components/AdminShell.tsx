@@ -29,10 +29,15 @@ const NAV: NavNode[] = [
       { key: 'campaigns', href: '/campaigns' },
     ],
   },
-  { key: 'integrations', href: '/integrations' },
-  { key: 'users', href: '/users' },
-  { key: 'billing', href: '/billing' },
-  { key: 'settings', href: '/settings' },
+  {
+    key: 'settingsGroup',
+    children: [
+      { key: 'settings', href: '/settings' },
+      { key: 'users', href: '/users' },
+      { key: 'integrations', href: '/integrations' },
+      { key: 'billing', href: '/billing' },
+    ],
+  },
 ];
 
 const ICONS: Record<string, string> = {
@@ -53,6 +58,7 @@ const ICONS: Record<string, string> = {
   billing: 'M3 7h18v10H3zM3 11h18M7 15h4',
   settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 14H2.4a2 2 0 1 1 0-4h.2A1.6 1.6 0 0 0 4 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 2.6h.1A1.6 1.6 0 0 0 10 1.1V1a2 2 0 1 1 4 0v.2A1.6 1.6 0 0 0 17 2.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.6 1z',
   hotel: 'M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 14h18M6 10V8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2',
+  settingsGroup: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
 };
 
 function NavIcon({ k }: { k: string }) {
@@ -194,7 +200,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
 
   const navItems: NavNode[] = [...NAV];
   if (['hotel', 'beach'].includes(vertical)) {
-    const at = navItems.findIndex((i) => 'href' in i && i.href === '/settings');
+    const at = navItems.findIndex((i) => i.key === 'settingsGroup');
     navItems.splice(at < 0 ? navItems.length : at, 0, { key: 'hotel', href: '/hotel' });
   }
 
