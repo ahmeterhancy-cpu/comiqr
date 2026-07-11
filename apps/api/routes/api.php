@@ -135,6 +135,9 @@ Route::post('webhooks/tiko/recurring', [SubscriptionController::class, 'webhook'
 // --- 3D Secure browser return (Tiko UrlOk/UrlFail) — verify + confirm + redirect ---
 Route::match(['get', 'post'], 'payments/return/{gateway}', [PaymentController::class, 'paymentReturn']);
 
+// --- Subscription card 3DS browser return (Tiko) — verify + activate + store card ---
+Route::match(['get', 'post'], 'subscription/return/tiko', [SubscriptionController::class, 'paymentReturn']);
+
 // --- Authenticated (any signed-in user) --------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);

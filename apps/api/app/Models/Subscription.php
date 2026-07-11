@@ -20,6 +20,7 @@ class Subscription extends Model
 
     protected $fillable = [
         'tenant_id', 'plan_id', 'status', 'billing_cycle', 'current_period_end', 'grace_ends_at', 'gateway_ref',
+        'card_ref', 'card_last4', 'card_brand',
     ];
 
     protected function casts(): array

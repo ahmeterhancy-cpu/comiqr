@@ -122,15 +122,26 @@ export class ApiClient {
     plan_code: string | null;
     plan_name: string | null;
     owner_phone: string | null;
-    subscription: { status: string; billing_cycle: string; current_period_end: string | null; grace_ends_at: string | null } | null;
+    subscription: {
+      status: string;
+      billing_cycle: string;
+      current_period_end: string | null;
+      grace_ends_at: string | null;
+      card_last4?: string | null;
+      card_brand?: string | null;
+    } | null;
   }> {
     return this.request('/subscription');
   }
 
-  /** Start Tiko recurring billing (SaaS subscription) for the owner's chosen plan. */
+  /**
+   * Begin card-on-page subscription checkout. Returns a Tiko pay3d session (url +
+   * hidden fields) — the browser adds the card fields and posts them straight to
+   * Tiko, so card data never touches our server.
+   */
   subscribe(body: { plan: string; billing_cycle?: 'monthly' | 'yearly'; phone?: string }): Promise<{
-    subscription: { plan: string; status: string; billing_cycle: string };
-    sms_sent: boolean;
+    subscription: { plan: string; status: string; billing_cycle: string; amount: number; currency: string };
+    session: { kind: string; url: string; ref: string; meta: { fields: Record<string, string> } };
   }> {
     return this.request('/subscription', { method: 'POST', body: JSON.stringify(body) });
   }

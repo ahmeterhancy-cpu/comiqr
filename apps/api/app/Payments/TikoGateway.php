@@ -35,18 +35,56 @@ class TikoGateway implements PaymentGateway
         $orderId = 'TIKO'.$payment->id.'X'.substr(md5((string) $payment->created_at), 0, 8);
         $payment->update(['gateway_ref' => $orderId]);
 
+        $customer = $payment->order?->customer;
+        $fields = $this->pay3dFields(
+            $orderId,
+            number_format((float) $payment->amount, 2, '.', ''),
+            $customer?->name ?: 'Musteri',
+            $customer?->email ?: 'guest@comiqr.app',
+            $context,
+        );
+
+        return $this->pay3dSession($fields, $orderId);
+    }
+
+    /**
+     * Build a pay3d checkout session for a SaaS subscription's first (or retry) charge.
+     * Standalone — no order/Payment row: the owner enters their card in the browser and
+     * it posts straight to Tiko with SaveCard, so we tokenise the card (CardId) for the
+     * next period. `card_id` in $data instead re-charges an already-stored card.
+     *
+     * @param  array{order_id:string,amount:float|string,currency?:string,customer_name?:string,customer_email?:string,save_card?:bool,card_group_key?:string,alias?:string,card_id?:string,url_ok?:string,url_fail?:string}  $data
+     */
+    public function subscriptionSession(array $data): PaymentSession
+    {
+        $orderId = (string) $data['order_id'];
+        $fields = $this->pay3dFields(
+            $orderId,
+            number_format((float) $data['amount'], 2, '.', ''),
+            (string) ($data['customer_name'] ?? 'Isletme'),
+            (string) ($data['customer_email'] ?? 'owner@comiqr.app'),
+            $data,
+        );
+
+        return $this->pay3dSession($fields, $orderId);
+    }
+
+    /**
+     * Shared pay3d field builder (Hash needs the secret, never the card). Card fields
+     * (CardNo/CardCvv/…) are intentionally omitted — the browser collects them and posts
+     * them straight to Tiko. Used by both order (initiate) and subscription checkouts.
+     *
+     * @return array<string,string>
+     */
+    protected function pay3dFields(string $orderId, string $amount, string $userName, string $userEmail, array $context): array
+    {
         $merchantId = (string) ($this->config['merchant_id'] ?? '');
-        $amount = number_format((float) $payment->amount, 2, '.', '');
-        $currency = (string) ($this->config['currency'] ?? 'TRY');
+        $currency = (string) ($context['currency'] ?? $this->config['currency'] ?? 'TRY');
         $installment = '0';
         $isTest = ($this->config['is_test'] ?? true) ? '1' : '0';
         $ip = request()?->ip() ?: '0.0.0.0';
-        $urlOk = (string) ($this->config['url_ok'] ?? url('/v1/payments/return/tiko'));
-        $urlFail = (string) ($this->config['url_fail'] ?? url('/v1/payments/return/tiko'));
-
-        $customer = $payment->order?->customer;
-        $userName = $customer?->name ?: 'Musteri';
-        $userEmail = $customer?->email ?: 'guest@comiqr.app';
+        $urlOk = (string) ($context['url_ok'] ?? $this->config['url_ok'] ?? url('/v1/payments/return/tiko'));
+        $urlFail = (string) ($context['url_fail'] ?? $this->config['url_fail'] ?? url('/v1/payments/return/tiko'));
 
         // Paying with a stored card appends CardId to the hash (docs: kart-saklama).
         $cardId = $context['card_id'] ?? null;
@@ -78,8 +116,12 @@ class TikoGateway implements PaymentGateway
             $fields['Alias'] = (string) ($context['alias'] ?? 'Kartım');
         }
 
-        // Card fields (CardNo/CardCvv/…) are intentionally omitted — the browser
-        // collects them and posts them straight to Tiko.
+        return $fields;
+    }
+
+    /** @param  array<string,string>  $fields */
+    protected function pay3dSession(array $fields, string $orderId): PaymentSession
+    {
         return PaymentSession::form(
             rtrim((string) ($this->config['base_url'] ?? ''), '/').'/gateway/pay3d',
             $fields,

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { Suspense, useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import type { PlanOption } from '@comiqr/shared-types';
 import { ApiError } from '@comiqr/shared-types/client';
 import { Button, Card, Field, Input } from '@/components/ui';
@@ -16,6 +17,7 @@ const ORANGE: CSSProperties = {
 };
 
 type Status = Awaited<ReturnType<ReturnType<typeof useApi>['api']['subscriptionStatus']>>;
+type Checkout = Awaited<ReturnType<ReturnType<typeof useApi>['api']['subscribe']>>;
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '';
@@ -27,15 +29,26 @@ function fmtDate(iso: string | null): string {
 }
 
 export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted">Yükleniyor…</div>}>
+      <BillingInner />
+    </Suspense>
+  );
+}
+
+function BillingInner() {
   const { api, ready } = useApi();
+  const params = useSearchParams();
   const [plans, setPlans] = useState<PlanOption[]>([]);
   const [status, setStatus] = useState<Status | null>(null);
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [selected, setSelected] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Result of the 3DS browser-return (Tiko redirects to ?billing=success|failed|error).
+  const returned = params.get('billing');
 
   useEffect(() => {
     if (!ready) return;
@@ -53,15 +66,18 @@ export default function BillingPage() {
   const chosen = plans.find((p) => p.code === selected && Number(p.price_monthly) > 0) ?? null;
   const amount = chosen ? Number(cycle === 'yearly' ? chosen.price_yearly : chosen.price_monthly) : 0;
 
-  async function subscribe() {
+  const sub = status?.subscription;
+  const pastDue = sub?.status === 'past_due';
+  const pending = sub?.status === 'pending_authorization';
+
+  /** Fetch the Tiko pay3d session, then reveal the card form (card → Tiko, not us). */
+  async function startCheckout() {
     if (!chosen) return;
     setBusy(true);
     setError(null);
-    setDone(null);
     try {
       const res = await api.subscribe({ plan: chosen.code, billing_cycle: cycle, phone: phone.trim() || undefined });
-      setDone(`${res.subscription.plan} aboneliği başlatıldı. Telefonunuza gönderilen SMS’teki linke tıklayıp ödemeyi onaylayın.`);
-      api.subscriptionStatus().then(setStatus).catch(() => undefined);
+      setCheckout(res);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Ödeme başlatılamadı, tekrar deneyin.');
     } finally {
@@ -73,155 +89,285 @@ export default function BillingPage() {
     return <div className="grid min-h-screen place-items-center text-sm text-muted">Yükleniyor…</div>;
   }
 
-  const sub = status?.subscription;
-  const pending = sub?.status === 'pending_authorization';
-
   return (
     <div style={ORANGE} className="min-h-screen bg-canvas text-ink">
       <div className="mx-auto max-w-3xl px-5 py-10">
         <Link href="/dashboard" className="text-sm font-semibold text-brand-600 hover:underline">← Panele dön</Link>
         <h1 className="mt-3 text-2xl font-extrabold tracking-tight">Abonelik & Ödeme</h1>
-        <p className="mt-1 text-sm text-muted">Planınızı seçin, Tiko ile güvenli tekrarlı ödeme başlatın.</p>
+        <p className="mt-1 text-sm text-muted">Planınızı seçin, kartınızla güvenli tekrarlı ödeme başlatın.</p>
 
-        {/* Status */}
-        <Card className="mt-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted">Mevcut durum</div>
-              <div className="mt-1 text-lg font-bold">
-                {status?.plan_name ?? 'Plan seçilmedi'}
-                {status?.tenant_status === 'trialing' && status?.trial_ends_at && (
-                  <span className="ml-2 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 align-middle">
-                    Deneme · {fmtDate(status.trial_ends_at)} bitiyor
-                  </span>
-                )}
-              </div>
-            </div>
-            {sub && (
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${pending ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                {pending ? 'SMS onayı bekleniyor' : sub.status}
-              </span>
-            )}
+        {/* Return banner (3DS result) */}
+        {returned === 'success' && (
+          <div className="mt-5 rounded-xl bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
+            ✓ Ödemeniz alındı, aboneliğiniz aktif. Kartınız sonraki dönemler için güvenle kaydedildi.
           </div>
-          {pending && (
-            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Aboneliğiniz başlatıldı. Telefonunuza gönderilen SMS’teki linke tıklayıp ödemeyi onaylayın; onay sonrası plan aktifleşir.
-            </p>
-          )}
-        </Card>
-
-        {/* Cycle toggle */}
-        <div className="mt-6 flex items-center gap-2">
-          <div className="inline-flex rounded-xl border border-line bg-surface p-1">
-            {(['monthly', 'yearly'] as const).map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCycle(c)}
-                className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition ${cycle === c ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`}
-              >
-                {c === 'monthly' ? 'Aylık' : 'Yıllık'}
-              </button>
-            ))}
+        )}
+        {(returned === 'failed' || returned === 'error') && (
+          <div className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            Ödeme tamamlanamadı. Kart bilgilerinizi kontrol edip tekrar deneyin.
           </div>
-          {cycle === 'yearly' && <span className="text-xs font-semibold text-brand-600">2 ay hediye 🎉</span>}
-        </div>
+        )}
 
-        {/* Plans — all packages; payable ones selectable, free/enterprise informational */}
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {plans.map((p) => {
-            const price = Number(cycle === 'yearly' ? p.price_yearly : p.price_monthly);
-            const payable = price > 0;
-            const active = selected === p.code;
-            const current = status?.plan_code === p.code;
-            const verticals = (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {p.verticals.map((v) => (
-                  <span key={v} className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-muted">{v}</span>
-                ))}
-              </div>
-            );
-            const head = (
-              <div className="flex items-center justify-between">
-                <span className="text-base font-bold">
-                  {p.name}
-                  {current && <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 align-middle text-[10px] font-bold text-brand-700">Mevcut</span>}
-                </span>
-                {payable && active && (
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-500 text-white">
-                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                  </span>
-                )}
-              </div>
-            );
-
-            if (payable) {
-              return (
-                <button
-                  key={p.code}
-                  type="button"
-                  onClick={() => setSelected(p.code)}
-                  className={`rounded-2xl border p-5 text-left transition ${active ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : 'border-line bg-surface hover:border-brand-300'}`}
-                >
-                  {head}
-                  <div className="mt-2 text-2xl font-extrabold tracking-tight">
-                    {price} {p.currency}<span className="text-sm font-semibold text-muted">/{cycle === 'yearly' ? 'yıl' : 'ay'}</span>
+        {checkout ? (
+          <TikoCardForm
+            session={checkout.session}
+            amount={checkout.subscription.amount}
+            currency={checkout.subscription.currency}
+            planName={checkout.subscription.plan}
+            cycle={cycle}
+            onBack={() => setCheckout(null)}
+          />
+        ) : (
+          <>
+            {/* Status */}
+            <Card className="mt-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted">Mevcut durum</div>
+                  <div className="mt-1 text-lg font-bold">
+                    {status?.plan_name ?? 'Plan seçilmedi'}
+                    {status?.tenant_status === 'trialing' && status?.trial_ends_at && (
+                      <span className="ml-2 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 align-middle">
+                        Deneme · {fmtDate(status.trial_ends_at)} bitiyor
+                      </span>
+                    )}
                   </div>
-                  {verticals}
-                </button>
-              );
-            }
-
-            const isEnterprise = p.code === 'enterprise';
-            return (
-              <div key={p.code} className="rounded-2xl border border-line bg-surface p-5">
-                {head}
-                <div className="mt-2 text-2xl font-extrabold tracking-tight">
-                  {isEnterprise ? 'Özel' : 'Ücretsiz'}
-                  {!isEnterprise && <span className="text-sm font-semibold text-muted"> / ay</span>}
-                </div>
-                {verticals}
-                <div className="mt-3 text-xs">
-                  {isEnterprise ? (
-                    <a href="/iletisim" className="inline-flex rounded-lg border border-line px-3 py-1.5 font-bold text-ink transition hover:bg-canvas">İletişime Geç</a>
-                  ) : current ? (
-                    <span className="font-semibold text-brand-600">Şu an bu plandasınız</span>
-                  ) : (
-                    <span className="text-muted">Ödeme gerektirmez</span>
+                  {sub?.card_last4 && (
+                    <div className="mt-1 text-xs text-muted">
+                      Kayıtlı kart: {sub.card_brand ? `${sub.card_brand} ` : ''}•••• {sub.card_last4}
+                    </div>
                   )}
                 </div>
+                {sub && (
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      pastDue ? 'bg-red-100 text-red-700' : pending ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                    }`}
+                  >
+                    {pastDue ? 'Ödeme alınamadı' : pending ? 'Ödeme bekleniyor' : sub.status === 'active' ? 'Aktif' : sub.status}
+                  </span>
+                )}
               </div>
-            );
-          })}
-        </div>
 
-        {/* Phone + submit */}
-        <Card className="mt-6">
-          <Field label="Onay telefonu" hint="Tiko, ödeme onay linkini bu numaraya SMS ile gönderir.">
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="+90 5xx xxx xx xx" />
-          </Field>
-
-          {error && <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          {done && <div className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{done}</div>}
-
-          <div className="mt-5 flex items-center justify-between gap-4">
-            <div className="text-sm text-muted">
-              {chosen ? (
-                <>Tahsil edilecek: <b className="text-ink">{amount} {chosen.currency}</b> / {cycle === 'yearly' ? 'yıl' : 'ay'}</>
-              ) : (
-                'Bir plan seçin'
+              {/* Payment failed → prompt to update the card */}
+              {pastDue && (
+                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-800">
+                  Son ödeme kartınızdan tahsil edilemedi
+                  {sub?.grace_ends_at && <> — {fmtDate(sub.grace_ends_at)} tarihine kadar ek süreniz var</>}. Aşağıdan kart
+                  bilgilerinizi güncelleyerek ödemeyi tamamlayın.
+                </div>
               )}
-            </div>
-            <Button onClick={subscribe} loading={busy} disabled={!chosen || !phone.trim()}>
-              {busy ? 'Başlatılıyor…' : 'Aboneliği Başlat'}
-            </Button>
-          </div>
-        </Card>
+              {pending && (
+                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  Ödeme henüz tamamlanmadı. Aşağıdan planınızı seçip kart bilgilerinizle ödemeyi tamamlayın.
+                </p>
+              )}
+            </Card>
 
-        <p className="mt-4 text-center text-xs text-muted">
-          Ödemeler Tiko altyapısıyla, 3D Secure ile güvenle alınır. İstediğiniz an iptal edebilirsiniz.
-        </p>
+            {/* Cycle toggle */}
+            <div className="mt-6 flex items-center gap-2">
+              <div className="inline-flex rounded-xl border border-line bg-surface p-1">
+                {(['monthly', 'yearly'] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCycle(c)}
+                    className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition ${cycle === c ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`}
+                    style={cycle === c ? { color: '#ffffff' } : undefined}
+                  >
+                    {c === 'monthly' ? 'Aylık' : 'Yıllık'}
+                  </button>
+                ))}
+              </div>
+              {cycle === 'yearly' && <span className="text-xs font-semibold text-brand-600">2 ay hediye 🎉</span>}
+            </div>
+
+            {/* Plans — all packages; payable ones selectable, free/enterprise informational */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {plans.map((p) => {
+                const price = Number(cycle === 'yearly' ? p.price_yearly : p.price_monthly);
+                const payable = price > 0;
+                const active = selected === p.code;
+                const current = status?.plan_code === p.code;
+                const verticals = (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {p.verticals.map((v) => (
+                      <span key={v} className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-muted">{v}</span>
+                    ))}
+                  </div>
+                );
+                const head = (
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-bold">
+                      {p.name}
+                      {current && <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 align-middle text-[10px] font-bold text-brand-700">Mevcut</span>}
+                    </span>
+                    {payable && active && (
+                      <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-500 text-white">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      </span>
+                    )}
+                  </div>
+                );
+
+                if (payable) {
+                  return (
+                    <button
+                      key={p.code}
+                      type="button"
+                      onClick={() => setSelected(p.code)}
+                      className={`rounded-2xl border p-5 text-left transition ${active ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : 'border-line bg-surface hover:border-brand-300'}`}
+                    >
+                      {head}
+                      <div className="mt-2 text-2xl font-extrabold tracking-tight">
+                        {price} {p.currency}<span className="text-sm font-semibold text-muted">/{cycle === 'yearly' ? 'yıl' : 'ay'}</span>
+                      </div>
+                      {verticals}
+                    </button>
+                  );
+                }
+
+                const isEnterprise = p.code === 'enterprise';
+                return (
+                  <div key={p.code} className="rounded-2xl border border-line bg-surface p-5">
+                    {head}
+                    <div className="mt-2 text-2xl font-extrabold tracking-tight">
+                      {isEnterprise ? 'Özel' : 'Ücretsiz'}
+                      {!isEnterprise && <span className="text-sm font-semibold text-muted"> / ay</span>}
+                    </div>
+                    {verticals}
+                    <div className="mt-3 text-xs">
+                      {isEnterprise ? (
+                        <a href="/iletisim" className="inline-flex rounded-lg border border-line px-3 py-1.5 font-bold text-ink transition hover:bg-canvas">İletişime Geç</a>
+                      ) : current ? (
+                        <span className="font-semibold text-brand-600">Şu an bu plandasınız</span>
+                      ) : (
+                        <span className="text-muted">Ödeme gerektirmez</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Optional contact + continue to card entry */}
+            <Card className="mt-6">
+              <Field label="İletişim telefonu (opsiyonel)" hint="Ödeme bildirimleri için kullanılır.">
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="+90 5xx xxx xx xx" />
+              </Field>
+
+              {error && <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+              <div className="mt-5 flex items-center justify-between gap-4">
+                <div className="text-sm text-muted">
+                  {chosen ? (
+                    <>Tahsil edilecek: <b className="text-ink">{amount} {chosen.currency}</b> / {cycle === 'yearly' ? 'yıl' : 'ay'}</>
+                  ) : (
+                    'Bir plan seçin'
+                  )}
+                </div>
+                <Button onClick={startCheckout} loading={busy} disabled={!chosen}>
+                  {busy ? 'Hazırlanıyor…' : pastDue ? 'Kartı Güncelle & Öde' : 'Kart Bilgilerine Geç'}
+                </Button>
+              </div>
+            </Card>
+
+            <p className="mt-4 text-center text-xs text-muted">
+              Kart bilgileriniz doğrudan güvenli ödeme sağlayıcısına gönderilir, sunucularımızda saklanmaz. Ödemeler 3D Secure
+              ile korunur; istediğiniz an iptal edebilirsiniz.
+            </p>
+          </>
+        )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Card entry that POSTs straight to Tiko's pay3d — card data goes browser→Tiko,
+ * never our server (PCI). The hidden fields (incl. the server-built Hash) come from
+ * the checkout session; the browser adds CardName/CardNo/expiry/CVV.
+ */
+function TikoCardForm({
+  session,
+  amount,
+  currency,
+  planName,
+  cycle,
+  onBack,
+}: {
+  session: Checkout['session'];
+  amount: number;
+  currency: string;
+  planName: string;
+  cycle: 'monthly' | 'yearly';
+  onBack: () => void;
+}) {
+  const stored = 'CardId' in session.meta.fields;
+  return (
+    <Card className="mt-6">
+      <button type="button" onClick={onBack} className="text-sm font-semibold text-brand-600 hover:underline">← Plan seçimine dön</button>
+      <h2 className="mt-3 text-lg font-bold">Kart ile Öde · {amount} {currency} / {cycle === 'yearly' ? 'yıl' : 'ay'}</h2>
+      <p className="mt-1 text-sm text-muted">
+        {planName} aboneliği. {stored ? 'Kayıtlı kartınızla güvenli ödeme yapılacak.' : 'Kart bilgileriniz doğrudan güvenli ödeme sayfasına iletilir.'}
+      </p>
+
+      <form method="POST" action={session.url} className="mt-5 space-y-3">
+        {Object.entries(session.meta.fields).map(([k, v]) => (
+          <input key={k} type="hidden" name={k} value={v} />
+        ))}
+        {!stored && (
+          <>
+            <CardField name="CardName" label="Kart Üzerindeki İsim" placeholder="Ad Soyad" />
+            <CardField name="CardNo" label="Kart Numarası" placeholder="0000 0000 0000 0000" inputMode="numeric" autoComplete="cc-number" />
+            <div className="grid grid-cols-3 gap-2">
+              <CardField name="CardExpireMonth" label="Ay" placeholder="12" inputMode="numeric" autoComplete="cc-exp-month" />
+              <CardField name="CardExpireYear" label="Yıl" placeholder="27" inputMode="numeric" autoComplete="cc-exp-year" />
+              <CardField name="CardCvv" label="CVV" placeholder="123" inputMode="numeric" autoComplete="cc-csc" />
+            </div>
+          </>
+        )}
+        <button
+          type="submit"
+          className="w-full rounded-xl bg-brand-500 py-3.5 text-sm font-bold text-white transition hover:bg-brand-600"
+          style={{ color: '#ffffff' }}
+        >
+          {amount} {currency} Öde ve Aboneliği Başlat
+        </button>
+      </form>
+
+      <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted">
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+        3D Secure korumalı · Kart bilgileri sunucularımıza gelmez
+      </p>
+    </Card>
+  );
+}
+
+function CardField({
+  name,
+  label,
+  placeholder,
+  inputMode,
+  autoComplete,
+}: {
+  name: string;
+  label: string;
+  placeholder: string;
+  inputMode?: 'numeric';
+  autoComplete?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+      <input
+        name={name}
+        required
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-brand-500 focus:bg-white"
+      />
+    </label>
   );
 }

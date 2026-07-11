@@ -10,6 +10,9 @@ return [
     // Customer result page the 3DS browser-return redirects to (web-customer).
     'result_url' => env('PAYMENT_RESULT_URL', 'http://localhost:3010/order-result'),
 
+    // Owner billing page the subscription 3DS browser-return redirects to (web-admin).
+    'admin_billing_url' => env('PAYMENT_ADMIN_BILLING_URL', 'http://localhost:3001/billing'),
+
     'gateways' => [
         'paytr' => [
             'merchant_id' => env('PAYTR_MERCHANT_ID'),
