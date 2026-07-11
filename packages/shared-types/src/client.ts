@@ -113,6 +113,26 @@ export class ApiClient {
     return this.request('/plans');
   }
 
+  /** Owner's current trial/subscription status (billing page). */
+  subscriptionStatus(): Promise<{
+    tenant_status: string;
+    trial_ends_at: string | null;
+    plan_code: string | null;
+    plan_name: string | null;
+    owner_phone: string | null;
+    subscription: { status: string; billing_cycle: string } | null;
+  }> {
+    return this.request('/subscription');
+  }
+
+  /** Start Tiko recurring billing (SaaS subscription) for the owner's chosen plan. */
+  subscribe(body: { plan: string; billing_cycle?: 'monthly' | 'yearly'; phone?: string }): Promise<{
+    subscription: { plan: string; status: string; billing_cycle: string };
+    sms_sent: boolean;
+  }> {
+    return this.request('/subscription', { method: 'POST', body: JSON.stringify(body) });
+  }
+
   logout(): Promise<{ message: string }> {
     return this.request('/auth/logout', { method: 'POST' });
   }

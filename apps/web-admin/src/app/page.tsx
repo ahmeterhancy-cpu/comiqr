@@ -398,7 +398,7 @@ export default function Home() {
               <ul className="my-6 flex-1 space-y-3">
                 {p.items.map((it) => (<li key={it} className="flex gap-2.5 text-sm"><Check />{it}</li>))}
               </ul>
-              <Link href="/register" className={`rounded-xl py-2.5 text-center text-sm font-bold transition ${p.feat ? 'bg-brand-500 text-white hover:bg-brand-600' : 'border border-line bg-surface text-ink hover:bg-canvas'}`}>{p.cta}</Link>
+              <Link href={authed ? '/billing' : '/register'} className={`rounded-xl py-2.5 text-center text-sm font-bold transition ${p.feat ? 'bg-brand-500 text-white hover:bg-brand-600' : 'border border-line bg-surface text-ink hover:bg-canvas'}`}>{p.cta}</Link>
             </div>
           ))}
         </div>
