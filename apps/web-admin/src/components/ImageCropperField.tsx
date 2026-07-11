@@ -158,37 +158,47 @@ function Cropper({
 
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
+  // "fill" = cover the whole frame (crop overflow); "fit" = show the whole image
+  // inside the frame (letterboxed). Portrait posters usually want "fit".
+  const [mode, setMode] = useState<'fill' | 'fit'>('fill');
   const coverScale = nat ? Math.max(FW / nat.w, FH / nat.h) : 1;
+  const containScale = nat ? Math.min(FW / nat.w, FH / nat.h) : 1;
+  const baseScale = mode === 'fill' ? coverScale : containScale;
   const [zoom, setZoom] = useState(1);
-  const k = coverScale * zoom; // rendered px per source px
+  const k = baseScale * zoom; // rendered px per source px
   const [pos, setPos] = useState({ x: 0, y: 0 }); // image top-left within the frame
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
 
+  // Keep the image within sensible bounds. Fill → no gaps; fit → image stays inside.
   const clamp = useCallback(
     (x: number, y: number, kk: number) => {
       if (!nat) return { x, y };
       const w = nat.w * kk;
       const h = nat.h * kk;
+      const loX = Math.min(0, FW - w);
+      const hiX = Math.max(0, FW - w);
+      const loY = Math.min(0, FH - h);
+      const hiY = Math.max(0, FH - h);
       return {
-        x: Math.min(0, Math.max(FW - w, x)),
-        y: Math.min(0, Math.max(FH - h, y)),
+        x: Math.min(hiX, Math.max(loX, x)),
+        y: Math.min(hiY, Math.max(loY, y)),
       };
     },
     [nat, FW, FH],
   );
 
-  // Center the image once its natural size is known.
+  // Re-center (and reset zoom) whenever the image loads or the fit mode changes.
   useEffect(() => {
     if (!nat) return;
-    const w = nat.w * coverScale;
-    const h = nat.h * coverScale;
-    setPos({ x: (FW - w) / 2, y: (FH - h) / 2 });
+    const w = nat.w * baseScale;
+    const h = nat.h * baseScale;
     setZoom(1);
-  }, [nat, coverScale, FW, FH]);
+    setPos({ x: (FW - w) / 2, y: (FH - h) / 2 });
+  }, [nat, baseScale, FW, FH]);
 
   function onZoom(nextZoom: number) {
     if (!nat) return;
-    const kNew = coverScale * nextZoom;
+    const kNew = baseScale * nextZoom;
     // Keep the frame center fixed while zooming.
     const cx = (FW / 2 - pos.x) / k;
     const cy = (FH / 2 - pos.y) / k;
@@ -200,18 +210,22 @@ function Cropper({
 
   function save() {
     if (!imgRef.current || !nat) return;
-    const sx = -pos.x / k;
-    const sy = -pos.y / k;
-    const sw = FW / k;
-    const sh = FH / k;
+    const scale = OUT_W / FW; // display px → output px
     const canvas = document.createElement('canvas');
     canvas.width = OUT_W;
     canvas.height = OUT_H;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(imgRef.current, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
     const type = aspect === 1 ? 'image/png' : 'image/jpeg';
+    // JPEG has no transparency — fill letterbox gaps white. PNG (logo) stays transparent.
+    if (type === 'image/jpeg') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, OUT_W, OUT_H);
+    }
+    // Reproduce the on-screen preview exactly: draw the whole image at its framed
+    // position/size (canvas clips overflow; gaps stay bg). Works for fill and fit.
+    ctx.drawImage(imgRef.current, pos.x * scale, pos.y * scale, nat.w * k * scale, nat.h * k * scale);
     canvas.toBlob((b) => b && onSave(b), type, 0.92);
   }
 
@@ -298,7 +312,26 @@ function Cropper({
           </div>
         </div>
       </div>
-      <p className="pb-6 text-center text-xs text-white/70">Kaydırarak konumlandırın · yakınlaştırmak için üstteki çubuğu kullanın</p>
+
+      {/* Fill / Fit mode */}
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-xl bg-white/95 p-1 shadow">
+          {([['fill', 'Doldur'], ['fit', 'Sığdır']] as const).map(([m, label]) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`rounded-lg px-4 py-1.5 text-xs font-bold transition ${mode === m ? 'bg-brand-500 text-white' : 'text-ink hover:bg-canvas'}`}
+              style={mode === m ? { color: '#ffffff' } : undefined}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="pb-6 pt-2 text-center text-xs text-white/70">
+        <b>Doldur:</b> çerçeveyi tümüyle kaplar (taşan kısım kırpılır) · <b>Sığdır:</b> görselin tamamı sığar · kaydırarak konumlandırın
+      </p>
     </div>
   );
 }
