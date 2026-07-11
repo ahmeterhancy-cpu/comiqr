@@ -41,6 +41,8 @@ class SubscriptionController extends Controller
             'subscription' => $sub ? [
                 'status' => $sub->status,
                 'billing_cycle' => $sub->billing_cycle,
+                'current_period_end' => $sub->current_period_end,
+                'grace_ends_at' => $sub->grace_ends_at,
             ] : null,
         ]]);
     }
@@ -110,5 +112,34 @@ class SubscriptionController extends Controller
             ],
             'sms_sent' => true,
         ]]);
+    }
+
+    /**
+     * POST /webhooks/tiko/recurring — Tiko reports the result of a recurring charge.
+     * On failure the subscription goes past_due with a +GRACE_DAYS window; on success
+     * it returns to active and the period is extended. Public (no tenant/auth context).
+     */
+    public function webhook(Request $request): JsonResponse
+    {
+        $ref = (string) ($request->input('recurring_id') ?? $request->input('Id') ?? $request->input('gateway_ref') ?? '');
+        if ($ref === '') {
+            return response()->json(['data' => ['ignored' => 'no_ref']]);
+        }
+
+        $sub = Subscription::withoutTenancy()->where('gateway_ref', $ref)->first();
+        if ($sub === null) {
+            return response()->json(['data' => ['ignored' => 'not_found']]);
+        }
+
+        $ok = filter_var($request->input('success', $request->input('paid', false)), FILTER_VALIDATE_BOOLEAN)
+            || in_array((string) $request->input('status'), ['paid', 'success', '200'], true);
+
+        if ($ok) {
+            $sub->markPaid($sub->billing_cycle === 'yearly' ? now()->addYear() : now()->addMonth());
+        } else {
+            $sub->markPaymentFailed();
+        }
+
+        return response()->json(['data' => ['status' => $sub->status]]);
     }
 }

@@ -122,7 +122,7 @@ export class ApiClient {
     plan_code: string | null;
     plan_name: string | null;
     owner_phone: string | null;
-    subscription: { status: string; billing_cycle: string } | null;
+    subscription: { status: string; billing_cycle: string; current_period_end: string | null; grace_ends_at: string | null } | null;
   }> {
     return this.request('/subscription');
   }

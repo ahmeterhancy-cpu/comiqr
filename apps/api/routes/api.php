@@ -129,6 +129,9 @@ Route::prefix('sessions/{qrToken}')->group(function () {
 // --- Payment webhooks (M5, docs/06 §6.4) — public, signature-verified ---
 Route::post('payments/webhook/{gateway}', [PaymentController::class, 'webhook']);
 
+// --- Recurring SaaS subscription result (Tiko) — public; past_due + grace on failure ---
+Route::post('webhooks/tiko/recurring', [SubscriptionController::class, 'webhook'])->middleware('throttle:120,1');
+
 // --- 3D Secure browser return (Tiko UrlOk/UrlFail) — verify + confirm + redirect ---
 Route::match(['get', 'post'], 'payments/return/{gateway}', [PaymentController::class, 'paymentReturn']);
 
