@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { AiAdvisorCard } from '@/components/AiAdvisorCard';
+import { OnboardingTour } from '@/components/OnboardingTour';
 import { Card } from '@/components/ui';
 import { getActiveBranchId } from '@/lib/branch';
 import { useApi } from '@/lib/useApi';
@@ -44,6 +45,7 @@ export default function DashboardPage() {
 
   return (
     <AdminShell title={t('welcome', { name: me.user.name })}>
+      <OnboardingTour />
       {tenant && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label={t('subdomainLabel')} value={tenant.slug} />

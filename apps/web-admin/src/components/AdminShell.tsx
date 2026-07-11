@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { createApi } from '@/lib/api';
 import { clearSession, getImpersonator, getToken, getUser, returnToImpersonator } from '@/lib/auth';
 import { getActiveBranchId, setActiveBranchId } from '@/lib/branch';
@@ -50,6 +50,47 @@ function NavIcon({ k }: { k: string }) {
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
       <path d={ICONS[k] ?? ICONS.dashboard} />
     </svg>
+  );
+}
+
+const LANGS: [string, string][] = [['tr', 'Türkçe'], ['en', 'English']];
+
+/** Panel language switcher (cookie-based; reloads in the chosen language). */
+function LangSwitcher() {
+  const active = useLocale();
+  const [open, setOpen] = useState(false);
+  const cur = LANGS.find(([c]) => c === active) ?? LANGS[0];
+  const pick = (code: string) => {
+    document.cookie = `locale=${code}; path=/; max-age=31536000; samesite=lax`;
+    window.location.reload();
+  };
+  return (
+    <div className="relative" data-tour="lang">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-canvas"
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 2.5 15 0 18M12 3c-2.5 2.6-2.5 15 0 18" /></svg>
+        <span className="hidden sm:inline">{cur[1]}</span>
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 z-40 mt-1 w-32 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-xl">
+          {LANGS.map(([code, label]) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => pick(code)}
+              className={`block w-full px-3 py-2 text-left text-sm ${code === active ? 'bg-brand-50 font-semibold text-brand-700' : 'text-ink hover:bg-canvas'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -187,6 +228,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
             {title && <h1 className="truncate text-lg font-bold text-ink">{title}</h1>}
           </div>
           <div className="flex items-center gap-2.5">
+            <LangSwitcher />
             <button aria-label="Ara" className="grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-ink">
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></svg>
             </button>
