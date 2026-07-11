@@ -20,7 +20,7 @@ class RestaurantSettings
             // First-run setup wizard progress marker (owner onboarding).
             'settings_json.onboarding' => ['sometimes', 'nullable', 'array'],
             'settings_json.onboarding.completed' => ['sometimes', 'boolean'],
-            'settings_json.onboarding.step' => ['sometimes', 'integer', 'min:0', 'max:7'],
+            'settings_json.onboarding.step' => ['sometimes', 'integer', 'min:0', 'max:20'],
             // Business authorized / billing contact (management-only, not shown on the menu).
             'settings_json.authorized' => ['sometimes', 'nullable', 'array'],
             'settings_json.authorized.name' => ['sometimes', 'nullable', 'string', 'max:200'],
