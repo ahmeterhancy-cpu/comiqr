@@ -95,10 +95,6 @@ export default function OnboardingPage() {
             {busy ? 'Kaydediliyor…' : 'Kurulumu Tamamla'}
           </Button>
         </form>
-
-        <button type="button" onClick={() => router.replace('/dashboard')} className="mt-3 w-full text-center text-sm font-medium text-muted transition hover:text-ink">
-          Şimdilik atla
-        </button>
       </div>
     </AuthShell>
   );
