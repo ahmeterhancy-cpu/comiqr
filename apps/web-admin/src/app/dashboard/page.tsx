@@ -112,9 +112,9 @@ export default function DashboardPage() {
 
 const QUADRANTS: Record<string, { label: string; hint: string; cls: string }> = {
   star: { label: 'Yıldız', hint: 'popüler + kârlı', cls: 'bg-emerald-100 text-emerald-800' },
-  plowhorse: { label: 'Beygir', hint: 'popüler, düşük marj', cls: 'bg-amber-100 text-amber-800' },
-  puzzle: { label: 'Bilmece', hint: 'az satan, yüksek marj', cls: 'bg-sky-100 text-sky-800' },
-  dog: { label: 'Köpek', hint: 'az satan, düşük marj', cls: 'bg-rose-100 text-rose-700' },
+  plowhorse: { label: 'Gözde', hint: 'popüler, düşük marj', cls: 'bg-amber-100 text-amber-800' },
+  puzzle: { label: 'Fırsat', hint: 'az satan, yüksek marj', cls: 'bg-sky-100 text-sky-800' },
+  dog: { label: 'Zayıf', hint: 'az satan, düşük marj', cls: 'bg-rose-100 text-rose-700' },
 };
 
 function MenuHeatmap({ heatmap, currency }: { heatmap: any; currency: string }) {
