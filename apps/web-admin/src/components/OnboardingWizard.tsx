@@ -21,6 +21,24 @@ const VERTICALS: [string, string, string][] = [
   ['bar', 'Bar / Pub', 'Adisyon akışı'],
 ];
 
+// Currencies (ISO 4217); Turkish names generated at runtime via Intl.
+const CURRENCY_CODES =
+  'TRY EUR USD GBP AED SAR QAR KWD BHD OMR JOD ILS EGP AZN GEL RUB UAH KZT INR PKR CNY JPY KRW THB SGD MYR IDR AUD NZD CAD CHF SEK NOK DKK PLN CZK HUF RON BGN RSD MAD TND DZD ZAR NGN BRL MXN ARS CLP'.split(
+    ' ',
+  );
+
+// Convenience: picking a country pre-fills a sensible default currency (overridable).
+const COUNTRY_CCY: Record<string, string> = {
+  CY: 'TRY', TR: 'TRY', US: 'USD', GB: 'GBP', RU: 'RUB', UA: 'UAH', AZ: 'AZN', GE: 'GEL', KZ: 'KZT',
+  SA: 'SAR', AE: 'AED', QA: 'QAR', KW: 'KWD', BH: 'BHD', OM: 'OMR', JO: 'JOD', IL: 'ILS', EG: 'EGP',
+  IN: 'INR', PK: 'PKR', CN: 'CNY', JP: 'JPY', KR: 'KRW', TH: 'THB', SG: 'SGD', MY: 'MYR', ID: 'IDR',
+  AU: 'AUD', NZ: 'NZD', CA: 'CAD', CH: 'CHF', SE: 'SEK', NO: 'NOK', DK: 'DKK', PL: 'PLN', CZ: 'CZK',
+  HU: 'HUF', RO: 'RON', BG: 'BGN', RS: 'RSD', MA: 'MAD', TN: 'TND', DZ: 'DZD', ZA: 'ZAR', NG: 'NGN',
+  BR: 'BRL', MX: 'MXN', AR: 'ARS', CL: 'CLP',
+  DE: 'EUR', FR: 'EUR', IT: 'EUR', ES: 'EUR', NL: 'EUR', BE: 'EUR', AT: 'EUR', PT: 'EUR', GR: 'EUR',
+  IE: 'EUR', FI: 'EUR', LU: 'EUR', SK: 'EUR', SI: 'EUR', EE: 'EUR', LV: 'EUR', LT: 'EUR', MT: 'EUR',
+};
+
 // All countries (ISO 3166-1 alpha-2); Turkish names + flags generated at runtime.
 const CODES =
   'AD AE AF AG AI AL AM AO AR AT AU AW AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GT GU GW GY HK HN HR HT HU ID IE IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MQ MR MT MU MV MW MX MY MZ NA NC NE NG NI NL NO NP NR NZ OM PA PE PF PG PH PK PL PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WS XK YE ZA ZM ZW'.split(
@@ -47,7 +65,6 @@ export function OnboardingWizard({
 }) {
   const s = tenant?.settings ?? {};
   const allowedVerticals: string[] | undefined = tenant?.plan?.features?.verticals;
-  const currency: string | undefined = tenant?.currency;
 
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -57,7 +74,15 @@ export function OnboardingWizard({
   const [name, setName] = useState<string>(tenant?.name ?? '');
   const [vertical, setVertical] = useState<string>(s.vertical ?? 'restaurant');
   const [country, setCountry] = useState<string>(s.country ?? '');
+  const [currency, setCurrency] = useState<string>(tenant?.currency ?? 'EUR');
   const [subTitle, setSubTitle] = useState<string>(s.sub_title ?? '');
+
+  // Picking a country nudges the currency to that country's default (still overridable).
+  const onCountry = (code: string) => {
+    setCountry(code);
+    const def = COUNTRY_CCY[code];
+    if (def) setCurrency(def);
+  };
   // Step 2 — contact & address
   const [address, setAddress] = useState<string>(s.address ?? '');
   const [phone, setPhone] = useState<string>(s.phone ?? '');
@@ -110,6 +135,24 @@ export function OnboardingWizard({
     }).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   }, []);
 
+  const currencies = useMemo(() => {
+    let dn: Intl.DisplayNames | null = null;
+    try {
+      dn = new Intl.DisplayNames(['tr'], { type: 'currency' });
+    } catch {
+      dn = null;
+    }
+    return CURRENCY_CODES.map((code) => {
+      let cname = code;
+      try {
+        cname = dn?.of(code) ?? code;
+      } catch {
+        cname = code;
+      }
+      return { code, name: cname };
+    }).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+  }, []);
+
   const STEPS = ['Temel Bilgiler', 'İletişim & Adres', 'Çalışma Saatleri', 'Sosyal Medya & WiFi', 'Görünüm', 'Sipariş Tercihleri'];
   const isLast = step === STEPS.length - 1;
 
@@ -138,8 +181,14 @@ export function OnboardingWizard({
           setBusy(false);
           return;
         }
+        // setRegion sets timezone/locale (and a default currency) from the country;
+        // we then send the explicitly chosen currency so it always wins.
         if (country && country !== s.country) await api.setRegion(country);
-        await api.updateTenant({ name: name.trim(), settings_json: { vertical, sub_title: subTitle.trim() || null } } as any);
+        await api.updateTenant({
+          name: name.trim(),
+          currency,
+          settings_json: { vertical, sub_title: subTitle.trim() || null },
+        } as any);
       } else if (step === 1) {
         await api.updateTenant({
           settings_json: { address: address.trim() || null, phone: phone.trim() || null, email: email.trim() || null, website: website.trim() || null },
@@ -238,11 +287,11 @@ export function OnboardingWizard({
                 </div>
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Ülke" hint="Para birimi, saat dilimi ve dil otomatik ayarlanır.">
+                <Field label="Ülke" hint="Saat dilimi ve dil otomatik ayarlanır.">
                   <div className="relative">
                     <select
                       value={country}
-                      onChange={(e) => setCountry(e.target.value)}
+                      onChange={(e) => onCountry(e.target.value)}
                       className="w-full appearance-none rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand-500"
                     >
                       <option value="">Ülke seçin…</option>
@@ -253,10 +302,24 @@ export function OnboardingWizard({
                     <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                   </div>
                 </Field>
-                <Field label="Alt Başlık" hint="Menü başlığının altında görünür.">
-                  <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
+                <Field label="Para Birimi" required hint="Menüde fiyatlar bu birimle gösterilir.">
+                  <div className="relative">
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      className="w-full appearance-none rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand-500"
+                    >
+                      {currencies.map((c) => (
+                        <option key={c.code} value={c.code}>{c.code} — {c.name}</option>
+                      ))}
+                    </select>
+                    <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                  </div>
                 </Field>
               </div>
+              <Field label="Alt Başlık" hint="Menü başlığının altında görünür.">
+                <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
+              </Field>
             </div>
           )}
 
