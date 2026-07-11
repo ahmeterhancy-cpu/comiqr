@@ -1,15 +1,25 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { useTranslations } from 'next-intl';
 import { Brand } from './ui';
 import { APP_NAME } from '@/lib/api';
+
+/* Orange brand scope — keeps the public funnel (landing → register/login) consistent. */
+const ORANGE: CSSProperties = {
+  ['--color-brand-50' as string]: '#fff3ec',
+  ['--color-brand-100' as string]: '#ffe1ce',
+  ['--color-brand-500' as string]: '#ea5b1a',
+  ['--color-brand-600' as string]: '#c9490f',
+  ['--color-brand-700' as string]: '#9e3a0c',
+};
 
 /** Split auth layout: brand/value panel + form card. Light, professional. */
 export function AuthShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations('app');
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div style={ORANGE} className="grid min-h-screen lg:grid-cols-2">
       <aside className="relative hidden flex-col justify-between bg-brand-600 p-12 text-white lg:flex">
         <Brand name={APP_NAME} />
         <div className="max-w-md">
