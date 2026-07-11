@@ -477,7 +477,7 @@ export default function Home() {
             {([
               ['Platform', [['Özellikler', '#ozellikler'], ['İşletme türleri', '#turler'], ['Fiyatlar', '#fiyatlar'], ['S.S.S.', '#sss']]],
               ['Başla', [['Ücretsiz kayıt', '/register'], ['Giriş', '/login'], ['Panel', '/dashboard']]],
-              ['Şirket', [['İletişim', '#'], ['Gizlilik', '#'], ['Koşullar', '#']]],
+              ['Şirket', [['İletişim', '/iletisim'], ['Gizlilik', '/gizlilik'], ['Koşullar', '/kosullar']]],
             ] as [string, [string, string][]][]).map(([h, links]) => (
               <div key={h}>
                 <h4 className="text-xs font-bold uppercase tracking-widest text-muted">{h}</h4>
