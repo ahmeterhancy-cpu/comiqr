@@ -198,6 +198,7 @@ const MORE = [
 export default function Home() {
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [open, setOpen] = useState<number | null>(0);
 
   useEffect(() => {
@@ -225,11 +226,26 @@ export default function Home() {
             <a href="#fiyatlar" className="text-sm font-semibold text-muted transition hover:text-ink">Fiyatlar</a>
             <a href="#sss" className="text-sm font-semibold text-muted transition hover:text-ink">S.S.S.</a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {!authed && <Link href="/login" className="hidden text-sm font-semibold text-muted transition hover:text-ink sm:block">Giriş</Link>}
             <Link href={primaryHref} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600">{authed ? 'Panele Git' : 'Ücretsiz Dene'}</Link>
+            <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label="Menü" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-ink md:hidden">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                {menuOpen ? <path d="m6 6 12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+              </svg>
+            </button>
           </div>
         </div>
+        {menuOpen && (
+          <div className="border-t border-line bg-canvas md:hidden">
+            <div className="mx-auto flex max-w-6xl flex-col px-5 py-2">
+              {[['Özellikler', '#ozellikler'], ['İşletme Türleri', '#turler'], ['Fiyatlar', '#fiyatlar'], ['S.S.S.', '#sss']].map(([l, href]) => (
+                <a key={href} href={href} onClick={() => setMenuOpen(false)} className="border-b border-line/70 py-3 text-sm font-semibold text-ink last:border-0">{l}</a>
+              ))}
+              {!authed && <Link href="/login" onClick={() => setMenuOpen(false)} className="py-3 text-sm font-semibold text-brand-600">Giriş Yap →</Link>}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* HERO */}
