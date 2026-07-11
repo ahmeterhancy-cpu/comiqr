@@ -218,13 +218,19 @@ function Cropper({
     if (!ctx) return;
     ctx.imageSmoothingQuality = 'high';
     const type = aspect === 1 ? 'image/png' : 'image/jpeg';
-    // JPEG has no transparency — fill letterbox gaps white. PNG (logo) stays transparent.
-    if (type === 'image/jpeg') {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, OUT_W, OUT_H);
+    // Cover (wide) fills any "fit" letterbox with a blurred, zoomed copy of the same
+    // image — so the banner is never boxed by empty bands. Logo (png) keeps gaps
+    // transparent.
+    if (aspect !== 1) {
+      const bg = Math.max(OUT_W / nat.w, OUT_H / nat.h) * 1.15;
+      const bw = nat.w * bg;
+      const bh = nat.h * bg;
+      ctx.filter = 'blur(28px)';
+      ctx.drawImage(imgRef.current, (OUT_W - bw) / 2, (OUT_H - bh) / 2, bw, bh);
+      ctx.filter = 'none';
     }
-    // Reproduce the on-screen preview exactly: draw the whole image at its framed
-    // position/size (canvas clips overflow; gaps stay bg). Works for fill and fit.
+    // Reproduce the on-screen preview: draw the whole image at its framed
+    // position/size (canvas clips overflow; gaps show the blurred bg). Fill + fit.
     ctx.drawImage(imgRef.current, pos.x * scale, pos.y * scale, nat.w * k * scale, nat.h * k * scale);
     canvas.toBlob((b) => b && onSave(b), type, 0.92);
   }
@@ -285,6 +291,11 @@ function Cropper({
           onPointerUp={() => (drag.current = null)}
           onPointerCancel={() => (drag.current = null)}
         >
+          {aspect !== 1 && (
+            // Blurred cover backdrop — fills "fit" letterbox so the banner never sits
+            // in empty bands. eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt="" aria-hidden draggable={false} className="pointer-events-none absolute inset-0 h-full w-full object-cover" style={{ filter: 'blur(22px)', transform: 'scale(1.2)' }} />
+          )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             ref={imgRef}
