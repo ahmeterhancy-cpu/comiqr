@@ -73,11 +73,14 @@ const CODES =
 export function OnboardingWizard({
   api,
   tenant,
+  owner,
   onDone,
   onClose,
 }: {
   api: Api;
   tenant: any;
+  /** Signed-in owner (me.user) — prefills the authorized-contact step. */
+  owner?: { name?: string; email?: string; phone?: string } | null;
   onDone: () => void;
   onClose: () => void;
 }) {
@@ -137,6 +140,15 @@ export function OnboardingWizard({
   const [takeaway, setTakeaway] = useState<boolean>(s.allow_takeaway ?? true);
   const [delivery, setDelivery] = useState<boolean>(s.allow_delivery ?? true);
   const [online, setOnline] = useState<boolean>(s.allow_online_payment ?? true);
+  // Step 7 — business authorized / billing contact
+  const a = s.authorized ?? {};
+  const [authName, setAuthName] = useState<string>(a.name ?? owner?.name ?? '');
+  const [authTitle, setAuthTitle] = useState<string>(a.title ?? '');
+  const [authPhone, setAuthPhone] = useState<string>(a.phone ?? owner?.phone ?? '');
+  const [authEmail, setAuthEmail] = useState<string>(a.email ?? owner?.email ?? '');
+  const [authCompany, setAuthCompany] = useState<string>(a.company ?? '');
+  const [authTaxOffice, setAuthTaxOffice] = useState<string>(a.tax_office ?? '');
+  const [authTaxNo, setAuthTaxNo] = useState<string>(a.tax_no ?? '');
 
   const countries = useMemo(() => {
     let dn: Intl.DisplayNames | null = null;
@@ -175,7 +187,7 @@ export function OnboardingWizard({
     }).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   }, []);
 
-  const STEPS = ['Temel Bilgiler', 'İletişim & Adres', 'Çalışma Saatleri', 'Sosyal Medya & WiFi', 'Görünüm', 'Sipariş Tercihleri'];
+  const STEPS = ['Temel Bilgiler', 'İletişim & Adres', 'Çalışma Saatleri', 'Sosyal Medya & WiFi', 'Görünüm', 'Sipariş Tercihleri', 'İşletme Yetkilisi'];
   const isLast = step === STEPS.length - 1;
 
   async function upload(type: 'logo' | 'cover', file: File) {
@@ -243,7 +255,26 @@ export function OnboardingWizard({
             allow_takeaway: takeaway,
             allow_delivery: delivery,
             allow_online_payment: online,
-            onboarding: { completed: true, step: 6 },
+          },
+        } as any);
+      } else if (step === 6) {
+        if (!authName.trim()) {
+          setError('Yetkili ad soyad gerekli.');
+          setBusy(false);
+          return;
+        }
+        await api.updateTenant({
+          settings_json: {
+            authorized: {
+              name: authName.trim(),
+              title: authTitle.trim() || null,
+              phone: authPhone.trim() || null,
+              email: authEmail.trim() || null,
+              company: authCompany.trim() || null,
+              tax_office: authTaxOffice.trim() || null,
+              tax_no: authTaxNo.trim() || null,
+            },
+            onboarding: { completed: true, step: 7 },
           },
         } as any);
         onDone();
@@ -460,6 +491,37 @@ export function OnboardingWizard({
                 <YesNo label="Online ödeme" value={online} onChange={setOnline} />
               </div>
               {currency && <p className="mt-3 text-xs text-muted">Para birimi: <b className="text-ink">{currency}</b> · Ayarlar’dan detaylandırabilirsiniz.</p>}
+            </div>
+          )}
+
+          {step === 6 && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted">İşletmeden sorumlu yetkili ve fatura bilgileri. Bu bilgiler yalnızca yönetim/fatura amacıyla kullanılır, menüde gösterilmez.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Yetkili Ad Soyad" required>
+                  <Input value={authName} onChange={(e) => setAuthName(e.target.value)} placeholder="Ad Soyad" />
+                </Field>
+                <Field label="Görev / Ünvan">
+                  <Input value={authTitle} onChange={(e) => setAuthTitle(e.target.value)} placeholder="İşletme Sahibi" />
+                </Field>
+                <Field label="Telefon">
+                  <Input value={authPhone} onChange={(e) => setAuthPhone(e.target.value)} placeholder="+90 5xx xxx xx xx" />
+                </Field>
+                <Field label="E-posta">
+                  <Input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="yetkili@restoran.com" />
+                </Field>
+              </div>
+              <div className="grid gap-3 border-t border-line pt-4 sm:grid-cols-2">
+                <Field label="Fatura Ünvanı" hint="Yasal şirket/işletme ünvanı (fatura için)">
+                  <Input value={authCompany} onChange={(e) => setAuthCompany(e.target.value)} placeholder="Örn. Sahil Turizm Gıda Ltd." />
+                </Field>
+                <Field label="Vergi Dairesi">
+                  <Input value={authTaxOffice} onChange={(e) => setAuthTaxOffice(e.target.value)} placeholder="Lefkoşa" />
+                </Field>
+                <Field label="Vergi / Kimlik No">
+                  <Input value={authTaxNo} onChange={(e) => setAuthTaxNo(e.target.value)} placeholder="1234567890" />
+                </Field>
+              </div>
             </div>
           )}
         </div>

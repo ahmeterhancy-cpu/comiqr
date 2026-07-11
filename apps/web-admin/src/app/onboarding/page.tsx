@@ -78,6 +78,7 @@ export default function OnboardingPage() {
         <OnboardingWizard
           api={api}
           tenant={tenant}
+          owner={me?.user}
           onClose={() => setOpen(false)}
           onDone={() => router.replace('/dashboard')}
         />
