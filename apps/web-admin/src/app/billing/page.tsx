@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import type { PlanOption } from '@comiqr/shared-types';
 import { ApiError } from '@comiqr/shared-types/client';
@@ -50,8 +50,7 @@ export default function BillingPage() {
       .catch(() => setError('Bilgiler yüklenemedi.'));
   }, [ready, api]);
 
-  const payable = useMemo(() => plans.filter((p) => Number(p.price_monthly) > 0), [plans]);
-  const chosen = payable.find((p) => p.code === selected) ?? null;
+  const chosen = plans.find((p) => p.code === selected && Number(p.price_monthly) > 0) ?? null;
   const amount = chosen ? Number(cycle === 'yearly' ? chosen.price_yearly : chosen.price_monthly) : 0;
 
   async function subscribe() {
@@ -128,31 +127,70 @@ export default function BillingPage() {
           {cycle === 'yearly' && <span className="text-xs font-semibold text-brand-600">2 ay hediye 🎉</span>}
         </div>
 
-        {/* Plans */}
+        {/* Plans — all packages; payable ones selectable, free/enterprise informational */}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {payable.map((p) => {
+          {plans.map((p) => {
             const price = Number(cycle === 'yearly' ? p.price_yearly : p.price_monthly);
+            const payable = price > 0;
             const active = selected === p.code;
+            const current = status?.plan_code === p.code;
+            const verticals = (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {p.verticals.map((v) => (
+                  <span key={v} className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-muted">{v}</span>
+                ))}
+              </div>
+            );
+            const head = (
+              <div className="flex items-center justify-between">
+                <span className="text-base font-bold">
+                  {p.name}
+                  {current && <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 align-middle text-[10px] font-bold text-brand-700">Mevcut</span>}
+                </span>
+                {payable && active && (
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-500 text-white">
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                  </span>
+                )}
+              </div>
+            );
+
+            if (payable) {
+              return (
+                <button
+                  key={p.code}
+                  type="button"
+                  onClick={() => setSelected(p.code)}
+                  className={`rounded-2xl border p-5 text-left transition ${active ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : 'border-line bg-surface hover:border-brand-300'}`}
+                >
+                  {head}
+                  <div className="mt-2 text-2xl font-extrabold tracking-tight">
+                    {price} {p.currency}<span className="text-sm font-semibold text-muted">/{cycle === 'yearly' ? 'yıl' : 'ay'}</span>
+                  </div>
+                  {verticals}
+                </button>
+              );
+            }
+
+            const isEnterprise = p.code === 'enterprise';
             return (
-              <button
-                key={p.code}
-                type="button"
-                onClick={() => setSelected(p.code)}
-                className={`rounded-2xl border p-5 text-left transition ${active ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : 'border-line bg-surface hover:border-brand-300'}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-bold">{p.name}</span>
-                  {active && <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-500 text-white"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>}
-                </div>
+              <div key={p.code} className="rounded-2xl border border-line bg-surface p-5">
+                {head}
                 <div className="mt-2 text-2xl font-extrabold tracking-tight">
-                  {price} {p.currency}<span className="text-sm font-semibold text-muted">/{cycle === 'yearly' ? 'yıl' : 'ay'}</span>
+                  {isEnterprise ? 'Özel' : 'Ücretsiz'}
+                  {!isEnterprise && <span className="text-sm font-semibold text-muted"> / ay</span>}
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {p.verticals.map((v) => (
-                    <span key={v} className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-muted">{v}</span>
-                  ))}
+                {verticals}
+                <div className="mt-3 text-xs">
+                  {isEnterprise ? (
+                    <a href="/iletisim" className="inline-flex rounded-lg border border-line px-3 py-1.5 font-bold text-ink transition hover:bg-canvas">İletişime Geç</a>
+                  ) : current ? (
+                    <span className="font-semibold text-brand-600">Şu an bu plandasınız</span>
+                  ) : (
+                    <span className="text-muted">Ödeme gerektirmez</span>
+                  )}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
