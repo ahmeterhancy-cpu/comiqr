@@ -151,9 +151,6 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
           Sistem Durumu
         </div>
         <div className="mt-0.5 text-[11px] text-slate-400">Tüm sistemler çalışıyor</div>
-        <svg viewBox="0 0 120 34" className="mt-2 w-full" preserveAspectRatio="none">
-          <path d="M0 26 C 14 24, 20 14, 32 18 S 56 30, 72 20 S 100 6, 120 12" fill="none" stroke="#2dd4bf" strokeWidth="2" strokeLinecap="round" />
-        </svg>
       </div>
 
       <button onClick={logout} className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-white/10 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white">
