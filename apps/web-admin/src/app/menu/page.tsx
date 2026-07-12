@@ -450,6 +450,76 @@ function PriceEdit({ product, onSave }: { product: any; onSave: (price: number) 
   );
 }
 
+/** One variant as an inline-editable chip: name + price delta, both save on blur/Enter. */
+function VariantChip({ product, variant, api, onChanged }: { product: any; variant: any; api: any; onChanged: () => void }) {
+  const [name, setName] = useState<string>(variant.name);
+  const [delta, setDelta] = useState<string>(Number(variant.price_delta).toFixed(0));
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setName(variant.name);
+    setDelta(Number(variant.price_delta).toFixed(0));
+  }, [variant.name, variant.price_delta]);
+
+  async function save(body: Record<string, unknown>) {
+    setSaving(true);
+    try {
+      await api.updateVariant(product.id, variant.id, body);
+      onChanged();
+    } finally {
+      setSaving(false);
+    }
+  }
+  function commitName() {
+    const n = name.trim();
+    if (!n || n === variant.name) return setName(variant.name);
+    save({ name: n });
+  }
+  function commitDelta() {
+    const d = Number(delta);
+    if (!Number.isFinite(d) || d === Number(variant.price_delta)) return setDelta(Number(variant.price_delta).toFixed(0));
+    save({ price_delta: d });
+  }
+  const enterBlur = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+  };
+  const inputCls = 'rounded border border-transparent bg-transparent px-1 text-ink outline-none transition hover:border-line focus:border-brand-400';
+
+  return (
+    <span className={`flex items-center gap-1 rounded-full bg-white px-2 py-1 text-xs shadow-sm ${saving ? 'opacity-50' : ''}`}>
+      <input
+        value={name}
+        disabled={saving}
+        onChange={(e) => setName(e.target.value)}
+        onBlur={commitName}
+        onKeyDown={enterBlur}
+        title="Varyasyon adı"
+        className={`w-20 font-medium ${inputCls}`}
+      />
+      <span className="text-muted">+₺</span>
+      <input
+        type="number"
+        value={delta}
+        disabled={saving}
+        onChange={(e) => setDelta(e.target.value)}
+        onBlur={commitDelta}
+        onKeyDown={enterBlur}
+        title="Fiyat farkı"
+        className={`w-12 text-right ${inputCls}`}
+      />
+      <button
+        onClick={async () => {
+          await api.deleteVariant(product.id, variant.id);
+          onChanged();
+        }}
+        title="Sil"
+        className="ml-0.5 text-red-600"
+      >
+        ×
+      </button>
+    </span>
+  );
+}
+
 function VariantsManager({ product, api, onChanged }: { product: any; api: any; onChanged: () => void }) {
   const [name, setName] = useState('');
   const [delta, setDelta] = useState('');
@@ -460,15 +530,7 @@ function VariantsManager({ product, api, onChanged }: { product: any; api: any; 
       <h4 className="mb-2 text-sm font-semibold text-ink">Varyasyonlar (boy/porsiyon)</h4>
       <div className="mb-2 flex flex-wrap gap-2">
         {variants.map((v: any) => (
-          <span key={v.id} className="flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs">
-            {v.name} {Number(v.price_delta) ? `(+₺${Number(v.price_delta).toFixed(0)})` : ''}
-            <button
-              onClick={async () => { await api.deleteVariant(product.id, v.id); onChanged(); }}
-              className="text-red-600"
-            >
-              ×
-            </button>
-          </span>
+          <VariantChip key={v.id} product={product} variant={v} api={api} onChanged={onChanged} />
         ))}
         {variants.length === 0 && <span className="text-xs text-muted">Varyasyon yok.</span>}
       </div>

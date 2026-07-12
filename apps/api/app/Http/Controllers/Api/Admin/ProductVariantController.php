@@ -33,6 +33,26 @@ class ProductVariantController extends Controller
         return response()->json(['data' => $variant], 201);
     }
 
+    public function update(Request $request, string $product, string $variant): JsonResponse
+    {
+        $model = Product::findOrFail($product);
+
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:64'],
+            'price_delta' => ['sometimes', 'numeric'],
+            'is_default' => ['boolean'],
+        ]);
+
+        if ($request->boolean('is_default')) {
+            $model->variants()->update(['is_default' => false]);
+        }
+
+        $v = $model->variants()->whereKey($variant)->firstOrFail();
+        $v->update($data);
+
+        return response()->json(['data' => $v]);
+    }
+
     public function destroy(string $product, string $variant): JsonResponse
     {
         $model = Product::findOrFail($product);

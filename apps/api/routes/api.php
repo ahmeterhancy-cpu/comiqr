@@ -215,6 +215,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/products/{product}/media', [ProductMediaController::class, 'upload']);
             Route::delete('admin/products/{product}/media', [ProductMediaController::class, 'destroy']);
             Route::post('admin/products/{product}/variants', [ProductVariantController::class, 'store']);
+            Route::patch('admin/products/{product}/variants/{variant}', [ProductVariantController::class, 'update']);
             Route::delete('admin/products/{product}/variants/{variant}', [ProductVariantController::class, 'destroy']);
 
             // Modifier groups (M1) — reusable option sets + product attachment.
