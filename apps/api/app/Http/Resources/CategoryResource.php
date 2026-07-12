@@ -21,6 +21,12 @@ class CategoryResource extends JsonResource
             'sort' => $this->sort,
             'is_active' => $this->is_active,
             'image_path' => $this->image_path,
+            // Category promotion (percent discount on its products).
+            'promo' => [
+                'active' => $this->promoPercent() > 0,
+                'percent' => (float) ($this->promo_json['percent'] ?? 0),
+                'label' => $this->promo_json['label'] ?? null,
+            ],
             'products' => ProductResource::collection($this->whenLoaded('products')),
         ];
     }

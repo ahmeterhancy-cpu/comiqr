@@ -158,6 +158,8 @@ export interface MenuProduct {
   name: string;
   description: string | null;
   price: string | number;
+  /** Pre-discount price when the category has an active promotion (for strike-through). */
+  original_price?: string | number;
   images: string[];
   video: string | null;
   is_active: boolean;
@@ -181,6 +183,8 @@ export interface MenuCategory {
   sort: number;
   is_active: boolean;
   image_path: string | null;
+  /** Category promotion — a percent discount applied to all its products. */
+  promo?: { active: boolean; percent: number; label: string | null };
   products: MenuProduct[];
 }
 

@@ -100,6 +100,11 @@ class CategoryController extends Controller
             'is_active' => ['boolean'],
             'image_path' => ['nullable', 'string'],
             'daypart_json' => ['nullable', 'array'],
+            // Category promotion (percent discount on all its products).
+            'promo_json' => ['nullable', 'array'],
+            'promo_json.enabled' => ['sometimes', 'boolean'],
+            'promo_json.percent' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:95'],
+            'promo_json.label' => ['sometimes', 'nullable', 'string', 'max:120'],
         ]);
     }
 }

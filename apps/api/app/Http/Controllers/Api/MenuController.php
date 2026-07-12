@@ -197,6 +197,31 @@ class MenuController extends Controller
         // White-label branding only takes effect on plans that unlock it (Faz 3).
         $whiteLabel = \App\Support\Plans\PlanGate::allows($tenant, 'white_label');
 
+        // Apply each category's promotion to its products' displayed prices (base
+        // price + variant deltas), keeping the original for a struck-through display.
+        // Modifiers/extras are not discounted. The same percent is charged per line
+        // in OrderService, so what's shown is what's charged.
+        // Deep-resolve to plain arrays (nested Product/Variant resources included) so
+        // the discount edits below stick and new keys like original_price survive.
+        $categoriesPayload = json_decode(json_encode(CategoryResource::collection($categories)->resolve()), true);
+        foreach ($categoriesPayload as &$cat) {
+            $pct = ($cat['promo']['active'] ?? false) ? (float) $cat['promo']['percent'] : 0.0;
+            if ($pct <= 0) {
+                continue;
+            }
+            $factor = 1 - $pct / 100;
+            foreach ($cat['products'] as &$p) {
+                $p['original_price'] = round((float) $p['price'], 2);
+                $p['price'] = round((float) $p['price'] * $factor, 2);
+                foreach ($p['variants'] ?? [] as &$v) {
+                    $v['price_delta'] = round((float) $v['price_delta'] * $factor, 2);
+                }
+                unset($v);
+            }
+            unset($p);
+        }
+        unset($cat);
+
         return [
             'venue' => [
                 'name' => $tenant->name,
@@ -245,7 +270,7 @@ class MenuController extends Controller
                 ],
             ],
             'allergens' => Allergen::orderBy('id')->get(['id', 'code', 'name', 'icon']),
-            'categories' => CategoryResource::collection($categories)->resolve(),
+            'categories' => $categoriesPayload,
             // Active table codes for the "select your table → call waiter/bill" flow (M4).
             'tables' => Table::query()
                 ->where('is_active', true)

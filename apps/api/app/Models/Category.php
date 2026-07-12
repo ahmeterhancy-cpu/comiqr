@@ -21,7 +21,7 @@ class Category extends Model
     protected array $translatable = ['name'];
 
     protected $fillable = [
-        'tenant_id', 'branch_id', 'parent_id', 'name', 'sort', 'is_active', 'image_path', 'daypart_json',
+        'tenant_id', 'branch_id', 'parent_id', 'name', 'sort', 'is_active', 'image_path', 'daypart_json', 'promo_json',
     ];
 
     protected function casts(): array
@@ -29,7 +29,17 @@ class Category extends Model
         return [
             'is_active' => 'boolean',
             'daypart_json' => 'array',
+            'promo_json' => 'array',
         ];
+    }
+
+    /** Active promo discount percent for this category (0 when off). */
+    public function promoPercent(): float
+    {
+        $p = $this->promo_json ?? [];
+        $pct = (float) ($p['percent'] ?? 0);
+
+        return ! empty($p['enabled']) && $pct > 0 ? min(95.0, $pct) : 0.0;
     }
 
     public function translationModel(): string

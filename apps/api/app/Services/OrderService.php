@@ -148,9 +148,15 @@ class OrderService
 
             $modifiers = $this->resolveModifiers($product, $line['modifiers'] ?? []);
 
-            $unitPrice = (float) $product->price
-                + (float) ($variant->price_delta ?? 0)
-                + array_sum(array_column($modifiers, 'price_delta'));
+            // Category promotion discounts the item (base price + variant), matching
+            // the discounted menu price. Modifiers/extras are charged in full.
+            $itemPrice = (float) $product->price + (float) ($variant->price_delta ?? 0);
+            $promoPct = $product->category?->promoPercent() ?? 0.0;
+            if ($promoPct > 0) {
+                $itemPrice = round($itemPrice * (1 - $promoPct / 100), 2);
+            }
+
+            $unitPrice = $itemPrice + array_sum(array_column($modifiers, 'price_delta'));
 
             $quantity = max(1, (int) ($line['quantity'] ?? 1));
 

@@ -697,7 +697,12 @@ function ModernProduct({
               <span className="ml-1.5 rounded border border-red-500 px-1 align-middle text-[10px] font-bold text-red-600">18+</span>
             )}
           </h3>
-          <div className="shrink-0 font-extrabold text-ink">{format.format(Number(product.price))}</div>
+          <div className="flex shrink-0 items-center gap-1.5 font-extrabold text-ink">
+            {product.original_price != null && Number(product.original_price) > Number(product.price) && (
+              <span className="text-xs font-medium text-muted line-through">{format.format(Number(product.original_price))}</span>
+            )}
+            <span>{format.format(Number(product.price))}</span>
+          </div>
         </div>
         {product.description && <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted">{product.description}</p>}
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
@@ -996,6 +1001,9 @@ function ProductDetailSheet({
           <div className="shrink-0 border-t border-line px-5 py-4">
             <div className="mb-2.5 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Fiyat</span>
+              {product.original_price != null && Number(product.original_price) > Number(product.price) && (
+                <span className="mr-1.5 text-sm font-medium text-muted line-through">{format.format(Number(product.original_price))}</span>
+              )}
               <span className="text-lg font-extrabold text-ink">{format.format(Number(product.price))}</span>
             </div>
             {hasOptions && onOptions ? (

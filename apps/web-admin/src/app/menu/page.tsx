@@ -195,6 +195,7 @@ export default function MenuPage() {
       </div>
       <CategoryManager
         categories={categories}
+        products={products}
         api={api as any}
         selectedId={selectedCat}
         onSelect={(id) => {
