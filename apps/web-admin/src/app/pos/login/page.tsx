@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError } from '@comiqr/shared-types/client';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Button, Field, Input } from '@/components/ui';
 import { createApi } from '@/lib/api';
 import { setSession } from '@/lib/auth';
@@ -50,12 +51,12 @@ export default function PosLoginPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-slate-900 px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
-        <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-500 text-sm font-extrabold text-white shadow-sm">
-            POS
-          </span>
-          <h1 className="text-lg font-bold text-ink">Kasa Girişi</h1>
-          <p className="text-xs text-muted">POS terminaline personel hesabınızla giriş yapın.</p>
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <BrandLogo className="h-10 w-auto" />
+          <div>
+            <h1 className="text-lg font-bold text-ink">Kasa Girişi</h1>
+            <p className="mt-0.5 text-xs text-muted">POS terminaline personel hesabınızla giriş yapın.</p>
+          </div>
         </div>
 
         {general && <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{general}</div>}

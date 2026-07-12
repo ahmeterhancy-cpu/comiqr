@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
+import { BrandLogo } from './BrandLogo';
 
 const ORANGE: CSSProperties = {
   ['--color-brand-50' as string]: '#fff3ec',
@@ -18,8 +19,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-line bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-500 font-extrabold text-white shadow-sm">Q</span>
-            <span className="text-lg font-extrabold tracking-tight">ComiQR</span>
+            <BrandLogo className="h-9 w-auto" />
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/" className="hidden text-sm font-semibold text-muted transition hover:text-ink sm:block">Ana Sayfa</Link>
@@ -35,8 +35,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-500 font-extrabold text-white">Q</span>
-                <span className="text-lg font-extrabold tracking-tight">ComiQR</span>
+                <BrandLogo className="h-9 w-auto" />
               </div>
               <p className="mt-4 max-w-xs text-sm text-muted">Restoran, otel, bar ve plaj işletmeleri için uçtan uca QR menü, sipariş ve servis platformu.</p>
             </div>

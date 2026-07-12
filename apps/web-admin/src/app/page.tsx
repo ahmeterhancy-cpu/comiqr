@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/BrandLogo';
 import { isAuthenticated } from '@/lib/auth';
 
 /* Orange brand scope — overrides the admin's indigo tokens for the public site only. */
@@ -217,8 +218,7 @@ export default function Home() {
       <nav className={`sticky top-0 z-50 backdrop-blur transition ${scrolled ? 'border-b border-line bg-canvas/85' : 'bg-canvas/60'}`}>
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-500 font-extrabold text-white shadow-sm">Q</span>
-            <span className="text-lg font-extrabold tracking-tight">ComiQR</span>
+            <BrandLogo className="h-9 w-auto" />
           </div>
           <div className="hidden items-center gap-8 md:flex">
             <a href="#ozellikler" className="text-sm font-semibold text-muted transition hover:text-ink">Özellikler</a>
@@ -469,8 +469,7 @@ export default function Home() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-500 font-extrabold text-white">Q</span>
-                <span className="text-lg font-extrabold tracking-tight">ComiQR</span>
+                <BrandLogo className="h-9 w-auto" />
               </div>
               <p className="mt-4 max-w-xs text-sm text-muted">Restoran, otel, bar ve plaj işletmeleri için uçtan uca QR menü, sipariş ve servis platformu.</p>
             </div>

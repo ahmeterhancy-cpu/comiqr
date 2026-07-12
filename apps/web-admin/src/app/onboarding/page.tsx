@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BrandLogo } from '@/components/BrandLogo';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { useApi } from '@/lib/useApi';
 
@@ -38,9 +39,8 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <div className="mx-auto max-w-3xl px-5 py-14">
-        <div className="mb-1 flex items-center gap-2 text-sm font-extrabold tracking-tight text-brand-600">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-500 text-white" style={{ color: '#ffffff' }}>Q</span>
-          ComiQR
+        <div className="mb-1">
+          <BrandLogo className="h-7 w-auto" />
         </div>
         <h1 className="mt-6 text-2xl font-extrabold tracking-tight">
           {firstName ? `Hoş geldin ${firstName}!` : 'Hoş geldin!'} İşletmeni kuralım.

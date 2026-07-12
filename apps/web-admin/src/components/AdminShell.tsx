@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { BrandLogo } from './BrandLogo';
 import { SetupGuide } from './SetupGuide';
 import { TrialCard } from './TrialCard';
 import { createApi } from '@/lib/api';
@@ -215,9 +216,10 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
 
   const sidebar = (
     <div className="flex h-full flex-col rounded-3xl p-4 text-white shadow-2xl" style={{ background: 'linear-gradient(180deg,#153453 0%,#0e2740 55%,#0a1f34 100%)' }}>
-      <div className="flex items-center gap-2.5 px-2 py-2">
-        <span className="grid h-9 w-9 place-items-center rounded-xl font-extrabold text-white shadow-lg" style={{ background: 'linear-gradient(135deg,#2dd4bf,#0ea5e9)' }}>Q</span>
-        <span className="text-lg font-extrabold tracking-tight">ComiQR</span>
+      <div className="px-2 py-2">
+        <span className="inline-flex rounded-xl bg-white px-2.5 py-1.5 shadow-lg">
+          <BrandLogo className="h-6 w-auto" />
+        </span>
       </div>
 
       {branches.length > 1 && (

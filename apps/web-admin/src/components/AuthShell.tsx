@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
+import { BrandLogo } from './BrandLogo';
 
 /* Orange brand scope — keeps the public funnel (landing → register/login) consistent. */
 const ORANGE: CSSProperties = {
@@ -43,11 +44,8 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       {/* LEFT — form */}
       <main className="flex items-center justify-center bg-surface px-6 py-10">
         <div className="w-full max-w-md">
-          <Link href="/" className="mb-6 flex flex-col items-center gap-2">
-            <span className="flex items-center gap-2.5">
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-500 text-lg font-extrabold text-white shadow-sm">Q</span>
-              <span className="text-2xl font-extrabold tracking-tight text-ink">ComiQR</span>
-            </span>
+          <Link href="/" className="mb-6 flex flex-col items-center gap-2.5">
+            <BrandLogo className="h-12 w-auto" />
             <span className="text-xs font-semibold text-muted">14 gün ücretsiz deneme · kart gerekmez</span>
           </Link>
           {children}
