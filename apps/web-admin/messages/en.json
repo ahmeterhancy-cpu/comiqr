@@ -5,6 +5,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "menu": "Menu",
+    "menuBuilder": "Menu Builder",
     "ingredients": "Ingredients",
     "recipes": "Recipes & Nutrition",
     "tables": "Tables & QR",

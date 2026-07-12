@@ -16,6 +16,7 @@ type NavNode = NavLeaf | { key: string; children: NavLeaf[] };
 const NAV: NavNode[] = [
   { key: 'dashboard', href: '/dashboard' },
   { key: 'menu', href: '/menu' },
+  { key: 'menuBuilder', href: '/menu-builder' },
   { key: 'ingredients', href: '/ingredients' },
   { key: 'orders', href: '/orders' },
   { key: 'pos', href: '/pos' },
@@ -44,6 +45,7 @@ const NAV: NavNode[] = [
 const ICONS: Record<string, string> = {
   dashboard: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   menu: 'M5 4h14v16H5zM9 8h6M9 12h6M9 16h3',
+  menuBuilder: 'M4 4h7v16H4zM13 4h7v7h-7zM13 15h7v5h-7',
   ingredients: 'M9 3h6l-1 4h-4zM7 7h10l-1.2 12.2a2 2 0 0 1-2 1.8H10.2a2 2 0 0 1-2-1.8z',
   orders: 'M6 3l1.5 1.5L9 3l1.5 1.5L12 3l1.5 1.5L15 3l1.5 1.5L18 3v18l-1.5-1.5L15 21l-1.5-1.5L12 21l-1.5-1.5L9 21l-1.5-1.5L6 21zM9 9h6M9 13h6',
   pos: 'M3 7h18v10H3zM3 11h18M7 15h3',

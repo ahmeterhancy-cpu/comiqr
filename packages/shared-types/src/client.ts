@@ -195,9 +195,12 @@ export class ApiClient {
   }
 
   /** Public menu (M1/M4). Tenant is taken from the instance (X-Tenant) or slug arg. */
-  menu(slug?: string): Promise<Menu> {
-    const query = slug ? `?tenant=${encodeURIComponent(slug)}` : '';
-    return this.request(`/menu${query}`);
+  menu(slug?: string, locale?: string): Promise<Menu> {
+    const params = new URLSearchParams();
+    if (slug) params.set('tenant', slug);
+    if (locale) params.set('locale', locale);
+    const query = params.toString();
+    return this.request(`/menu${query ? `?${query}` : ''}`);
   }
 
   /** Guest AI menu assistant — answers strictly from the menu. 402 if plan lacks AI, 503 if unconfigured. */
