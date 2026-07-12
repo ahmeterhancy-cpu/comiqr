@@ -165,21 +165,37 @@ export function CategoryManager({
                   <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setMenuFor(null); }} />
                   <div className="absolute right-2 top-10 z-20 w-36 overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lg" onClick={(e) => e.stopPropagation()}>
                     <button type="button" onClick={() => { setMenuFor(null); setModal({ mode: 'edit', cat: c }); }} className="block w-full px-3 py-1.5 text-left text-sm text-ink hover:bg-canvas">Düzenle</button>
-                    <button type="button" onClick={() => { setMenuFor(null); setPromoFor(c); }} className="block w-full px-3 py-1.5 text-left text-sm text-ink hover:bg-canvas">Promosyon</button>
                     <button type="button" onClick={() => remove(c)} className="block w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50">Sil</button>
                   </div>
                 </>
               )}
 
-              {c.promo?.active && (
+              {!c.is_active ? (
+                <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white shadow" style={{ color: '#ffffff' }}>Kapalı</span>
+              ) : c.promo?.active ? (
                 <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white shadow" style={{ color: '#ffffff' }}>
                   %{Math.round(c.promo.percent)} İNDİRİM
                 </span>
-              )}
-              <span className="absolute bottom-2 left-2 right-2 truncate text-sm font-bold text-white drop-shadow" style={{ color: '#ffffff' }}>
+              ) : null}
+
+              <span className="absolute bottom-2 left-2 right-10 truncate text-sm font-bold text-white drop-shadow" style={{ color: '#ffffff' }}>
                 {c.name}
               </span>
-              {!c.is_active && <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ color: '#ffffff' }}>Kapalı</span>}
+
+              {/* Dedicated promotion (tag) icon */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPromoFor(c);
+                }}
+                title={c.promo?.active ? `Promosyon: %${Math.round(c.promo.percent)} indirim` : 'Promosyon ekle'}
+                aria-label="Promosyon"
+                className={`absolute bottom-2 right-2 grid h-7 w-7 place-items-center rounded-lg shadow transition ${c.promo?.active ? 'bg-red-500 text-white' : 'bg-white/85 text-ink hover:bg-white'}`}
+                style={c.promo?.active ? { color: '#ffffff' } : undefined}
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" /><circle cx="7.5" cy="7.5" r="1.3" fill="currentColor" /></svg>
+              </button>
             </div>
           );
         })}
