@@ -11,7 +11,6 @@ const LANGS: [string, string][] = [
   ['ru', 'Русский'],
   ['ar', 'العربية'],
 ];
-const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 const TEXT_COLORS = ['#111827', '#ffffff', '#4b5563', '#15803d', '#2563eb', '#7c3aed', '#ea580c', '#dc2626'];
 const PAGE_COLORS = ['#ffffff', '#f9fafb', '#f3f4f6', '#faf7f2', '#f7f7f4', '#fdf6e3', '#f0f7f0', '#fdf2f2'];
 const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
@@ -175,7 +174,6 @@ export default function MenuBuilderPage() {
   }, [tenantSettings]);
 
   const categories = (menu?.categories ?? []).filter((c: any) => (c.products ?? []).length > 0);
-  const selectedContacts = contactList.filter((c) => contacts[c.key]);
 
   function priceParts(p: any): { original?: string; price: string } | null {
     if (!showPrices) return null;
@@ -382,31 +380,6 @@ export default function MenuBuilderPage() {
                       )}
                       <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{venue.name}</div>
                       {venue.sub_title && <div style={{ fontStyle: 'italic', opacity: 0.7, fontSize: 13, marginTop: 2 }}>{venue.sub_title}</div>}
-                      {venue.address && <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>{venue.address}</div>}
-                      {selectedContacts.map((c) => (
-                        <div key={c.key} style={{ fontSize: 12, opacity: 0.85, marginTop: 3 }}>{c.value}</div>
-                      ))}
-
-                      {Array.isArray(venue.hours) && venue.hours.length === 7 && (
-                        <div style={{ marginTop: 14 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 5 }}>Çalışma Saatleri</div>
-                          {venue.hours.map((h: any, i: number) => (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '1px 0', fontWeight: h.today ? 700 : 400 }}>
-                              <span>{DAYS[i]}</span>
-                              <span style={{ color: h.closed ? '#c0392b' : undefined, fontStyle: h.closed ? 'italic' : undefined }}>
-                                {h.closed ? 'Kapalı' : `${h.open} - ${h.close}`}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {showWifi && venue.wifi_ssid && (
-                        <div style={{ marginTop: 12, fontSize: 11, opacity: 0.85 }}>
-                          <div>📶 {venue.wifi_ssid}</div>
-                          {venue.wifi_password && <div>🔒 {venue.wifi_password}</div>}
-                        </div>
-                      )}
                     </div>
 
                     {/* Categories */}
