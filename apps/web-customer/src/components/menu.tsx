@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
 import type { AllergenRef, Menu, MenuCategory, MenuModifier, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
 import { lineKey, useCart, type CartLine } from './cart';
+
+/** True when the owner hid all prices on the guest menu (menu display toggle). */
+const HidePricesCtx = createContext(false);
 
 export interface MenuLabels {
   kcal: string;
@@ -40,9 +43,8 @@ export function MenuView({ menu, labels, tableCode }: { menu: Menu; labels: Menu
   const props: ThemeProps = { menu, labels, tableCode, allergenMap, format, categories };
 
   const theme = menu.venue.theme ?? 'modern';
-  if (theme === 'classic') return <ClassicMenu {...props} />;
-  if (theme === 'flipbook') return <FlipbookMenu {...props} />;
-  return <ModernMenu {...props} />;
+  const inner = theme === 'classic' ? <ClassicMenu {...props} /> : theme === 'flipbook' ? <FlipbookMenu {...props} /> : <ModernMenu {...props} />;
+  return <HidePricesCtx.Provider value={menu.venue.show_prices === false}>{inner}</HidePricesCtx.Provider>;
 }
 
 /* Turn a stored handle/url into an absolute link (handles bare handles & @-prefixes). */
@@ -673,6 +675,7 @@ function ModernProduct({
   onOptions?: () => void;
   onDetail?: () => void;
 }) {
+  const hidePrices = useContext(HidePricesCtx);
   const n = product.nutrition;
   const img = product.images?.[0];
   const contains = (n?.allergens.contains ?? []).map((id) => allergenMap.get(id)?.name).filter(Boolean);
@@ -697,12 +700,14 @@ function ModernProduct({
               <span className="ml-1.5 rounded border border-red-500 px-1 align-middle text-[10px] font-bold text-red-600">18+</span>
             )}
           </h3>
-          <div className="flex shrink-0 items-center gap-1.5 font-extrabold text-ink">
-            {product.original_price != null && Number(product.original_price) > Number(product.price) && (
-              <span className="text-xs font-medium text-muted line-through">{format.format(Number(product.original_price))}</span>
-            )}
-            <span>{format.format(Number(product.price))}</span>
-          </div>
+          {!hidePrices && (
+            <div className="flex shrink-0 items-center gap-1.5 font-extrabold text-ink">
+              {product.original_price != null && Number(product.original_price) > Number(product.price) && (
+                <span className="text-xs font-medium text-muted line-through">{format.format(Number(product.original_price))}</span>
+              )}
+              <span>{format.format(Number(product.price))}</span>
+            </div>
+          )}
         </div>
         {product.description && <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted">{product.description}</p>}
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
@@ -917,6 +922,7 @@ function ProductDetailSheet({
   onOptions?: () => void;
   onClose: () => void;
 }) {
+  const hidePrices = useContext(HidePricesCtx);
   const n = product.nutrition;
   const img = product.images?.[0];
   const allergens = (n?.allergens.contains ?? []).map((id) => allergenMap.get(id)).filter(Boolean) as AllergenRef[];
@@ -1001,10 +1007,10 @@ function ProductDetailSheet({
           <div className="shrink-0 border-t border-line px-5 py-4">
             <div className="mb-2.5 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Fiyat</span>
-              {product.original_price != null && Number(product.original_price) > Number(product.price) && (
+              {!hidePrices && product.original_price != null && Number(product.original_price) > Number(product.price) && (
                 <span className="mr-1.5 text-sm font-medium text-muted line-through">{format.format(Number(product.original_price))}</span>
               )}
-              <span className="text-lg font-extrabold text-ink">{format.format(Number(product.price))}</span>
+              {!hidePrices && <span className="text-lg font-extrabold text-ink">{format.format(Number(product.price))}</span>}
             </div>
             {hasOptions && onOptions ? (
               <button type="button" onClick={onOptions} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-3 text-sm font-bold" style={{ color: '#ffffff' }}>
@@ -1100,7 +1106,7 @@ function ClassicMenu({ menu, labels, format, categories }: ThemeProps) {
                   <div className="min-w-0 flex-1 py-3 pr-4">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-display text-lg font-semibold text-ink">{p.name}</h3>
-                      <span className="shrink-0 font-display font-semibold text-brand-600">{format.format(Number(p.price))}</span>
+                      {menu.venue.show_prices !== false && <span className="shrink-0 font-display font-semibold text-brand-600">{format.format(Number(p.price))}</span>}
                     </div>
                     {p.description && <p className="mt-1 text-sm leading-relaxed text-muted">{p.description}</p>}
                     {p.nutrition && (
@@ -1147,7 +1153,7 @@ function FlipbookMenu({ menu, labels, format, categories }: ThemeProps) {
                     <div className="flex items-baseline gap-2">
                       <span className="font-display text-lg font-medium text-[#2b2620]">{p.name}</span>
                       <span className="mx-1 flex-1 translate-y-[-0.2em] border-b border-dotted border-[#b8ab93]" />
-                      <span className="font-display text-lg font-semibold text-[#2b2620]">{format.format(Number(p.price))}</span>
+                      {menu.venue.show_prices !== false && <span className="font-display text-lg font-semibold text-[#2b2620]">{format.format(Number(p.price))}</span>}
                     </div>
                     {p.description && <p className="mt-0.5 max-w-[85%] text-sm italic leading-snug text-[#8a7f6d]">{p.description}</p>}
                     {p.nutrition && <span className="text-[11px] text-[#b8ab93]">{Math.round(p.nutrition.kcal)} {labels.kcal}</span>}

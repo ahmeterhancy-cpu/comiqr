@@ -222,6 +222,27 @@ class MenuController extends Controller
         }
         unset($cat);
 
+        // Menu display toggles (owner customises what the guest QR menu shows).
+        $showDesc = (bool) ($settings['show_descriptions'] ?? true);
+        $showIng = (bool) ($settings['show_ingredients'] ?? true);
+        $showWifi = (bool) ($settings['show_wifi'] ?? true);
+        $hiddenContacts = array_flip((array) ($settings['hidden_contacts'] ?? []));
+        if (! $showDesc || ! $showIng) {
+            foreach ($categoriesPayload as &$catD) {
+                foreach ($catD['products'] as &$pD) {
+                    if (! $showDesc) {
+                        $pD['description'] = null;
+                    }
+                    if (! $showIng) {
+                        $pD['recipe'] = [];
+                    }
+                }
+                unset($pD);
+            }
+            unset($catD);
+        }
+        $contact = fn (string $key) => isset($hiddenContacts[$key]) ? null : ($settings[$key] ?? null);
+
         return [
             'venue' => [
                 'name' => $tenant->name,
@@ -241,18 +262,20 @@ class MenuController extends Controller
                 'address' => $settings['address'] ?? null,
                 'logo' => $settings['logo'] ?? null,
                 'cover' => $settings['cover'] ?? null,
-                // Contact + social + guest WiFi (all live in settings_json; shown only when set).
-                'email' => $settings['email'] ?? null,
-                'website' => $settings['website'] ?? null,
-                'phone' => $settings['phone'] ?? null,
-                'instagram' => $settings['instagram'] ?? null,
-                'facebook' => $settings['facebook'] ?? null,
-                'x' => $settings['x'] ?? null,
-                'tiktok' => $settings['tiktok'] ?? null,
-                'youtube' => $settings['youtube'] ?? null,
-                'whatsapp' => $settings['whatsapp'] ?? null,
-                'wifi_ssid' => $settings['wifi_ssid'] ?? null,
-                'wifi_password' => $settings['wifi_password'] ?? null,
+                // Contact + social + guest WiFi (settings_json; owner can hide any of them).
+                'email' => $contact('email'),
+                'website' => $contact('website'),
+                'phone' => $contact('phone'),
+                'instagram' => $contact('instagram'),
+                'facebook' => $contact('facebook'),
+                'x' => $contact('x'),
+                'tiktok' => $contact('tiktok'),
+                'youtube' => $contact('youtube'),
+                'whatsapp' => $contact('whatsapp'),
+                'wifi_ssid' => $showWifi ? ($settings['wifi_ssid'] ?? null) : null,
+                'wifi_password' => $showWifi ? ($settings['wifi_password'] ?? null) : null,
+                // Menu display toggle — hide all prices on the guest menu.
+                'show_prices' => (bool) ($settings['show_prices'] ?? true),
                 // Table service (call waiter / request bill) — owner can disable.
                 'allow_call_waiter' => \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_call_waiter'),
                 // "Add to cart" ordering available (plan unlocks it + at least one order channel on).

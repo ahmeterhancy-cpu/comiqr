@@ -213,6 +213,8 @@ export interface MenuVenue {
   theme?: 'classic' | 'flipbook' | 'modern';
   vertical?: 'restaurant' | 'hotel' | 'bar' | 'beach';
   happy_hour?: { active: boolean; percent: number };
+  /** Menu display toggle — when false, the guest menu hides all prices. */
+  show_prices?: boolean;
   rating?: number;
   reviews_count?: number;
   brand_color?: string | null;

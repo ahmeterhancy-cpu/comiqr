@@ -58,6 +58,13 @@ class RestaurantSettings
             'settings_json.delivery_charge' => ['sometimes', 'numeric', 'min:0'],
             'settings_json.order_notification' => ['sometimes', 'boolean'],
             'settings_json.allow_online_payment' => ['sometimes', 'boolean'],
+            // Menu display toggles (customer QR menu) — what the guest menu shows.
+            'settings_json.show_descriptions' => ['sometimes', 'boolean'],
+            'settings_json.show_ingredients' => ['sometimes', 'boolean'],
+            'settings_json.show_prices' => ['sometimes', 'boolean'],
+            'settings_json.show_wifi' => ['sometimes', 'boolean'],
+            'settings_json.hidden_contacts' => ['sometimes', 'nullable', 'array'],
+            'settings_json.hidden_contacts.*' => ['string', 'max:20'],
             'settings_json.theme' => ['sometimes', Rule::in(self::THEMES)],
             'settings_json.logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'settings_json.cover' => ['sometimes', 'nullable', 'string', 'max:2048'],

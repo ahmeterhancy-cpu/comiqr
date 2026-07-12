@@ -40,8 +40,54 @@ export default function MenuBuilderPage() {
   const [contacts, setContacts] = useState<Record<string, boolean>>({});
   const [device, setDevice] = useState<'phone' | 'tablet' | 'desktop'>('phone');
   const [reloadKey, setReloadKey] = useState(0);
+  const [hiddenInit, setHiddenInit] = useState<string[]>([]);
+  const [tenantSettings, setTenantSettings] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const slug = me?.tenant?.slug;
+
+  // Load the owner's current QR-menu display settings so the toggles reflect them.
+  useEffect(() => {
+    if (!ready) return;
+    api.getTenant().then((t: any) => {
+      const s = t?.settings ?? {};
+      setTenantSettings(s);
+      setShowDesc(s.show_descriptions ?? true);
+      setShowIng(s.show_ingredients ?? true);
+      setShowPrices(s.show_prices ?? true);
+      setShowWifi(s.show_wifi ?? true);
+      setHiddenInit(Array.isArray(s.hidden_contacts) ? s.hidden_contacts : []);
+      if (t?.locale_default) setLang(t.locale_default);
+    }).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
+  /** Persist the display toggles + contacts + language to the live QR menu. */
+  async function saveToQr() {
+    setSaving(true);
+    setSaved(false);
+    try {
+      const hidden = contactList.filter((c) => !contacts[c.key]).map((c) => c.key);
+      await api.updateTenant({
+        locale_default: lang,
+        settings_json: {
+          show_descriptions: showDesc,
+          show_ingredients: showIng,
+          show_prices: showPrices,
+          show_wifi: showWifi,
+          hidden_contacts: hidden,
+        },
+      } as any);
+      setSaved(true);
+      setReloadKey((k) => k + 1); // refresh the live QR preview
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      /* keep the form as-is on error */
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const load = useCallback(async () => {
     if (!slug) return;
@@ -80,23 +126,25 @@ export default function MenuBuilderPage() {
     ? `${CUSTOMER_URL}/v/${previewSlug}?${new URLSearchParams({ locale: lang, preview: '1' }).toString()}&_=${reloadKey}`
     : '';
 
-  // Available contact channels from the venue.
+  // Contact channels from the tenant settings (raw values — the menu payload hides
+  // some, so we read the source of truth here to keep them toggleable).
   const contactList = useMemo(() => {
+    const s = tenantSettings;
     const out: { key: string; label: string; value: string }[] = [];
-    if (venue.phone) out.push({ key: 'phone', label: 'Telefon', value: venue.phone });
-    if (venue.whatsapp) out.push({ key: 'whatsapp', label: 'WhatsApp', value: venue.whatsapp });
-    if (venue.email) out.push({ key: 'email', label: 'E-posta', value: venue.email });
-    if (venue.website) out.push({ key: 'website', label: 'Web', value: venue.website });
+    if (s.phone) out.push({ key: 'phone', label: 'Telefon', value: s.phone });
+    if (s.whatsapp) out.push({ key: 'whatsapp', label: 'WhatsApp', value: s.whatsapp });
+    if (s.email) out.push({ key: 'email', label: 'E-posta', value: s.email });
+    if (s.website) out.push({ key: 'website', label: 'Web', value: s.website });
     return out;
-  }, [venue.phone, venue.whatsapp, venue.email, venue.website]);
+  }, [tenantSettings]);
 
-  // Default all contacts on once the menu loads.
+  // Initialise contact checkboxes from the saved hidden list.
   useEffect(() => {
     if (contactList.length && Object.keys(contacts).length === 0) {
-      setContacts(Object.fromEntries(contactList.map((c) => [c.key, true])));
+      setContacts(Object.fromEntries(contactList.map((c) => [c.key, !hiddenInit.includes(c.key)])));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contactList]);
+  }, [contactList, hiddenInit]);
 
   const categories = (menu?.categories ?? []).filter((c: any) => (c.products ?? []).length > 0);
   const selectedContacts = contactList.filter((c) => contacts[c.key]);
@@ -125,6 +173,19 @@ export default function MenuBuilderPage() {
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* ---------- Left: settings ---------- */}
         <aside className="w-full shrink-0 space-y-5 lg:w-80">
+          {/* Save to the live QR menu */}
+          <button
+            type="button"
+            onClick={saveToQr}
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600 disabled:opacity-60"
+            style={{ color: '#ffffff' }}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-9" /></svg>
+            {saving ? 'Kaydediliyor…' : saved ? 'QR Menüye Kaydedildi' : 'QR Menüye Kaydet'}
+          </button>
+          <p className="-mt-2 px-1 text-[11px] text-muted">İçerik ve iletişim ayarları canlı QR menünüze uygulanır. (Tasarım/renk ayarları yalnızca PDF içindir.)</p>
+
           {/* Export */}
           <Section title="Dışa Aktarım">
             <div className="grid grid-cols-2 gap-2">
