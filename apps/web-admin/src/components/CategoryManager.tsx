@@ -23,12 +23,15 @@ export function CategoryManager({
   api,
   selectedId,
   onSelect,
+  onReorder,
   onChanged,
 }: {
   categories: Cat[];
   api: Api;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  /** New id order after a drag — lets the parent re-order its list (e.g. the product sections). */
+  onReorder?: (ids: number[]) => void;
   onChanged: () => void;
 }) {
   const [order, setOrder] = useState<Cat[]>(categories);
@@ -71,7 +74,9 @@ export function CategoryManager({
     const [moved] = cur.splice(fi, 1);
     cur.splice(ti, 0, moved);
     setOrder(cur);
-    api.reorderCategories(cur.map((c) => c.id)).catch(() => onChanged());
+    const ids = cur.map((c) => c.id);
+    onReorder?.(ids); // keep the product sections below in the same order
+    api.reorderCategories(ids).catch(() => onChanged());
   }
 
   return (

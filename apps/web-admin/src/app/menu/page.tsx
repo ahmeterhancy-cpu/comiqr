@@ -203,6 +203,9 @@ export default function MenuPage() {
             document.getElementById(`cat-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
           );
         }}
+        onReorder={(ids) =>
+          setCategories((prev) => ids.map((id) => prev.find((c) => c.id === id)).filter(Boolean) as any[])
+        }
         onChanged={load}
       />
 
