@@ -140,8 +140,11 @@ export function RecipeEditor({
           <h4 className="mb-2 text-sm font-semibold text-ink">Besin & Maliyet (otomatik)</h4>
           {nutrition ? (
             <div className="space-y-1.5 text-sm">
-              <Row label="Kalori" value={`${nutrition.kcal} kcal`} strong />
-              <Row label="Protein / Karb / Yağ" value={`${nutrition.macros.protein_g} / ${nutrition.macros.carb_g} / ${nutrition.macros.fat_g} g`} />
+              <Row label="Kalori" value={nutrition.kcal != null ? `${nutrition.kcal} kcal` : '—'} strong />
+              <Row
+                label="Protein / Karb / Yağ"
+                value={nutrition.macros ? `${nutrition.macros.protein_g} / ${nutrition.macros.carb_g} / ${nutrition.macros.fat_g} g` : '—'}
+              />
               <Row label="Maliyet / porsiyon" value={`₺${nutrition.cost_per_portion}`} />
               <Row label="Önerilen fiyat" value={nutrition.suggested_price ? `₺${nutrition.suggested_price}` : '—'} />
               <Row label="Marj" value={nutrition.margin_pct != null ? `%${nutrition.margin_pct}` : '—'} />
