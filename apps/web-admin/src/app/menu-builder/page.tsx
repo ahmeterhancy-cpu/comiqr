@@ -14,6 +14,12 @@ const LANGS: [string, string][] = [
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 const TEXT_COLORS = ['#111827', '#ffffff', '#4b5563', '#15803d', '#2563eb', '#7c3aed', '#ea580c', '#dc2626'];
 const PAGE_COLORS = ['#ffffff', '#f9fafb', '#f3f4f6', '#faf7f2', '#f7f7f4', '#fdf6e3', '#f0f7f0', '#fdf2f2'];
+const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
+const DEVICES: { key: 'phone' | 'tablet' | 'desktop'; label: string; w: number; h: number }[] = [
+  { key: 'phone', label: 'Telefon', w: 390, h: 720 },
+  { key: 'tablet', label: 'Tablet', w: 768, h: 820 },
+  { key: 'desktop', label: 'Masaüstü', w: 1024, h: 720 },
+];
 
 export default function MenuBuilderPage() {
   const { api, me, ready } = useApi();
@@ -32,7 +38,8 @@ export default function MenuBuilderPage() {
   const [pageColor, setPageColor] = useState('#ffffff');
   const [decoration, setDecoration] = useState<'none' | 'border' | 'double' | 'dotted'>('none');
   const [contacts, setContacts] = useState<Record<string, boolean>>({});
-  const [zoom, setZoom] = useState(0.55);
+  const [device, setDevice] = useState<'phone' | 'tablet' | 'desktop'>('phone');
+  const [reloadKey, setReloadKey] = useState(0);
 
   const slug = me?.tenant?.slug;
 
@@ -64,6 +71,14 @@ export default function MenuBuilderPage() {
     () => new Intl.NumberFormat(lang, { style: 'currency', currency, maximumFractionDigits: 2 }),
     [lang, currency],
   );
+
+  // Live QR-menu preview (right side) — the actual customer menu in a device frame.
+  const previewSlug = slug ?? venue.slug;
+  const dev = DEVICES.find((d) => d.key === device)!;
+  const frameScale = device === 'desktop' ? 0.86 : 1;
+  const previewUrl = previewSlug
+    ? `${CUSTOMER_URL}/v/${previewSlug}?${new URLSearchParams({ locale: lang, preview: '1' }).toString()}&_=${reloadKey}`
+    : '';
 
   // Available contact channels from the venue.
   const contactList = useMemo(() => {
@@ -197,25 +212,48 @@ export default function MenuBuilderPage() {
           </Section>
         </aside>
 
-        {/* ---------- Right: preview ---------- */}
+        {/* ---------- Right: live QR menu preview ---------- */}
         <div className="min-w-0 flex-1">
-          <div className="mb-3 flex items-center justify-center gap-2">
-            <button type="button" onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white" style={{ color: '#ffffff' }}>−</button>
-            <span className="w-14 text-center text-sm font-semibold text-muted">{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={() => setZoom((z) => Math.min(1.5, Math.round((z + 0.1) * 10) / 10))} className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white" style={{ color: '#ffffff' }}>+</button>
+          <div className="mb-3 flex flex-wrap items-center justify-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">QR Menü Önizleme</span>
+            <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+              {DEVICES.map((d) => (
+                <button key={d.key} type="button" onClick={() => setDevice(d.key)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${device === d.key ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={device === d.key ? { color: '#ffffff' } : undefined}>{d.label}</button>
+              ))}
+            </div>
+            <button type="button" onClick={() => setReloadKey((k) => k + 1)} title="Yenile" className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted transition hover:bg-canvas">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" /></svg>
+            </button>
           </div>
 
-          <div className="overflow-auto rounded-2xl bg-[#e7eaf0] p-6">
-            {loading ? (
-              <p className="py-20 text-center text-sm text-muted">Yükleniyor…</p>
+          <div className="grid min-h-[560px] place-items-center overflow-auto rounded-2xl bg-[#eef2f7] p-6">
+            {!previewUrl ? (
+              <p className="text-sm text-muted">Yükleniyor…</p>
             ) : (
-              <div className="mx-auto" style={{ width: 794 * zoom }}>
+              <div
+                className={`relative bg-black shadow-2xl ${device === 'phone' ? 'rounded-[2.2rem] p-2.5' : device === 'tablet' ? 'rounded-[1.6rem] p-3' : 'rounded-xl p-1.5'}`}
+                style={{ width: dev.w * frameScale + (device === 'phone' ? 20 : device === 'tablet' ? 24 : 12) }}
+              >
+                {device === 'phone' && <div className="absolute left-1/2 top-2.5 z-10 h-4 w-24 -translate-x-1/2 rounded-full bg-black" />}
+                <iframe
+                  key={previewUrl}
+                  src={previewUrl}
+                  title="QR Menü"
+                  className={`block bg-white ${device === 'phone' ? 'rounded-[1.7rem]' : device === 'tablet' ? 'rounded-[1rem]' : 'rounded-lg'}`}
+                  style={{ width: dev.w, height: dev.h, transform: `scale(${frameScale})`, transformOrigin: 'top left', border: 0, marginRight: dev.w * (1 - frameScale) * -1, marginBottom: dev.h * (1 - frameScale) * -1 }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Hidden printable sheet — only rendered when printing (İndir) */}
+        <div className="hidden print:block">
+          <div>
                 <div
                   id="menu-sheet"
                   style={{
                     width: 794,
-                    transform: `scale(${zoom})`,
-                    transformOrigin: 'top left',
                     background: pageColor,
                     color: textColor,
                     padding: '56px 52px',
@@ -320,8 +358,6 @@ export default function MenuBuilderPage() {
                     {venue.name} · ComiQR ile hazırlandı
                   </div>
                 </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
