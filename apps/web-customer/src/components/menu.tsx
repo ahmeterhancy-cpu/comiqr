@@ -47,7 +47,12 @@ export function MenuView({ menu, labels, tableCode }: { menu: Menu; labels: Menu
 
   // Owner-picked menu colours (Menu Builder) override the theme's text/background.
   const colorVars: Record<string, string> = {};
-  if (menu.venue.menu_text_color) colorVars['--color-ink'] = menu.venue.menu_text_color;
+  if (menu.venue.menu_text_color) {
+    // Drive both the primary and secondary text tokens so all copy takes the colour.
+    colorVars['--color-ink'] = menu.venue.menu_text_color;
+    colorVars['--color-muted'] = menu.venue.menu_text_color;
+    colorVars.color = menu.venue.menu_text_color;
+  }
   if (menu.venue.menu_page_color) {
     colorVars['--color-canvas'] = menu.venue.menu_page_color;
     colorVars.background = menu.venue.menu_page_color;
