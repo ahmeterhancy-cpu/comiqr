@@ -38,8 +38,9 @@ export default function MenuBuilderPage() {
   const [showBill, setShowBill] = useState(true);
   const [showSearch, setShowSearch] = useState(true);
   const [showAllergens, setShowAllergens] = useState(true);
-  const [columns, setColumns] = useState<1 | 2>(2);
-  const [priceRow, setPriceRow] = useState(false); // false = inline, true = different row
+  // PDF-only layout defaults (the "Tasarım" controls were removed; the PDF uses these).
+  const columns: 1 | 2 = 2;
+  const priceRow: boolean = false; // false = inline price, true = price on its own row
   const [textColor, setTextColor] = useState('#111827');
   const [pageColor, setPageColor] = useState('#ffffff');
   const [decoration, setDecoration] = useState<'none' | 'border' | 'double' | 'dotted'>('none');
@@ -211,7 +212,6 @@ export default function MenuBuilderPage() {
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-9" /></svg>
             {saving ? 'Kaydediliyor…' : saved ? 'QR Menüye Kaydedildi' : 'QR Menüye Kaydet'}
           </button>
-          <p className="-mt-2 px-1 text-[11px] text-muted">İçerik, iletişim ve renk ayarları canlı QR menünüze uygulanır. (Yerleşim, fiyat yerleşimi ve sayfa süsü yalnızca PDF içindir.)</p>
 
           {/* Export */}
           <Section title="Dışa Aktarım">
@@ -271,20 +271,6 @@ export default function MenuBuilderPage() {
               </div>
             </Section>
           )}
-
-          {/* Design */}
-          <Section title="Tasarım">
-            <div className="mb-1.5 text-xs font-medium text-muted">Yerleşim</div>
-            <div className="grid grid-cols-2 gap-2">
-              <Choice active={columns === 1} onClick={() => setColumns(1)} label="Tek Sütun" />
-              <Choice active={columns === 2} onClick={() => setColumns(2)} label="İki Sütun" />
-            </div>
-            <div className="mb-1.5 mt-3 text-xs font-medium text-muted">Fiyat Yerleşimi</div>
-            <div className="grid grid-cols-2 gap-2">
-              <Choice active={!priceRow} onClick={() => setPriceRow(false)} label="Satır İçi" />
-              <Choice active={priceRow} onClick={() => setPriceRow(true)} label="Alt Satır" />
-            </div>
-          </Section>
 
           {/* Colors */}
           <Section title="Renkler">
@@ -515,13 +501,6 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
         <span className={`h-5 w-5 rounded-full bg-white shadow transition ${value ? 'translate-x-5' : ''}`} />
       </button>
     </div>
-  );
-}
-function Choice({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
-  return (
-    <button type="button" onClick={onClick} className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${active ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-muted hover:border-brand-300'}`}>
-      {label}
-    </button>
   );
 }
 function Swatches({ colors, value, onChange }: { colors: string[]; value: string; onChange: (v: string) => void }) {
