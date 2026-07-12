@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AdminShell } from '@/components/AdminShell';
+import { ThemeThumb } from '@/components/ThemeThumb';
 import { useApi } from '@/lib/useApi';
+
+/** Görsel menü temaları — kaynak: RestaurantSettings::THEMES (classic/flipbook/modern). */
+const THEMES: { key: 'modern' | 'classic' | 'flipbook'; name: string; tag: string | null; desc: string }[] = [
+  { key: 'modern', name: 'Modern', tag: 'Varsayılan', desc: 'Kart tabanlı çağdaş düzen: ürün fotoğrafı, kalori rozetleri ve yapışkan kategori navigasyonu.' },
+  { key: 'classic', name: 'Classic', tag: null, desc: 'Görsel odaklı: üstte kapak görseli + yuvarlak logo + hakkında metni, her üründe fotoğraf.' },
+  { key: 'flipbook', name: 'Flipbook', tag: null, desc: 'Basılı menü / dergi estetiği: krem zemin, serif başlıklar, noktalı fiyat çizgileri, fotoğrafsız.' },
+];
 
 const LANGS: [string, string][] = [
   ['tr', 'Türkçe'],
@@ -37,6 +45,7 @@ export default function MenuBuilderPage() {
   const [showBill, setShowBill] = useState(true);
   const [showSearch, setShowSearch] = useState(true);
   const [showAllergens, setShowAllergens] = useState(true);
+  const [theme, setTheme] = useState<'modern' | 'classic' | 'flipbook'>('modern');
   // PDF-only layout defaults (the "Tasarım" controls were removed; the PDF uses these).
   const columns: 1 | 2 = 2;
   const priceRow: boolean = false; // false = inline price, true = price on its own row
@@ -70,6 +79,7 @@ export default function MenuBuilderPage() {
       setShowBill(s.show_bill ?? s.allow_call_waiter ?? true);
       setShowSearch(s.show_search ?? true);
       setShowAllergens(s.show_allergens ?? true);
+      if (s.theme) setTheme(s.theme);
       if (s.menu_text_color) setTextColor(s.menu_text_color);
       if (s.menu_page_color) setPageColor(s.menu_page_color);
       const hidden: string[] = Array.isArray(s.hidden_contacts) ? s.hidden_contacts : [];
@@ -88,7 +98,7 @@ export default function MenuBuilderPage() {
     const id = setTimeout(() => saveToQr(), 600);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showDesc, showIng, showPrices, showWifi, showHours, showCart, showCallWaiter, showBill, showSearch, showAllergens, contacts, lang, textColor, pageColor]);
+  }, [showDesc, showIng, showPrices, showWifi, showHours, showCart, showCallWaiter, showBill, showSearch, showAllergens, theme, contacts, lang, textColor, pageColor]);
 
   /** Persist the display toggles + contacts + language to the live QR menu. */
   async function saveToQr() {
@@ -109,6 +119,7 @@ export default function MenuBuilderPage() {
           show_bill: showBill,
           show_search: showSearch,
           show_allergens: showAllergens,
+          theme,
           hidden_contacts: hidden,
           menu_text_color: textColor,
           menu_page_color: pageColor,
@@ -158,7 +169,7 @@ export default function MenuBuilderPage() {
   const dev = DEVICES.find((d) => d.key === device)!;
   const frameScale = device === 'desktop' ? 0.86 : 1;
   const previewUrl = previewSlug
-    ? `${CUSTOMER_URL}/v/${previewSlug}?${new URLSearchParams({ locale: lang, preview: '1' }).toString()}&_=${reloadKey}`
+    ? `${CUSTOMER_URL}/v/${previewSlug}?${new URLSearchParams({ locale: lang, preview: '1', theme }).toString()}&_=${reloadKey}`
     : '';
 
   // Contact channels from the tenant settings (raw values — the menu payload hides
@@ -245,6 +256,35 @@ export default function MenuBuilderPage() {
             <Toggle label="Hesap iste" value={showBill} onChange={setShowBill} />
             <Toggle label="Arama" value={showSearch} onChange={setShowSearch} />
             <Toggle label="Alerjen filtreleri" value={showAllergens} onChange={setShowAllergens} />
+          </Section>
+
+          {/* Menu theme */}
+          <Section title="Menü Tasarımı">
+            <p className="-mt-1 mb-3 text-[11px] text-muted">Müşterilerin gördüğü QR menünün görsel düzeni. Seçim canlı önizlemeye anında yansır.</p>
+            <div className="grid grid-cols-3 gap-2">
+              {THEMES.map((t) => {
+                const active = theme === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTheme(t.key)}
+                    title={t.desc}
+                    aria-pressed={active}
+                    className={`flex flex-col rounded-xl border p-2 text-left transition ${active ? 'border-brand-500 ring-2 ring-brand-500/30' : 'border-line hover:border-brand-300'}`}
+                  >
+                    <div className="overflow-hidden rounded-md border border-line/60">
+                      <ThemeThumb theme={t.key} />
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <span className={`text-xs font-bold ${active ? 'text-brand-700' : 'text-ink'}`}>{t.name}</span>
+                      {t.tag && <span className="rounded-full bg-brand-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-brand-600">{t.tag}</span>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted">{THEMES.find((t) => t.key === theme)?.desc}</p>
           </Section>
 
           {/* Contacts */}
