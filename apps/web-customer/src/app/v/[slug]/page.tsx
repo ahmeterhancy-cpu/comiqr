@@ -14,11 +14,12 @@ export default async function VenueMenuPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ theme?: string }>;
+  searchParams: Promise<{ theme?: string; locale?: string; preview?: string }>;
 }) {
   const { slug } = await params;
-  const { theme } = await searchParams;
-  const menu = await fetchMenu(slug);
+  const { theme, locale, preview } = await searchParams;
+  // The builder preview passes ?preview=1 so changes show immediately (no ISR cache).
+  const menu = await fetchMenu(slug, { locale, fresh: !!preview });
 
   if (!menu) {
     notFound();

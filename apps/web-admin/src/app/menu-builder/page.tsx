@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AdminShell } from '@/components/AdminShell';
 import { useApi } from '@/lib/useApi';
 
@@ -40,7 +40,6 @@ export default function MenuBuilderPage() {
   const [contacts, setContacts] = useState<Record<string, boolean>>({});
   const [device, setDevice] = useState<'phone' | 'tablet' | 'desktop'>('phone');
   const [reloadKey, setReloadKey] = useState(0);
-  const [hiddenInit, setHiddenInit] = useState<string[]>([]);
   const [tenantSettings, setTenantSettings] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -57,11 +56,23 @@ export default function MenuBuilderPage() {
       setShowIng(s.show_ingredients ?? true);
       setShowPrices(s.show_prices ?? true);
       setShowWifi(s.show_wifi ?? true);
-      setHiddenInit(Array.isArray(s.hidden_contacts) ? s.hidden_contacts : []);
+      const hidden: string[] = Array.isArray(s.hidden_contacts) ? s.hidden_contacts : [];
+      const keys = ['phone', 'whatsapp', 'email', 'website'].filter((k) => s[k]);
+      setContacts(Object.fromEntries(keys.map((k) => [k, !hidden.includes(k)])));
       if (t?.locale_default) setLang(t.locale_default);
+      setTimeout(() => (inited.current = true), 0); // enable auto-save after the initial sync
     }).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
+
+  // Auto-apply content/contact/language changes to the live QR menu (debounced).
+  const inited = useRef(false);
+  useEffect(() => {
+    if (!inited.current) return;
+    const id = setTimeout(() => saveToQr(), 600);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDesc, showIng, showPrices, showWifi, contacts, lang]);
 
   /** Persist the display toggles + contacts + language to the live QR menu. */
   async function saveToQr() {
@@ -137,14 +148,6 @@ export default function MenuBuilderPage() {
     if (s.website) out.push({ key: 'website', label: 'Web', value: s.website });
     return out;
   }, [tenantSettings]);
-
-  // Initialise contact checkboxes from the saved hidden list.
-  useEffect(() => {
-    if (contactList.length && Object.keys(contacts).length === 0) {
-      setContacts(Object.fromEntries(contactList.map((c) => [c.key, !hiddenInit.includes(c.key)])));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contactList, hiddenInit]);
 
   const categories = (menu?.categories ?? []).filter((c: any) => (c.products ?? []).length > 0);
   const selectedContacts = contactList.filter((c) => contacts[c.key]);
