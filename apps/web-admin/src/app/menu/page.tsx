@@ -60,6 +60,10 @@ export default function MenuPage() {
     await api.updateProduct(p.id, { price });
     load();
   }
+  async function saveName(p: any, name: string) {
+    await api.updateProduct(p.id, { name });
+    load();
+  }
 
   /** Drag-and-drop reorder of products WITHIN one category; persists sort order. */
   function onProductDrop(categoryId: number, overId: number) {
@@ -287,10 +291,10 @@ export default function MenuPage() {
                         ) : (
                           <span className="grid h-10 w-10 place-items-center rounded-lg bg-canvas text-xs text-muted">—</span>
                         )}
-                        <div className="min-w-0">
-                          <span className="font-medium text-ink">{p.name}</span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <NameEdit product={p} onSave={(name) => saveName(p, name)} />
                           {p.nutrition && (
-                            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">
+                            <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">
                               {Math.round(p.nutrition.kcal)} kcal
                             </span>
                           )}
@@ -355,6 +359,48 @@ export default function MenuPage() {
         ))}
       </div>
     </AdminShell>
+  );
+}
+
+/** Inline, click-to-edit product name. Saves on blur/Enter when changed (non-empty). */
+function NameEdit({ product, onSave }: { product: any; onSave: (name: string) => void | Promise<void> }) {
+  const [val, setVal] = useState<string>(product.name);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setVal(product.name);
+  }, [product.name]);
+
+  async function commit() {
+    const name = val.trim();
+    if (!name || name === product.name) {
+      setVal(product.name);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(name);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <input
+      type="text"
+      value={val}
+      disabled={saving}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        if (e.key === 'Escape') {
+          setVal(product.name);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      title="Ürün adını düzenle"
+      className={`w-44 max-w-full truncate rounded-md border border-transparent bg-transparent px-1.5 py-0.5 font-medium text-ink outline-none transition hover:border-line focus:w-56 focus:border-brand-400 ${saving ? 'opacity-50' : ''}`}
+    />
   );
 }
 
