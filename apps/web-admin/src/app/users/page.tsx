@@ -11,6 +11,7 @@ const ROLES: { value: StaffRole; label: string; desc: string }[] = [
   { value: 'manager', label: 'Yönetici', desc: 'Menü, sipariş, personel ve ayarlar' },
   { value: 'waiter', label: 'Garson', desc: 'Masa, sipariş ve servis çağrıları' },
   { value: 'kitchen', label: 'Mutfak', desc: 'Mutfak ekranı (KDS)' },
+  { value: 'cashier', label: 'Kasa (POS)', desc: 'Yalnızca POS terminali — ayrı giriş' },
 ];
 
 const ROLE_CLS: Record<string, string> = {
@@ -18,9 +19,10 @@ const ROLE_CLS: Record<string, string> = {
   manager: 'bg-sky-100 text-sky-700',
   waiter: 'bg-amber-100 text-amber-700',
   kitchen: 'bg-violet-100 text-violet-700',
+  cashier: 'bg-emerald-100 text-emerald-700',
 };
 
-const ROLE_LABEL: Record<string, string> = { owner: 'Sahip', manager: 'Yönetici', waiter: 'Garson', kitchen: 'Mutfak' };
+const ROLE_LABEL: Record<string, string> = { owner: 'Sahip', manager: 'Yönetici', waiter: 'Garson', kitchen: 'Mutfak', cashier: 'Kasa' };
 
 export default function UsersPage() {
   const { api, me, ready } = useApi();

@@ -11,8 +11,9 @@ namespace App\Enums;
  *   manager     — operational management; oversees waiter + kitchen
  *   waiter      — floor operations
  *   kitchen     — KDS / prep
+ *   cashier     — POS terminal only (build/settle orders); no menu/panel access
  *
- * waiter and kitchen are siblings: neither satisfies the other.
+ * waiter, kitchen and cashier are siblings: none satisfies another.
  */
 enum Role: string
 {
@@ -21,11 +22,12 @@ enum Role: string
     case Manager = 'manager';
     case Waiter = 'waiter';
     case Kitchen = 'kitchen';
+    case Cashier = 'cashier';
 
     /** Roles selectable when inviting tenant staff (superadmin excluded). */
     public static function tenantRoles(): array
     {
-        return [self::Owner, self::Manager, self::Waiter, self::Kitchen];
+        return [self::Owner, self::Manager, self::Waiter, self::Kitchen, self::Cashier];
     }
 
     public function label(): string
@@ -36,6 +38,7 @@ enum Role: string
             self::Manager => 'Manager',
             self::Waiter => 'Waiter',
             self::Kitchen => 'Kitchen',
+            self::Cashier => 'Cashier',
         };
     }
 

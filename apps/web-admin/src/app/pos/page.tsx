@@ -43,7 +43,8 @@ const productImg = (p: any): string | undefined => p?.images?.[0] ?? p?.image_pa
  */
 export default function PosPage() {
   const router = useRouter();
-  const { api, me, ready } = useApi();
+  const { api, me, ready } = useApi('/pos/login');
+  const isCashier = me?.user.role === 'cashier';
   const currency = (me?.tenant as any)?.currency ?? 'TRY';
   const venueName = (me?.tenant as any)?.name ?? 'ComiQR';
   const vertical = (me?.tenant as any)?.settings?.vertical ?? 'restaurant';
@@ -376,19 +377,23 @@ export default function PosPage() {
           >
             {shift ? `🟢 Vardiya · ${money(shift.expected_cash, currency)}` : '🔒 Kasa Kapalı'}
           </button>
-          <button onClick={() => setShowKds(true)} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
-            🍳 Mutfak
-          </button>
+          {!isCashier && (
+            <button onClick={() => setShowKds(true)} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
+              🍳 Mutfak
+            </button>
+          )}
           <button onClick={() => loadRecall('open')} className="relative rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
             📋 Adisyonlar
             {liveAlert && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-slate-900" />}
           </button>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
-          >
-            ← Panel
-          </button>
+          {!isCashier && (
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
+            >
+              ← Panel
+            </button>
+          )}
         </div>
       </header>
 

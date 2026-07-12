@@ -254,8 +254,22 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/reviews/{review}/status', [ReviewController::class, 'setStatus']);
         });
 
-        // --- Staff POS (Faz 3 — ultra POS) — waiter+, ordering plan ---
-        Route::middleware(['role:waiter', 'plan:ordering'])->group(function () {
+        // --- POS terminal reads — the cashier role has no menu-editing rights but
+        // needs to read the product grid, categories, branches and tables to build a
+        // ticket. Registered AFTER the manager group so these GETs resolve here
+        // (Laravel keeps the last-registered route per method+URI); gated
+        // role:manager,cashier — waiter stays out (matching prior behaviour) and it is
+        // deliberately NOT plan-gated so a manager on any plan keeps read access. ---
+        Route::middleware('role:manager,cashier')->group(function () {
+            Route::get('admin/products', [ProductController::class, 'index']);
+            Route::get('admin/products/{product}', [ProductController::class, 'show']);
+            Route::get('admin/categories', [CategoryController::class, 'index']);
+            Route::get('admin/branches', [BranchController::class, 'index']);
+            Route::get('admin/tables', [TableController::class, 'index']);
+        });
+
+        // --- Staff POS (Faz 3 — ultra POS) — waiter+ or cashier, ordering plan ---
+        Route::middleware(['role:waiter,cashier', 'plan:ordering'])->group(function () {
             Route::get('admin/pos/orders', [PosController::class, 'orders']);
             Route::post('admin/pos/orders', [PosController::class, 'order'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/items', [PosController::class, 'addItems'])->middleware('throttle:120,1');

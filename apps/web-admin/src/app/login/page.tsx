@@ -31,7 +31,8 @@ export default function LoginPage() {
         device_name: 'web-admin',
       });
       setSession(res.token, res.user);
-      router.replace('/dashboard');
+      // Cashiers have no panel access — send them straight to the POS terminal.
+      router.replace(res.user.role === 'cashier' ? '/pos' : '/dashboard');
     } catch (err) {
       if (err instanceof ApiError) {
         const flat: Record<string, string> = {};

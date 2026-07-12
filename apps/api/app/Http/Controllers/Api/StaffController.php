@@ -20,7 +20,7 @@ use Illuminate\Validation\Rule;
 class StaffController extends Controller
 {
     /** Roles an owner/manager may assign to staff (never owner/superadmin). */
-    private const ASSIGNABLE = ['manager', 'waiter', 'kitchen'];
+    private const ASSIGNABLE = ['manager', 'waiter', 'kitchen', 'cashier'];
 
     public function __construct(protected TenantManager $tenants) {}
 

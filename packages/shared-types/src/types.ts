@@ -5,7 +5,7 @@
 
 export type Locale = 'tr' | 'en' | 'de' | 'ru' | 'ar';
 
-export type Role = 'owner' | 'manager' | 'waiter' | 'kitchen' | 'superadmin';
+export type Role = 'owner' | 'manager' | 'waiter' | 'kitchen' | 'cashier' | 'superadmin';
 
 export interface ApiEnvelope<T> {
   data?: T;
@@ -99,7 +99,7 @@ export interface MeResult {
   tenant: Tenant | null;
 }
 
-export type StaffRole = 'manager' | 'waiter' | 'kitchen';
+export type StaffRole = 'manager' | 'waiter' | 'kitchen' | 'cashier';
 
 export interface StaffUser {
   id: number;

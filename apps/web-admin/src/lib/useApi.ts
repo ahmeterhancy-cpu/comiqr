@@ -8,10 +8,12 @@ import { API_URL } from './api';
 import { clearSession, getToken } from './auth';
 
 /**
- * Auth-guarded API client for panel pages. Redirects to /login when there is no
- * token, and loads the current user/tenant once.
+ * Auth-guarded API client for panel pages. Redirects to the login page when
+ * there is no token, and loads the current user/tenant once. Pass `loginPath`
+ * to send unauthenticated users to a context-specific login (e.g. the POS
+ * terminal uses '/pos/login' instead of the panel '/login').
  */
-export function useApi() {
+export function useApi(loginPath = '/login') {
   const router = useRouter();
   const [me, setMe] = useState<MeResult | null>(null);
   const [ready, setReady] = useState(false);
@@ -24,7 +26,7 @@ export function useApi() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      router.replace('/login');
+      router.replace(loginPath);
       return;
     }
     clientRef.current!.withToken(token);
@@ -36,9 +38,9 @@ export function useApi() {
       })
       .catch(() => {
         clearSession();
-        router.replace('/login');
+        router.replace(loginPath);
       });
-  }, [router]);
+  }, [router, loginPath]);
 
   return { api: clientRef.current!, me, ready };
 }
