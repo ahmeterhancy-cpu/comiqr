@@ -528,7 +528,11 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
       ))}
 
       {menu.venue.powered_by !== false && (
-        <p className="mt-8 text-center text-xs text-muted">Powered by ComiQR</p>
+        <div className="mt-8 flex items-center justify-center gap-1.5 text-xs text-muted">
+          <span>Powered by</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/comiqr-logo.png" alt="ComiQR" className="h-4 w-auto opacity-80" />
+        </div>
       )}
 
       {/* Cart bar */}
