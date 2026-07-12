@@ -55,6 +55,7 @@ export default function MenuBuilderPage() {
   const [contacts, setContacts] = useState<Record<string, boolean>>({});
   const [device, setDevice] = useState<'phone' | 'tablet' | 'desktop'>('phone');
   const [reloadKey, setReloadKey] = useState(0);
+  const [previewLoading, setPreviewLoading] = useState(true);
   const [tab, setTab] = useState<'qr' | 'pdf'>('qr');
   const [zoom, setZoom] = useState(0.55);
   const [tenantSettings, setTenantSettings] = useState<any>({});
@@ -171,6 +172,12 @@ export default function MenuBuilderPage() {
   const previewUrl = previewSlug
     ? `${CUSTOMER_URL}/v/${previewSlug}?${new URLSearchParams({ locale: lang, preview: '1', theme }).toString()}&_=${reloadKey}`
     : '';
+
+  // Show a spinner over the preview until the iframe finishes loading (a cold
+  // dev-server compile can take a moment); reset it on every preview URL change.
+  useEffect(() => {
+    if (previewUrl) setPreviewLoading(true);
+  }, [previewUrl]);
 
   // Contact channels from the tenant settings (raw values — the menu payload hides
   // some, so we read the source of truth here to keep them toggleable).
@@ -360,7 +367,7 @@ export default function MenuBuilderPage() {
 
           <div className={`grid min-h-[560px] place-items-center overflow-auto rounded-2xl bg-[#eef2f7] p-6 ${tab === 'qr' ? '' : 'hidden'}`}>
             {!previewUrl ? (
-              <p className="text-sm text-muted">Yükleniyor…</p>
+              <PreviewSpinner />
             ) : (
               <div
                 className={`relative bg-black shadow-2xl ${device === 'phone' ? 'rounded-[2.2rem] p-2.5' : device === 'tablet' ? 'rounded-[1.6rem] p-3' : 'rounded-xl p-1.5'}`}
@@ -371,9 +378,15 @@ export default function MenuBuilderPage() {
                   key={previewUrl}
                   src={previewUrl}
                   title="QR Menü"
+                  onLoad={() => setPreviewLoading(false)}
                   className={`block bg-white ${device === 'phone' ? 'rounded-[1.7rem]' : device === 'tablet' ? 'rounded-[1rem]' : 'rounded-lg'}`}
                   style={{ width: dev.w, height: dev.h, transform: `scale(${frameScale})`, transformOrigin: 'top left', border: 0, marginRight: dev.w * (1 - frameScale) * -1, marginBottom: dev.h * (1 - frameScale) * -1 }}
                 />
+                {previewLoading && (
+                  <div className={`absolute z-20 grid place-items-center bg-white ${device === 'phone' ? 'inset-2.5 rounded-[1.7rem]' : device === 'tablet' ? 'inset-3 rounded-[1rem]' : 'inset-1.5 rounded-lg'}`}>
+                    <PreviewSpinner />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -513,6 +526,14 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
       <button type="button" onClick={() => onChange(!value)} className={`flex h-6 w-11 items-center rounded-full p-0.5 transition ${value ? 'bg-emerald-500' : 'bg-line'}`}>
         <span className={`h-5 w-5 rounded-full bg-white shadow transition ${value ? 'translate-x-5' : ''}`} />
       </button>
+    </div>
+  );
+}
+function PreviewSpinner() {
+  return (
+    <div className="flex flex-col items-center gap-3 text-muted">
+      <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-line border-t-brand-500" />
+      <span className="text-xs">Yükleniyor…</span>
     </div>
   );
 }
