@@ -209,6 +209,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::apiResource('admin/categories', CategoryController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 
+            Route::post('admin/products/reorder', [ProductController::class, 'reorder']);
             Route::apiResource('admin/products', ProductController::class)
                 ->only(['index', 'show', 'store', 'update', 'destroy']);
             Route::post('admin/products/{product}/media', [ProductMediaController::class, 'upload']);

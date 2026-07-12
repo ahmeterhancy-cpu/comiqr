@@ -29,6 +29,22 @@ class ProductController extends Controller
         return response()->json(['data' => ProductResource::collection($products)]);
     }
 
+    /** POST /admin/products/reorder — persist drag-and-drop order (sort = index). */
+    public function reorder(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        // Tenant scope guarantees we only touch this tenant's products.
+        foreach (array_values($data['ids']) as $index => $id) {
+            Product::where('id', $id)->update(['sort' => $index]);
+        }
+
+        return response()->json(['data' => ['ok' => true]]);
+    }
+
     public function show(string $product): JsonResponse
     {
         $model = Product::with(['variants', 'nutritionSummary', 'modifierGroups.modifiers'])->findOrFail($product);

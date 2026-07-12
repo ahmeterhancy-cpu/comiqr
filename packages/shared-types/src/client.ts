@@ -291,6 +291,10 @@ export class ApiClient {
   reorderCategories(ids: number[]): Promise<{ ok: boolean }> {
     return this.request('/admin/categories/reorder', { method: 'POST', body: JSON.stringify({ ids }) });
   }
+  /** Persist a new drag-and-drop product order within a category (ids, first = top). */
+  reorderProducts(ids: number[]): Promise<{ ok: boolean }> {
+    return this.request('/admin/products/reorder', { method: 'POST', body: JSON.stringify({ ids }) });
+  }
   /** Upload a category cover image; returns its URL to store as image_path. */
   uploadCategoryImage(file: File): Promise<{ url: string }> {
     const form = new FormData();

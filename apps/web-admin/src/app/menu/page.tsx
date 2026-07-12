@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AdminShell } from '@/components/AdminShell';
 import { CategoryManager } from '@/components/CategoryManager';
 import { RecipeEditor } from '@/components/RecipeEditor';
@@ -22,6 +22,8 @@ export default function MenuPage() {
   const [busy, setBusy] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedCat, setSelectedCat] = useState<number | null>(null);
+  const [dragProdId, setDragProdId] = useState<number | null>(null);
+  const draggingProdRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     const [cats, prods, ings, mods] = await Promise.all([
@@ -53,6 +55,32 @@ export default function MenuPage() {
   async function toggleAge(p: any) {
     await api.updateProduct(p.id, { age_restricted: !p.age_restricted });
     load();
+  }
+  async function savePrice(p: any, price: number) {
+    await api.updateProduct(p.id, { price });
+    load();
+  }
+
+  /** Drag-and-drop reorder of products WITHIN one category; persists sort order. */
+  function onProductDrop(categoryId: number, overId: number) {
+    const from = draggingProdRef.current;
+    draggingProdRef.current = null;
+    setDragProdId(null);
+    if (from == null || from === overId) return;
+    const inCat = products.filter((p) => p.category_id === categoryId);
+    const fi = inCat.findIndex((p) => p.id === from);
+    const ti = inCat.findIndex((p) => p.id === overId);
+    if (fi < 0 || ti < 0) return; // only reorder inside the same category
+    const reordered = [...inCat];
+    const [moved] = reordered.splice(fi, 1);
+    reordered.splice(ti, 0, moved);
+    // Rewrite this category's slots in the flat list, keeping other categories put.
+    // Computed as a plain value (not a setState updater) so it stays pure — a
+    // mutable counter inside an updater would double-run under StrictMode.
+    let k = 0;
+    const next = products.map((p) => (p.category_id === categoryId ? reordered[k++] : p));
+    setProducts(next);
+    api.reorderProducts(reordered.map((p) => p.id)).catch(() => load());
   }
   async function uploadImage(p: any, file: File) {
     setBusy(p.id);
@@ -226,9 +254,33 @@ export default function MenuPage() {
               {products
                 .filter((p) => p.category_id === c.id)
                 .map((p) => (
-                  <li key={p.id} className="py-2.5">
+                  <li
+                    key={p.id}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => onProductDrop(c.id, p.id)}
+                    className={`py-2.5 transition ${dragProdId === p.id ? 'opacity-40' : ''}`}
+                  >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          draggable
+                          onDragStart={() => {
+                            draggingProdRef.current = p.id;
+                            setDragProdId(p.id);
+                          }}
+                          onDragEnd={() => {
+                            draggingProdRef.current = null;
+                            setDragProdId(null);
+                          }}
+                          title="Sürükleyerek sırala"
+                          className="shrink-0 cursor-grab select-none text-muted/60 hover:text-muted active:cursor-grabbing"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                            <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+                            <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+                            <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+                          </svg>
+                        </span>
                         {p.images?.[0] ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={p.images[0]} alt={p.name} className="h-10 w-10 rounded-lg object-cover" />
@@ -254,7 +306,7 @@ export default function MenuPage() {
                             onChange={(e) => e.target.files?.[0] && uploadImage(p, e.target.files[0])}
                           />
                         </label>
-                        <span className="text-sm font-semibold text-ink">₺{Number(p.price).toFixed(0)}</span>
+                        <PriceEdit product={p} onSave={(price) => savePrice(p, price)} />
                         <button
                           onClick={() => toggleProduct(p)}
                           className={`rounded-md px-2 py-0.5 text-xs font-medium ${
@@ -303,6 +355,52 @@ export default function MenuPage() {
         ))}
       </div>
     </AdminShell>
+  );
+}
+
+/** Inline, click-to-edit product price. Saves on blur/Enter when changed. */
+function PriceEdit({ product, onSave }: { product: any; onSave: (price: number) => void | Promise<void> }) {
+  const original = Number(product.price).toFixed(0);
+  const [val, setVal] = useState(original);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setVal(Number(product.price).toFixed(0));
+  }, [product.price]);
+
+  async function commit() {
+    const n = Number(val);
+    if (!Number.isFinite(n) || n < 0 || n === Number(product.price)) {
+      setVal(Number(product.price).toFixed(0));
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(n);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 transition ${saving ? 'opacity-50' : 'border-line focus-within:border-brand-400'}`}
+      title="Fiyatı düzenle"
+    >
+      <span className="text-xs text-muted">₺</span>
+      <input
+        type="number"
+        min={0}
+        inputMode="numeric"
+        value={val}
+        disabled={saving}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        }}
+        className="w-12 bg-transparent text-right text-sm font-semibold text-ink outline-none"
+      />
+    </div>
   );
 }
 
