@@ -218,6 +218,13 @@ export interface MenuVenue {
   /** Owner-picked menu colours (Menu Builder) — override the theme's text/background. */
   menu_text_color?: string | null;
   menu_page_color?: string | null;
+  /** Menu Builder element toggles (default on). */
+  show_hours?: boolean;
+  show_search?: boolean;
+  show_allergens?: boolean;
+  show_cart?: boolean;
+  show_call_waiter?: boolean;
+  show_bill?: boolean;
   rating?: number;
   reviews_count?: number;
   brand_color?: string | null;

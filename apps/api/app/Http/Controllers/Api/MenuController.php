@@ -279,6 +279,13 @@ class MenuController extends Controller
                 // Custom menu colours (owner set in the Menu Builder).
                 'menu_text_color' => $settings['menu_text_color'] ?? null,
                 'menu_page_color' => $settings['menu_page_color'] ?? null,
+                // Menu Builder element toggles (default on; call-waiter/bill fall back to allow_call_waiter).
+                'show_hours' => (bool) ($settings['show_hours'] ?? true),
+                'show_search' => (bool) ($settings['show_search'] ?? true),
+                'show_allergens' => (bool) ($settings['show_allergens'] ?? true),
+                'show_cart' => (bool) ($settings['show_cart'] ?? true),
+                'show_call_waiter' => (bool) ($settings['show_call_waiter'] ?? $settings['allow_call_waiter'] ?? true),
+                'show_bill' => (bool) ($settings['show_bill'] ?? $settings['allow_call_waiter'] ?? true),
                 // Table service (call waiter / request bill) — owner can disable.
                 'allow_call_waiter' => \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_call_waiter'),
                 // "Add to cart" ordering available (plan unlocks it + at least one order channel on).

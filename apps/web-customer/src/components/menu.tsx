@@ -261,7 +261,7 @@ function WifiChip({ v }: { v: Menu['venue'] }) {
 const SERVICE_API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
 
 /** Call waiter / request bill from the slug menu — customer picks their table code. */
-function ServiceCall({ slug, tables }: { slug: string; tables: string[] }) {
+function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: { slug: string; tables: string[]; showCallWaiter?: boolean; showBill?: boolean }) {
   const [mode, setMode] = useState<null | 'call-waiter' | 'request-bill'>(null);
   const [table, setTable] = useState<string>(tables[0] ?? '');
   const [busy, setBusy] = useState(false);
@@ -292,21 +292,25 @@ function ServiceCall({ slug, tables }: { slug: string; tables: string[] }) {
 
   return (
     <>
-      <div className="mx-auto mt-3 grid max-w-sm grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => { setMode('call-waiter'); setError(null); }}
-          className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
-        >
-          <BellIcon /> Garson Çağır
-        </button>
-        <button
-          type="button"
-          onClick={() => { setMode('request-bill'); setError(null); }}
-          className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
-        >
-          <ReceiptIcon /> Hesap İste
-        </button>
+      <div className={`mx-auto mt-3 grid max-w-sm gap-2 ${showCallWaiter && showBill ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {showCallWaiter && (
+          <button
+            type="button"
+            onClick={() => { setMode('call-waiter'); setError(null); }}
+            className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+          >
+            <BellIcon /> Garson Çağır
+          </button>
+        )}
+        {showBill && (
+          <button
+            type="button"
+            onClick={() => { setMode('request-bill'); setError(null); }}
+            className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
+          >
+            <ReceiptIcon /> Hesap İste
+          </button>
+        )}
       </div>
       {done && <p className="mx-auto mt-2 max-w-sm text-center text-xs font-semibold text-emerald-600">✓ {done}</p>}
 
@@ -491,7 +495,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h1 className="text-xl font-extrabold tracking-tight text-ink">{v.name}</h1>
                 {v.open_now != null &&
-                  (hasWeekHours(v.hours) ? (
+                  (hasWeekHours(v.hours) && v.show_hours !== false ? (
                     <button
                       type="button"
                       onClick={() => setHoursOpen((o) => !o)}
@@ -519,9 +523,11 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
               )}
             </div>
           </div>
-          {hoursOpen && hasWeekHours(v.hours) && <WeekHours hours={v.hours!} loc={loc} openNow={v.open_now} />}
+          {hoursOpen && hasWeekHours(v.hours) && v.show_hours !== false && <WeekHours hours={v.hours!} loc={loc} openNow={v.open_now} />}
           <WifiChip v={v} />
-          {v.allow_call_waiter && v.slug && (menu.tables?.length ?? 0) > 0 && <ServiceCall slug={v.slug} tables={menu.tables!} />}
+          {(v.show_call_waiter !== false || v.show_bill !== false) && v.slug && (menu.tables?.length ?? 0) > 0 && (
+            <ServiceCall slug={v.slug} tables={menu.tables!} showCallWaiter={v.show_call_waiter !== false} showBill={v.show_bill !== false} />
+          )}
         </div>
       </header>
 
@@ -563,30 +569,36 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
       )}
 
       {/* Search + allergen filters */}
-      <div className="flex flex-col gap-2 px-4 pb-1 pt-3 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3-3" strokeLinecap="round" />
-          </svg>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
-            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} aria-label="Temizle" className="shrink-0 text-muted transition hover:text-ink">
-              ✕
-            </button>
+      {(v.show_search !== false || v.show_allergens !== false) && (
+        <div className="flex flex-col gap-2 px-4 pb-1 pt-3 sm:flex-row sm:items-center">
+          {v.show_search !== false && (
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3-3" strokeLinecap="round" />
+              </svg>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search..."
+                className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} aria-label="Temizle" className="shrink-0 text-muted transition hover:text-ink">
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+          {v.show_allergens !== false && (
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+              <FilterChip active={fAllergen} onClick={() => setFAllergen((x) => !x)} tone="red">⚠️ Allergen</FilterChip>
+              <FilterChip active={fGluten} onClick={() => setFGluten((x) => !x)} tone="amber">🌾 Gluten</FilterChip>
+              <FilterChip active={fLactose} onClick={() => setFLactose((x) => !x)} tone="sky">🥛 Lactose</FilterChip>
+            </div>
           )}
         </div>
-        <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
-          <FilterChip active={fAllergen} onClick={() => setFAllergen((x) => !x)} tone="red">⚠️ Allergen</FilterChip>
-          <FilterChip active={fGluten} onClick={() => setFGluten((x) => !x)} tone="amber">🌾 Gluten</FilterChip>
-          <FilterChip active={fLactose} onClick={() => setFLactose((x) => !x)} tone="sky">🥛 Lactose</FilterChip>
-        </div>
-      </div>
+      )}
 
       {visible.length === 0 ? (
         <p className="px-5 py-16 text-center text-sm text-muted">
@@ -606,7 +618,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
                     allergenMap={allergenMap}
                     labels={labels}
                     format={format}
-                    canOrder={!!v.can_order}
+                    canOrder={!!v.can_order && v.show_cart !== false}
                     baseQty={cart.qtyOfKey(baseKey)}
                     productQty={cart.qtyOfProduct(p.id)}
                     onQuick={(q) =>
@@ -630,7 +642,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
           format={format}
           allergenMap={allergenMap}
           labels={labels}
-          canOrder={!!v.can_order}
+          canOrder={!!v.can_order && v.show_cart !== false}
           baseQty={cart.qtyOfKey(lineKey(detailProduct.id, undefined, []))}
           productQty={cart.qtyOfProduct(detailProduct.id)}
           onQuick={(q) =>

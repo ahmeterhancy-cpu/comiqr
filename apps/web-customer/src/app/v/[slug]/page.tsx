@@ -50,7 +50,7 @@ export default async function VenueMenuPage({
       <MenuView menu={menu} labels={labels} />
       {menu.venue?.ai_chat && <MenuChat slug={slug} />}
       {/* Cart shortcut — only when the "add to cart" ordering module is enabled. */}
-      {menu.venue?.can_order && (
+      {menu.venue?.can_order && menu.venue?.show_cart !== false && (
         <CartFab slug={slug} currency={menu.venue.currency} locale={menu.venue.locale_default} />
       )}
     </>

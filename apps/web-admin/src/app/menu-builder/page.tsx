@@ -32,6 +32,12 @@ export default function MenuBuilderPage() {
   const [showIng, setShowIng] = useState(true);
   const [showPrices, setShowPrices] = useState(true);
   const [showWifi, setShowWifi] = useState(true);
+  const [showHours, setShowHours] = useState(true);
+  const [showCart, setShowCart] = useState(true);
+  const [showCallWaiter, setShowCallWaiter] = useState(true);
+  const [showBill, setShowBill] = useState(true);
+  const [showSearch, setShowSearch] = useState(true);
+  const [showAllergens, setShowAllergens] = useState(true);
   const [columns, setColumns] = useState<1 | 2>(2);
   const [priceRow, setPriceRow] = useState(false); // false = inline, true = different row
   const [textColor, setTextColor] = useState('#111827');
@@ -58,6 +64,12 @@ export default function MenuBuilderPage() {
       setShowIng(s.show_ingredients ?? true);
       setShowPrices(s.show_prices ?? true);
       setShowWifi(s.show_wifi ?? true);
+      setShowHours(s.show_hours ?? true);
+      setShowCart(s.show_cart ?? true);
+      setShowCallWaiter(s.show_call_waiter ?? s.allow_call_waiter ?? true);
+      setShowBill(s.show_bill ?? s.allow_call_waiter ?? true);
+      setShowSearch(s.show_search ?? true);
+      setShowAllergens(s.show_allergens ?? true);
       if (s.menu_text_color) setTextColor(s.menu_text_color);
       if (s.menu_page_color) setPageColor(s.menu_page_color);
       const hidden: string[] = Array.isArray(s.hidden_contacts) ? s.hidden_contacts : [];
@@ -76,7 +88,7 @@ export default function MenuBuilderPage() {
     const id = setTimeout(() => saveToQr(), 600);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showDesc, showIng, showPrices, showWifi, contacts, lang, textColor, pageColor]);
+  }, [showDesc, showIng, showPrices, showWifi, showHours, showCart, showCallWaiter, showBill, showSearch, showAllergens, contacts, lang, textColor, pageColor]);
 
   /** Persist the display toggles + contacts + language to the live QR menu. */
   async function saveToQr() {
@@ -91,6 +103,12 @@ export default function MenuBuilderPage() {
           show_ingredients: showIng,
           show_prices: showPrices,
           show_wifi: showWifi,
+          show_hours: showHours,
+          show_cart: showCart,
+          show_call_waiter: showCallWaiter,
+          show_bill: showBill,
+          show_search: showSearch,
+          show_allergens: showAllergens,
           hidden_contacts: hidden,
           menu_text_color: textColor,
           menu_page_color: pageColor,
@@ -223,6 +241,12 @@ export default function MenuBuilderPage() {
             <Toggle label="İçindekileri göster" value={showIng} onChange={setShowIng} />
             <Toggle label="Fiyatları göster" value={showPrices} onChange={setShowPrices} />
             <Toggle label="WiFi göster" value={showWifi} onChange={setShowWifi} />
+            <Toggle label="Çalışma saatleri" value={showHours} onChange={setShowHours} />
+            <Toggle label="Sepete ekle / sepet" value={showCart} onChange={setShowCart} />
+            <Toggle label="Garson çağır" value={showCallWaiter} onChange={setShowCallWaiter} />
+            <Toggle label="Hesap iste" value={showBill} onChange={setShowBill} />
+            <Toggle label="Arama" value={showSearch} onChange={setShowSearch} />
+            <Toggle label="Alerjen filtreleri" value={showAllergens} onChange={setShowAllergens} />
           </Section>
 
           {/* Contacts */}
