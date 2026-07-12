@@ -268,7 +268,7 @@ export default function MenuBuilderPage() {
           {/* Menu theme */}
           <Section title="Menü Tasarımı">
             <p className="-mt-1 mb-3 text-[11px] text-muted">Müşterilerin gördüğü QR menünün görsel düzeni. Seçim canlı önizlemeye anında yansır.</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-2">
               {THEMES.map((t) => {
                 const active = theme === t.key;
                 return (
@@ -276,22 +276,26 @@ export default function MenuBuilderPage() {
                     key={t.key}
                     type="button"
                     onClick={() => setTheme(t.key)}
-                    title={t.desc}
                     aria-pressed={active}
-                    className={`flex flex-col rounded-xl border p-2 text-left transition ${active ? 'border-brand-500 ring-2 ring-brand-500/30' : 'border-line hover:border-brand-300'}`}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-2 text-left transition ${active ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30' : 'border-line hover:border-brand-300'}`}
                   >
-                    <div className="overflow-hidden rounded-md border border-line/60">
+                    <div className="w-10 shrink-0 overflow-hidden rounded-md border border-line/60">
                       <ThemeThumb theme={t.key} />
                     </div>
-                    <div className="mt-1.5 flex items-center gap-1">
-                      <span className={`text-xs font-bold ${active ? 'text-brand-700' : 'text-ink'}`}>{t.name}</span>
-                      {t.tag && <span className="rounded-full bg-brand-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-brand-600">{t.tag}</span>}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-sm font-bold ${active ? 'text-brand-700' : 'text-ink'}`}>{t.name}</span>
+                        {t.tag && <span className="rounded-full bg-brand-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-brand-600">{t.tag}</span>}
+                        {active && (
+                          <svg viewBox="0 0 24 24" className="ml-auto h-4 w-4 shrink-0 text-brand-600" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-9" /></svg>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-[11px] leading-snug text-muted">{t.desc}</p>
                     </div>
                   </button>
                 );
               })}
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-muted">{THEMES.find((t) => t.key === theme)?.desc}</p>
           </Section>
 
           {/* Contacts */}
