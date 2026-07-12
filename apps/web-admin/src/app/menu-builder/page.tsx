@@ -40,6 +40,8 @@ export default function MenuBuilderPage() {
   const [contacts, setContacts] = useState<Record<string, boolean>>({});
   const [device, setDevice] = useState<'phone' | 'tablet' | 'desktop'>('phone');
   const [reloadKey, setReloadKey] = useState(0);
+  const [tab, setTab] = useState<'qr' | 'pdf'>('qr');
+  const [zoom, setZoom] = useState(0.55);
   const [tenantSettings, setTenantSettings] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -279,18 +281,32 @@ export default function MenuBuilderPage() {
         {/* ---------- Right: live QR menu preview ---------- */}
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center justify-center gap-3">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted">QR Menü Önizleme</span>
-            <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
-              {DEVICES.map((d) => (
-                <button key={d.key} type="button" onClick={() => setDevice(d.key)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${device === d.key ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={device === d.key ? { color: '#ffffff' } : undefined}>{d.label}</button>
+            <div className="inline-flex rounded-xl border border-line bg-surface p-0.5">
+              {(['qr', 'pdf'] as const).map((t) => (
+                <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-lg px-4 py-1.5 text-xs font-bold transition ${tab === t ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={tab === t ? { color: '#ffffff' } : undefined}>{t === 'qr' ? 'QR Menü' : 'PDF'}</button>
               ))}
             </div>
-            <button type="button" onClick={() => setReloadKey((k) => k + 1)} title="Yenile" className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted transition hover:bg-canvas">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" /></svg>
-            </button>
+            {tab === 'qr' ? (
+              <>
+                <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+                  {DEVICES.map((d) => (
+                    <button key={d.key} type="button" onClick={() => setDevice(d.key)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${device === d.key ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={device === d.key ? { color: '#ffffff' } : undefined}>{d.label}</button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setReloadKey((k) => k + 1)} title="Yenile" className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted transition hover:bg-canvas">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" /></svg>
+                </button>
+              </>
+            ) : (
+              <div className="inline-flex items-center gap-2">
+                <button type="button" onClick={() => setZoom((z) => Math.max(0.35, Math.round((z - 0.1) * 10) / 10))} className="grid h-7 w-7 place-items-center rounded-lg bg-ink text-white" style={{ color: '#ffffff' }}>−</button>
+                <span className="w-12 text-center text-xs font-semibold text-muted">{Math.round(zoom * 100)}%</span>
+                <button type="button" onClick={() => setZoom((z) => Math.min(1, Math.round((z + 0.1) * 10) / 10))} className="grid h-7 w-7 place-items-center rounded-lg bg-ink text-white" style={{ color: '#ffffff' }}>+</button>
+              </div>
+            )}
           </div>
 
-          <div className="grid min-h-[560px] place-items-center overflow-auto rounded-2xl bg-[#eef2f7] p-6">
+          <div className={`grid min-h-[560px] place-items-center overflow-auto rounded-2xl bg-[#eef2f7] p-6 ${tab === 'qr' ? '' : 'hidden'}`}>
             {!previewUrl ? (
               <p className="text-sm text-muted">Yükleniyor…</p>
             ) : (
@@ -309,15 +325,16 @@ export default function MenuBuilderPage() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Hidden printable sheet — only rendered when printing (İndir) */}
-        <div className="hidden print:block">
-          <div>
+          {/* PDF preview — visible on the PDF tab, printed on İndir either way */}
+          <div className={tab === 'pdf' ? 'overflow-auto rounded-2xl bg-[#e7eaf0] p-6' : 'hidden print:block'}>
+          <div className="mx-auto" style={tab === 'pdf' ? { width: 794 * zoom } : undefined}>
                 <div
                   id="menu-sheet"
                   style={{
                     width: 794,
+                    transform: tab === 'pdf' ? `scale(${zoom})` : undefined,
+                    transformOrigin: 'top left',
                     background: pageColor,
                     color: textColor,
                     padding: '56px 52px',
@@ -422,6 +439,7 @@ export default function MenuBuilderPage() {
                     {venue.name} · ComiQR ile hazırlandı
                   </div>
                 </div>
+          </div>
           </div>
         </div>
       </div>
