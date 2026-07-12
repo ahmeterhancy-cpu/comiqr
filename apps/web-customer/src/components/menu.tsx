@@ -44,7 +44,21 @@ export function MenuView({ menu, labels, tableCode }: { menu: Menu; labels: Menu
 
   const theme = menu.venue.theme ?? 'modern';
   const inner = theme === 'classic' ? <ClassicMenu {...props} /> : theme === 'flipbook' ? <FlipbookMenu {...props} /> : <ModernMenu {...props} />;
-  return <HidePricesCtx.Provider value={menu.venue.show_prices === false}>{inner}</HidePricesCtx.Provider>;
+
+  // Owner-picked menu colours (Menu Builder) override the theme's text/background.
+  const colorVars: Record<string, string> = {};
+  if (menu.venue.menu_text_color) colorVars['--color-ink'] = menu.venue.menu_text_color;
+  if (menu.venue.menu_page_color) {
+    colorVars['--color-canvas'] = menu.venue.menu_page_color;
+    colorVars.background = menu.venue.menu_page_color;
+  }
+  const hasColors = Object.keys(colorVars).length > 0;
+
+  return (
+    <HidePricesCtx.Provider value={menu.venue.show_prices === false}>
+      {hasColors ? <div style={{ ...(colorVars as any), minHeight: '100vh' }}>{inner}</div> : inner}
+    </HidePricesCtx.Provider>
+  );
 }
 
 /* Turn a stored handle/url into an absolute link (handles bare handles & @-prefixes). */

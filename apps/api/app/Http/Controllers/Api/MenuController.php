@@ -276,6 +276,9 @@ class MenuController extends Controller
                 'wifi_password' => $showWifi ? ($settings['wifi_password'] ?? null) : null,
                 // Menu display toggle — hide all prices on the guest menu.
                 'show_prices' => (bool) ($settings['show_prices'] ?? true),
+                // Custom menu colours (owner set in the Menu Builder).
+                'menu_text_color' => $settings['menu_text_color'] ?? null,
+                'menu_page_color' => $settings['menu_page_color'] ?? null,
                 // Table service (call waiter / request bill) — owner can disable.
                 'allow_call_waiter' => \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_call_waiter'),
                 // "Add to cart" ordering available (plan unlocks it + at least one order channel on).

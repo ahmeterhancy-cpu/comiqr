@@ -215,6 +215,9 @@ export interface MenuVenue {
   happy_hour?: { active: boolean; percent: number };
   /** Menu display toggle — when false, the guest menu hides all prices. */
   show_prices?: boolean;
+  /** Owner-picked menu colours (Menu Builder) — override the theme's text/background. */
+  menu_text_color?: string | null;
+  menu_page_color?: string | null;
   rating?: number;
   reviews_count?: number;
   brand_color?: string | null;

@@ -58,6 +58,8 @@ export default function MenuBuilderPage() {
       setShowIng(s.show_ingredients ?? true);
       setShowPrices(s.show_prices ?? true);
       setShowWifi(s.show_wifi ?? true);
+      if (s.menu_text_color) setTextColor(s.menu_text_color);
+      if (s.menu_page_color) setPageColor(s.menu_page_color);
       const hidden: string[] = Array.isArray(s.hidden_contacts) ? s.hidden_contacts : [];
       const keys = ['phone', 'whatsapp', 'email', 'website'].filter((k) => s[k]);
       setContacts(Object.fromEntries(keys.map((k) => [k, !hidden.includes(k)])));
@@ -74,7 +76,7 @@ export default function MenuBuilderPage() {
     const id = setTimeout(() => saveToQr(), 600);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showDesc, showIng, showPrices, showWifi, contacts, lang]);
+  }, [showDesc, showIng, showPrices, showWifi, contacts, lang, textColor, pageColor]);
 
   /** Persist the display toggles + contacts + language to the live QR menu. */
   async function saveToQr() {
@@ -90,6 +92,8 @@ export default function MenuBuilderPage() {
           show_prices: showPrices,
           show_wifi: showWifi,
           hidden_contacts: hidden,
+          menu_text_color: textColor,
+          menu_page_color: pageColor,
         },
       } as any);
       setSaved(true);
@@ -189,7 +193,7 @@ export default function MenuBuilderPage() {
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-9" /></svg>
             {saving ? 'Kaydediliyor…' : saved ? 'QR Menüye Kaydedildi' : 'QR Menüye Kaydet'}
           </button>
-          <p className="-mt-2 px-1 text-[11px] text-muted">İçerik ve iletişim ayarları canlı QR menünüze uygulanır. (Tasarım/renk ayarları yalnızca PDF içindir.)</p>
+          <p className="-mt-2 px-1 text-[11px] text-muted">İçerik, iletişim ve renk ayarları canlı QR menünüze uygulanır. (Yerleşim, fiyat yerleşimi ve sayfa süsü yalnızca PDF içindir.)</p>
 
           {/* Export */}
           <Section title="Dışa Aktarım">
