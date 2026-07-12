@@ -3,7 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { MenuView } from '@/components/menu';
 import { MenuChat } from '@/components/menu-chat';
 import { CartFab } from '@/components/cart';
-import { fetchMenu } from '@/lib/menu';
+import { MenuUnavailable } from '@/components/menu-unavailable';
+import { fetchMenuResult } from '@/lib/menu';
 
 /**
  * Public venue menu by slug (M1/M2 payoff — live nutrition on the customer PWA).
@@ -14,16 +15,23 @@ export default async function VenueMenuPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ theme?: string; locale?: string; preview?: string }>;
+  searchParams: Promise<{ theme?: string; locale?: string; preview?: string; r?: string }>;
 }) {
   const { slug } = await params;
-  const { theme, locale, preview } = await searchParams;
+  const { theme, locale, preview, r } = await searchParams;
   // The builder preview passes ?preview=1 so changes show immediately (no ISR cache).
-  const menu = await fetchMenu(slug, { locale, fresh: !!preview });
+  const result = await fetchMenuResult(slug, { locale, fresh: !!preview });
 
-  if (!menu) {
+  // A genuine missing venue is a real 404; a transient failure (rate-limit / blip)
+  // shows a soft, auto-retrying state instead of an alarming "page not found".
+  if (result.status === 'not-found') {
     notFound();
   }
+  if (result.status === 'unavailable') {
+    const attempt = Number.parseInt(r ?? '0', 10);
+    return <MenuUnavailable attempt={Number.isFinite(attempt) ? attempt : 0} />;
+  }
+  const menu = result.menu;
 
   // ?theme=classic|flipbook|modern previews a layout without changing settings.
   if (theme && ['classic', 'flipbook', 'modern'].includes(theme)) {
