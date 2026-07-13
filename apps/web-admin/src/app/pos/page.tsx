@@ -96,10 +96,12 @@ export default function PosPage() {
 
   const load = useCallback(async () => {
     const stored = getActiveBranchId();
+    // Fail soft: a transient 403/network error (or a tenant-less session) must not
+    // crash the terminal — the views just stay empty and the guard redirects if needed.
     const [ps, cs, ts, bs] = await Promise.all([
-      api.adminProducts(),
-      api.adminCategories(),
-      api.adminTables(),
+      api.adminProducts().catch(() => [] as any[]),
+      api.adminCategories().catch(() => [] as any[]),
+      api.adminTables().catch(() => [] as any[]),
       api.adminBranches().catch(() => [] as any[]),
     ]);
     // Validate the stored branch against the tenant's real branches so a stale or
@@ -115,6 +117,11 @@ export default function PosPage() {
   useEffect(() => {
     if (ready) load();
   }, [ready, load]);
+
+  // The POS is tenant-scoped — a superadmin (no tenant) can't operate the terminal.
+  useEffect(() => {
+    if (ready && me && !me.tenant) router.replace('/superadmin');
+  }, [ready, me, router]);
 
   // Live recall via Reverb (M6/M10): new orders / status changes on this branch
   // refresh the open Adisyonlar drawer, or flag the button. Degrades gracefully to
