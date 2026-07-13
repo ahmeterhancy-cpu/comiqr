@@ -92,8 +92,9 @@ export default function MenuPage() {
     setNotice(null);
     try {
       // Shrink before upload so large phone photos don't hit the server's
-      // upload_max_filesize (commonly 2 MB) and fail silently.
-      const optimized = await compressImage(file);
+      // upload_max_filesize (commonly 2 MB) and fail silently. Product images
+      // are photos → JPEG for the smallest file.
+      const optimized = await compressImage(file, { format: 'jpeg' });
       if (optimized.size > 4 * 1024 * 1024) {
         setNotice('Görsel çok büyük (4 MB üstü). Lütfen daha küçük bir görsel seçin.');
         return;

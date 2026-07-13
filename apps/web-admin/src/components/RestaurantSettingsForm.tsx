@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button, Card, Input } from '@/components/ui';
 import { ThemeThumb } from '@/components/ThemeThumb';
+import { compressImage } from '@/lib/image';
 
 type Settings = Record<string, any>;
 
@@ -147,7 +148,13 @@ export function RestaurantSettingsForm({
     setUploading(type);
     setError(null);
     try {
-      const res = await onUpload(type, file);
+      // Shrink big uploads before they hit the server's upload_max_filesize.
+      // Logo → PNG (keep transparency, 512px); cover → JPEG (1500px wide).
+      const optimized =
+        type === 'logo'
+          ? await compressImage(file, { maxSize: 512, format: 'png' })
+          : await compressImage(file, { maxSize: 1500, format: 'jpeg' });
+      const res = await onUpload(type, optimized);
       if (type === 'logo') setLogo(res.url);
       else setCover(res.url);
     } catch {

@@ -10,12 +10,23 @@
  */
 export async function compressImage(
   file: File,
-  { maxSize = 1600, quality = 0.82, maxBytes = 1_500_000 }: { maxSize?: number; quality?: number; maxBytes?: number } = {},
+  {
+    maxSize = 1600,
+    quality = 0.82,
+    maxBytes = 1_500_000,
+    format = 'auto',
+  }: { maxSize?: number; quality?: number; maxBytes?: number; format?: 'jpeg' | 'png' | 'auto' } = {},
 ): Promise<File> {
   if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
     return file;
   }
-  // Already small and reasonably sized — no point re-encoding.
+  // 'auto' keeps PNG sources as PNG so logos/graphics don't lose transparency;
+  // everything else (photos) becomes JPEG for a much smaller file.
+  const asPng = format === 'png' || (format === 'auto' && file.type === 'image/png');
+  const outType = asPng ? 'image/png' : 'image/jpeg';
+  const outExt = asPng ? '.png' : '.jpg';
+
+  // Already small and within the dimension cap — no point re-encoding.
   if (file.size <= maxBytes) {
     try {
       const bmp = await createImageBitmap(file);
@@ -49,9 +60,11 @@ export async function compressImage(
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
 
-  const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+  const blob: Blob | null = await new Promise((resolve) =>
+    canvas.toBlob(resolve, outType, asPng ? undefined : quality),
+  );
   if (!blob) return file;
 
-  const name = file.name.replace(/\.(png|webp|jpeg|jpg|heic|heif)$/i, '') + '.jpg';
-  return new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified });
+  const name = file.name.replace(/\.(png|webp|jpeg|jpg|heic|heif)$/i, '') + outExt;
+  return new File([blob], name, { type: outType, lastModified: file.lastModified });
 }
