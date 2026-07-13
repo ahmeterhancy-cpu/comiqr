@@ -96,6 +96,13 @@ class AppServiceProvider extends ServiceProvider
                     ->by($request->query('tenant') ?: $request->route('qrToken') ?: $request->header('X-Tenant') ?: $request->ip());
             }
 
+            // Media are public, cacheable static assets — a single menu page pulls
+            // dozens of images at once (logo + covers + every product photo), so a
+            // 120/min budget 429s the whole page. Give media GETs a wide ceiling.
+            if ($request->isMethod('GET') && $request->is('v1/media/*')) {
+                return Limit::perMinute(3000)->by($request->ip());
+            }
+
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });
 
