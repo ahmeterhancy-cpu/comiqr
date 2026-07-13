@@ -173,6 +173,21 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
     setCurrentName(getUser()?.name ?? '');
   }, []);
 
+  // The cashier role is POS-only — it must never reach the admin panel. Bounce
+  // to the POS terminal (fast path from the cached user, then confirm via me()).
+  useEffect(() => {
+    if (getUser()?.role === 'cashier') {
+      router.replace('/pos');
+      return;
+    }
+    createApi(getToken())
+      .me()
+      .then((m: any) => {
+        if (m?.user?.role === 'cashier') router.replace('/pos');
+      })
+      .catch(() => undefined);
+  }, [router]);
+
   function returnToSuper() {
     if (returnToImpersonator()) window.location.href = '/superadmin';
   }
