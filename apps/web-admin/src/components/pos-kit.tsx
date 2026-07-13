@@ -269,6 +269,8 @@ export function PaymentModal({
   const [redeemMsg, setRedeemMsg] = useState<string | null>(null);
   const [showItemSplit, setShowItemSplit] = useState(false);
   const [selItems, setSelItems] = useState<number[]>([]);
+  const [method, setMethod] = useState<'cash' | 'card' | 'room'>('cash');
+  const [tab, setTab] = useState<'full' | 'split'>('full');
 
   const grand = Number(order.grand_total);
   const paid = Number(order.paid_total ?? 0);
@@ -340,149 +342,162 @@ export function PaymentModal({
     }
   }
 
+  async function onComplete() {
+    if (method === 'room') return chargeRoom();
+    return tender(method);
+  }
+
   const quick = [outstanding, Math.ceil(outstanding / 50) * 50, Math.ceil(outstanding / 100) * 100, 200, 500].filter(
     (v, i, a) => v > 0 && a.indexOf(v) === i,
   );
+  const methods = [
+    { key: 'cash' as const, label: 'Nakit', icon: '💵', show: true },
+    { key: 'card' as const, label: 'Kart', icon: '💳', show: true },
+    { key: 'room' as const, label: canRoomCharge ? 'Odaya Yaz' : 'Açık Hesap', icon: '🧾', show: canRoomCharge },
+  ].filter((m) => m.show);
 
   return (
-    <Modal title="Ödeme" onClose={onClose} wide>
-      <div className="grid gap-5 sm:grid-cols-2">
-        {/* Left: summary + quick cash */}
-        <div>
-          <div className="rounded-2xl border border-line bg-canvas p-4">
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-muted">Kalan</span>
-              <span className="text-3xl font-black text-ink">{money(outstanding, currency)}</span>
+    <Modal title="Ödeme Al" onClose={onClose}>
+      <div className="mx-auto w-full max-w-md">
+        {/* Order + total */}
+        <div className="mb-4 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted">🧾 Sipariş #{order.id}</span>
+          <span className="text-2xl font-black text-brand-600">{money(outstanding, currency)}</span>
+        </div>
+
+        {/* Tabs: full / split */}
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setTab('full')}
+            className={`rounded-xl py-2.5 text-sm font-bold transition ${tab === 'full' ? 'bg-brand-500 text-white' : 'bg-canvas text-muted hover:text-ink'}`}
+            style={tab === 'full' ? { color: '#ffffff' } : undefined}
+          >
+            Tam Ödeme
+          </button>
+          <button
+            onClick={() => setTab('split')}
+            className={`rounded-xl py-2.5 text-sm font-bold transition ${tab === 'split' ? 'bg-slate-900 text-white' : 'bg-canvas text-muted hover:text-ink'}`}
+            style={tab === 'split' ? { color: '#ffffff' } : undefined}
+          >
+            Böl
+          </button>
+        </div>
+
+        {/* Payment methods */}
+        <div className={`mb-4 grid gap-2 ${methods.length >= 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {methods.map((m) => (
+            <button
+              key={m.key}
+              onClick={() => setMethod(m.key)}
+              className={`flex flex-col items-center gap-1 rounded-xl border py-3 text-xs font-semibold transition ${
+                method === m.key ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-200' : 'border-line text-muted hover:border-brand-300'
+              }`}
+            >
+              <span className="text-lg">{m.icon}</span>
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Amount display */}
+        <div className="mb-3 rounded-xl border border-line px-4 py-3 text-center text-2xl font-black text-ink">
+          {amount ? money(amount, currency) : <span className="text-muted/40">{money(0, currency)}</span>}
+        </div>
+
+        {/* Totals */}
+        <div className="mb-3 space-y-1 text-sm">
+          <div className="flex justify-between text-muted"><span>Toplam</span><span className="font-semibold text-ink">{money(grand, currency)}</span></div>
+          <div className="flex justify-between text-muted"><span>Ödenen</span><span>{money(paid, currency)}</span></div>
+          <div className="flex justify-between font-semibold text-red-600"><span>Kalan</span><span>{money(outstanding, currency)}</span></div>
+          {change > 0 && (
+            <div className="flex justify-between font-semibold text-emerald-600"><span>Para üstü</span><span>{money(change, currency)}</span></div>
+          )}
+        </div>
+
+        {/* Split helpers */}
+        {tab === 'split' && (
+          <div className="mb-3 rounded-xl bg-canvas p-2.5 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-muted">Eşit böl:</span>
+              {[2, 3, 4].map((n) => (
+                <button key={n} onClick={() => setAmount(String(round2(outstanding / n)))} className="rounded-lg border border-line bg-white px-2.5 py-1 font-semibold text-ink hover:border-brand-400">
+                  {n} kişi
+                </button>
+              ))}
             </div>
-            {paid > 0 && (
-              <div className="mt-1 flex justify-between text-xs text-muted">
-                <span>Toplam {money(grand, currency)}</span>
-                <span>Ödenen {money(paid, currency)}</span>
+            {liveItems.length > 1 && (
+              <div className="mt-2">
+                <button onClick={() => setShowItemSplit((v) => !v)} className="font-semibold text-brand-600">🍽️ Ürüne göre böl</button>
+                {showItemSplit && (
+                  <div className="mt-1.5 max-h-32 space-y-1 overflow-y-auto rounded-lg border border-line bg-white p-2">
+                    {liveItems.map((i: any) => (
+                      <label key={i.id} className="flex cursor-pointer items-center justify-between gap-2">
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <input type="checkbox" checked={selItems.includes(i.id)} onChange={() => toggleItem(i)} />
+                          <span className="truncate">{i.quantity}× {i.product_name ?? `#${i.product_id}`}</span>
+                        </span>
+                        <span className="shrink-0 text-muted">{money(i.line_total, currency)}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
+        )}
 
-          <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-muted">Alınan (nakit)</p>
-          <div className="rounded-xl border border-line px-4 py-3 text-right text-3xl font-black text-ink">
-            {amount ? money(amount, currency) : <span className="text-muted/50">{money(0, currency)}</span>}
-          </div>
-          {change > 0 && (
-            <div className="mt-2 flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
-              <span>Para üstü</span>
-              <span className="text-lg">{money(change, currency)}</span>
-            </div>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {quick.map((q) => (
-              <button
-                key={q}
-                onClick={() => setAmount(String(round2(q)))}
-                className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-ink hover:border-brand-400"
-              >
+        {/* Quick amounts */}
+        {quick.length > 0 && (
+          <div className="mb-2 grid grid-cols-4 gap-2">
+            {quick.slice(0, 4).map((q) => (
+              <button key={q} onClick={() => setAmount(String(round2(q)))} className="rounded-lg border border-line py-2 text-xs font-semibold text-ink hover:border-brand-400">
                 {money(q, currency)}
               </button>
             ))}
           </div>
-          <div className="mt-2 flex items-center gap-2 text-xs">
-            <span className="font-semibold text-muted">Eşit böl:</span>
-            {[2, 3, 4].map((n) => (
-              <button
-                key={n}
-                onClick={() => setAmount(String(round2(outstanding / n)))}
-                className="rounded-lg border border-line px-2.5 py-1 font-semibold text-ink hover:border-brand-400"
-              >
-                {n} kişi
-              </button>
-            ))}
-          </div>
-          {liveItems.length > 1 && (
-            <div className="mt-2">
-              <button onClick={() => setShowItemSplit((v) => !v)} className="text-xs font-semibold text-brand-600">
-                🍽️ Ürüne göre böl
-              </button>
-              {showItemSplit && (
-                <div className="mt-1.5 max-h-36 space-y-1 overflow-y-auto rounded-xl border border-line p-2">
-                  {liveItems.map((i: any) => (
-                    <label key={i.id} className="flex cursor-pointer items-center justify-between gap-2 text-xs">
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <input type="checkbox" checked={selItems.includes(i.id)} onChange={() => toggleItem(i)} />
-                        <span className="truncate">
-                          {i.quantity}× {i.product_name ?? `#${i.product_id}`}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-muted">{money(i.line_total, currency)}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs font-semibold text-muted">Bahşiş</span>
+        )}
+
+        {/* Keypad */}
+        <Keypad onKey={(k) => setAmount((a) => (k === '⌫' ? a.slice(0, -1) : k === '00' ? (a ? a + '00' : a) : a + k))} />
+
+        {/* Tip + redeem (secondary) */}
+        <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-muted">Bahşiş</span>
             <input
               value={tip}
               onChange={(e) => setTip(e.target.value.replace(/[^0-9.]/g, ''))}
               inputMode="decimal"
               placeholder="0"
-              className="w-24 rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+              className="w-20 rounded-lg border border-line px-2 py-1 outline-none focus:border-brand-500"
             />
           </div>
-          <div className="mt-3">
-            {!showRedeem ? (
-              <button onClick={() => setShowRedeem(true)} className="text-xs font-semibold text-brand-600">
-                ⭐ Puan Kullan
-              </button>
-            ) : (
-              <div className="space-y-2 rounded-xl border border-line p-2.5">
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Müşteri telefonu"
-                  className="w-full rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-brand-500"
-                />
-                <div className="flex gap-2">
-                  <input
-                    value={points}
-                    onChange={(e) => setPoints(e.target.value.replace(/[^0-9]/g, ''))}
-                    inputMode="numeric"
-                    placeholder="Puan"
-                    className="flex-1 rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-brand-500"
-                  />
-                  <Button onClick={applyRedeem} loading={busy} className="px-4 py-1.5 text-xs">
-                    Kullan
-                  </Button>
-                </div>
-                {redeemMsg && <p className="text-xs text-red-600">{redeemMsg}</p>}
-                <p className="text-[10px] text-muted">1 puan = {money(1, currency)}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right: keypad + tenders */}
-        <div>
-          <Keypad
-            onKey={(k) =>
-              setAmount((a) => (k === '⌫' ? a.slice(0, -1) : k === '00' ? (a ? a + '00' : a) : a + k))
-            }
-          />
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button onClick={() => tender('cash')} loading={busy} className="py-4 text-base">
-              💵 Nakit
-            </Button>
-            <Button onClick={() => tender('card')} loading={busy} className="py-4 text-base">
-              💳 Kart
-            </Button>
-          </div>
-          {canRoomCharge && (
-            <Button variant="ghost" onClick={chargeRoom} loading={busy} className="mt-2 w-full py-3">
-              🧾 Odaya / Şezlonga Yaz
-            </Button>
+          {!showRedeem && (
+            <button onClick={() => setShowRedeem(true)} className="font-semibold text-brand-600">⭐ Puan Kullan</button>
           )}
-          <p className="mt-2 text-center text-xs text-muted">
-            Tutar boşsa tamamı tahsil edilir · küçük tutar = bölünmüş ödeme
-          </p>
+        </div>
+        {showRedeem && (
+          <div className="mt-2 space-y-2 rounded-xl border border-line p-2.5 text-xs">
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Müşteri telefonu" className="w-full rounded-lg border border-line px-3 py-1.5 outline-none focus:border-brand-500" />
+            <div className="flex gap-2">
+              <input value={points} onChange={(e) => setPoints(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="Puan" className="flex-1 rounded-lg border border-line px-3 py-1.5 outline-none focus:border-brand-500" />
+              <Button onClick={applyRedeem} loading={busy} className="px-4 py-1.5 text-xs">Kullan</Button>
+            </div>
+            {redeemMsg && <p className="text-red-600">{redeemMsg}</p>}
+            <p className="text-[10px] text-muted">1 puan = {money(1, currency)}</p>
+          </div>
+        )}
+
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+        {/* Actions */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button onClick={onClose} className="rounded-xl border border-line py-3 text-sm font-bold text-ink transition hover:bg-canvas">
+            İptal
+          </button>
+          <Button onClick={onComplete} loading={busy} className="py-3 text-sm font-bold">
+            {method === 'room' ? (canRoomCharge ? '🧾 Odaya Yaz' : 'Açık Hesap') : 'Ödemeyi Tamamla'}
+          </Button>
         </div>
       </div>
     </Modal>
