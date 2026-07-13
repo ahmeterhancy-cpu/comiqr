@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { MenuView } from '@/components/menu';
 import { MenuChat } from '@/components/menu-chat';
 import { CartFab } from '@/components/cart';
@@ -19,8 +19,11 @@ export default async function VenueMenuPage({
 }) {
   const { slug } = await params;
   const { theme, locale, preview, r } = await searchParams;
-  // The builder preview passes ?preview=1 so changes show immediately (no ISR cache).
-  const result = await fetchMenuResult(slug, { locale, fresh: !!preview });
+  // Diners pick a language via the cookie-based switcher (next-intl getLocale reads
+  // that cookie); the menu content must follow it. ?locale only overrides in the
+  // admin builder preview, which forces a specific locale.
+  const activeLocale = preview && locale ? locale : await getLocale();
+  const result = await fetchMenuResult(slug, { locale: activeLocale, fresh: !!preview });
 
   // A genuine missing venue is a real 404; a transient failure (rate-limit / blip)
   // shows a soft, auto-retrying state instead of an alarming "page not found".
