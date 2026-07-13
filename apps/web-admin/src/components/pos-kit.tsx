@@ -786,15 +786,15 @@ export function KdsPanel({
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {active.map((o) => (
-            <div key={o.id} className="rounded-2xl border border-line bg-canvas p-3">
+            <div key={o.order_id} className="rounded-2xl border border-line bg-canvas p-3">
               <div className="mb-2 flex items-center justify-between text-sm font-bold text-ink">
-                <span>{o.table_code ? `Masa ${o.table_code}` : o.type === 'takeaway' ? 'Gel-Al' : 'Sipariş'} · #{o.id}</span>
+                <span>{o.table_session_id ? 'Masa' : 'Sipariş'} · #{o.order_id}</span>
               </div>
               <ul className="space-y-1.5">
                 {o.live.map((i: any) => (
                   <li key={i.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="min-w-0 truncate text-ink">
-                      <b>{i.quantity}×</b> {i.product_name ?? productName(i.product_id)}
+                      <b>{i.quantity}×</b> {i.product ?? i.product_name ?? productName(i.product_id)}
                       {i.note ? <span className="text-muted"> · {i.note}</span> : ''}
                     </span>
                     <button
