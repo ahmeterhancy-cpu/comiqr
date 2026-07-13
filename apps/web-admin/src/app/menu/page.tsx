@@ -5,6 +5,7 @@ import { AdminShell } from '@/components/AdminShell';
 import { CategoryManager } from '@/components/CategoryManager';
 import { RecipeEditor } from '@/components/RecipeEditor';
 import { Button, Card, Input } from '@/components/ui';
+import { compressImage } from '@/lib/image';
 import { printMenu } from '@/lib/print-menu';
 import { useApi } from '@/lib/useApi';
 
@@ -88,11 +89,19 @@ export default function MenuPage() {
   }
   async function uploadImage(p: any, file: File) {
     setBusy(p.id);
+    setNotice(null);
     try {
-      await api.uploadProductImage(p.id, file);
+      // Shrink before upload so large phone photos don't hit the server's
+      // upload_max_filesize (commonly 2 MB) and fail silently.
+      const optimized = await compressImage(file);
+      if (optimized.size > 4 * 1024 * 1024) {
+        setNotice('Görsel çok büyük (4 MB üstü). Lütfen daha küçük bir görsel seçin.');
+        return;
+      }
+      await api.uploadProductImage(p.id, optimized);
       load();
     } catch {
-      setNotice('Görsel yüklenemedi.');
+      setNotice('Görsel yüklenemedi. Lütfen JPG/PNG/WebP bir görsel deneyin.');
     } finally {
       setBusy(null);
     }
