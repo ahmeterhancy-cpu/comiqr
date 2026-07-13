@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BrandLogo } from '@/components/BrandLogo';
 import { getActiveBranchId } from '@/lib/branch';
@@ -381,10 +380,16 @@ export default function PosPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f4f6f8] text-ink">
-      {/* ---- Sidebar (RestoBit-style, light) ---- */}
+      {/* ---- Sidebar (RestoBit-style, light) — POS-only nav ---- */}
       <PosSidebar
         userName={me?.user.name ?? venueName}
         isCashier={isCashier}
+        shiftOpen={!!shift}
+        onNewSale={resetTicket}
+        onRecall={() => loadRecall('open')}
+        onTables={() => !order && setShowMap(true)}
+        onKds={() => setShowKds(true)}
+        onShift={() => setShowShift(true)}
         onLogout={() => { clearSession(); router.replace('/pos/login'); }}
       />
 
@@ -865,18 +870,36 @@ function TopBtn({ onClick, children }: { onClick: () => void; children: React.Re
   );
 }
 
-const POS_NAV: { href: string; label: string; icon: string }[] = [
-  { href: '/dashboard', label: 'Panel', icon: '▤' },
-  { href: '/pos', label: 'POS', icon: '🧾' },
-  { href: '/menu', label: 'Menü', icon: '📋' },
-  { href: '/tables', label: 'Masalar', icon: '🍽️' },
-  { href: '/orders', label: 'Siparişler', icon: '📦' },
-  { href: '/customers', label: 'Müşteriler', icon: '👤' },
-  { href: '/reports', label: 'Raporlar', icon: '📊' },
-  { href: '/settings', label: 'Ayarlar', icon: '⚙️' },
-];
+function PosSidebar({
+  userName,
+  isCashier,
+  shiftOpen,
+  onNewSale,
+  onRecall,
+  onTables,
+  onKds,
+  onShift,
+  onLogout,
+}: {
+  userName: string;
+  isCashier: boolean;
+  shiftOpen: boolean;
+  onNewSale: () => void;
+  onRecall: () => void;
+  onTables: () => void;
+  onKds: () => void;
+  onShift: () => void;
+  onLogout: () => void;
+}) {
+  // POS-only navigation — every item stays inside the terminal (no admin panel).
+  const items: { key: string; label: string; icon: string; onClick: () => void; active?: boolean; show: boolean }[] = [
+    { key: 'sale', label: 'Satış', icon: '🧾', onClick: onNewSale, active: true, show: true },
+    { key: 'orders', label: 'Adisyonlar', icon: '📋', onClick: onRecall, show: true },
+    { key: 'tables', label: 'Masalar', icon: '🍽️', onClick: onTables, show: true },
+    { key: 'kds', label: 'Mutfak', icon: '🍳', onClick: onKds, show: !isCashier },
+    { key: 'shift', label: shiftOpen ? 'Vardiya · Açık' : 'Vardiya', icon: shiftOpen ? '🟢' : '🔒', onClick: onShift, show: true },
+  ].filter((i) => i.show);
 
-function PosSidebar({ userName, isCashier, onLogout }: { userName: string; isCashier: boolean; onLogout: () => void }) {
   return (
     <aside className="hidden w-56 shrink-0 flex-col border-r border-line bg-white p-4 lg:flex xl:w-60">
       <div className="px-1">
@@ -888,25 +911,23 @@ function PosSidebar({ userName, isCashier, onLogout }: { userName: string; isCas
         </span>
         <div className="min-w-0">
           <div className="truncate text-sm font-bold text-ink">{userName}</div>
-          <div className="text-[11px] text-muted">{isCashier ? 'Kasa' : 'Yönetim'}</div>
+          <div className="text-[11px] text-muted">{isCashier ? 'Kasa' : 'POS'}</div>
         </div>
       </div>
-      <nav className="mt-5 flex-1 space-y-1 overflow-y-auto">
-        {(isCashier ? POS_NAV.filter((n) => n.href === '/pos') : POS_NAV).map((n) => {
-          const active = n.href === '/pos';
-          return (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
-                active ? 'bg-brand-50 text-brand-700' : 'text-muted hover:bg-canvas hover:text-ink'
-              }`}
-            >
-              <span className="w-5 text-center">{n.icon}</span>
-              {n.label}
-            </Link>
-          );
-        })}
+      <div className="mt-5 mb-1 px-3 text-[10px] font-bold uppercase tracking-wide text-muted">POS Terminali</div>
+      <nav className="flex-1 space-y-1 overflow-y-auto">
+        {items.map((it) => (
+          <button
+            key={it.key}
+            onClick={it.onClick}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
+              it.active ? 'bg-brand-50 text-brand-700' : 'text-muted hover:bg-canvas hover:text-ink'
+            }`}
+          >
+            <span className="w-5 text-center">{it.icon}</span>
+            {it.label}
+          </button>
+        ))}
       </nav>
       <button
         onClick={onLogout}
