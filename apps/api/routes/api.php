@@ -268,6 +268,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('admin/categories', [CategoryController::class, 'index']);
             Route::get('admin/branches', [BranchController::class, 'index']);
             Route::get('admin/tables', [TableController::class, 'index']);
+            Route::get('admin/customers', [CustomerController::class, 'index']);
         });
 
         // --- Staff POS (Faz 3 — ultra POS) — waiter+ or cashier, ordering plan ---

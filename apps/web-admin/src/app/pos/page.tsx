@@ -20,6 +20,9 @@ import {
   ShiftModal,
   TableMapModal,
 } from '@/components/pos-kit';
+import { CustomersView, OrdersView, ReportsView, SummaryView, TablesView } from '@/components/pos-views';
+
+type PosView = 'sale' | 'summary' | 'orders' | 'tables' | 'customers' | 'reports';
 
 type Line = {
   key: string;
@@ -73,6 +76,7 @@ export default function PosPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState<Date>(() => new Date());
+  const [view, setView] = useState<PosView>('sale');
 
   // Modals
   const [customizing, setCustomizing] = useState<any | null>(null);
@@ -384,10 +388,9 @@ export default function PosPage() {
       <PosSidebar
         userName={me?.user.name ?? venueName}
         isCashier={isCashier}
+        view={view}
+        onView={setView}
         shiftOpen={!!shift}
-        onNewSale={resetTicket}
-        onRecall={() => loadRecall('open')}
-        onTables={() => !order && setShowMap(true)}
         onKds={() => setShowKds(true)}
         onShift={() => setShowShift(true)}
         onLogout={() => { clearSession(); router.replace('/pos/login'); }}
@@ -427,6 +430,8 @@ export default function PosPage() {
         </header>
 
         <div className="flex min-h-0 flex-1 gap-4 overflow-hidden p-4">
+        {view === 'sale' ? (
+        <>
         {/* ---- Products ---- */}
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-white">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
@@ -711,6 +716,18 @@ export default function PosPage() {
             </div>
           </div>
         </aside>
+        </>
+        ) : view === 'summary' ? (
+          <SummaryView api={api} currency={currency} branchId={activeBranch} onNewSale={() => { resetTicket(); setView('sale'); }} onOpenShift={() => setShowShift(true)} />
+        ) : view === 'orders' ? (
+          <OrdersView api={api} currency={currency} branchId={activeBranch} onRecall={(o) => { pickRecalled(o); setView('sale'); }} />
+        ) : view === 'tables' ? (
+          <TablesView api={api} tables={tables} currency={currency} branchId={activeBranch} onPickTable={(id, code) => { resetTicket(); setOrderType('table'); setTableId(id); setTableCode(code); setView('sale'); }} onRecall={(o) => { pickRecalled(o); setView('sale'); }} />
+        ) : view === 'customers' ? (
+          <CustomersView api={api} currency={currency} />
+        ) : (
+          <ReportsView api={api} currency={currency} branchId={activeBranch} />
+        )}
         </div>
       </div>
 
@@ -873,32 +890,35 @@ function TopBtn({ onClick, children }: { onClick: () => void; children: React.Re
 function PosSidebar({
   userName,
   isCashier,
+  view,
+  onView,
   shiftOpen,
-  onNewSale,
-  onRecall,
-  onTables,
   onKds,
   onShift,
   onLogout,
 }: {
   userName: string;
   isCashier: boolean;
+  view: PosView;
+  onView: (v: PosView) => void;
   shiftOpen: boolean;
-  onNewSale: () => void;
-  onRecall: () => void;
-  onTables: () => void;
   onKds: () => void;
   onShift: () => void;
   onLogout: () => void;
 }) {
-  // POS-only navigation — every item stays inside the terminal (no admin panel).
-  const items: { key: string; label: string; icon: string; onClick: () => void; active?: boolean; show: boolean }[] = [
-    { key: 'sale', label: 'Satış', icon: '🧾', onClick: onNewSale, active: true, show: true },
-    { key: 'orders', label: 'Adisyonlar', icon: '📋', onClick: onRecall, show: true },
-    { key: 'tables', label: 'Masalar', icon: '🍽️', onClick: onTables, show: true },
-    { key: 'kds', label: 'Mutfak', icon: '🍳', onClick: onKds, show: !isCashier },
-    { key: 'shift', label: shiftOpen ? 'Vardiya · Açık' : 'Vardiya', icon: shiftOpen ? '🟢' : '🔒', onClick: onShift, show: true },
-  ].filter((i) => i.show);
+  // POS-only sections — mirrors the admin menu structure but stays in the terminal.
+  const views: { key: PosView; label: string; icon: string }[] = [
+    { key: 'summary', label: 'Özet', icon: '🏠' },
+    { key: 'sale', label: 'Satış', icon: '🧾' },
+    { key: 'orders', label: 'Siparişler', icon: '📋' },
+    { key: 'tables', label: 'Masalar', icon: '🍽️' },
+    { key: 'customers', label: 'Müşteriler', icon: '👤' },
+    { key: 'reports', label: 'Raporlar', icon: '📊' },
+  ];
+  const actions = [
+    ...(isCashier ? [] : [{ key: 'kds', label: 'Mutfak (KDS)', icon: '🍳', onClick: onKds }]),
+    { key: 'shift', label: shiftOpen ? 'Vardiya · Açık' : 'Vardiya', icon: shiftOpen ? '🟢' : '🔒', onClick: onShift },
+  ];
 
   return (
     <aside className="hidden w-56 shrink-0 flex-col border-r border-line bg-white p-4 lg:flex xl:w-60">
@@ -914,18 +934,29 @@ function PosSidebar({
           <div className="text-[11px] text-muted">{isCashier ? 'Kasa' : 'POS'}</div>
         </div>
       </div>
-      <div className="mt-5 mb-1 px-3 text-[10px] font-bold uppercase tracking-wide text-muted">POS Terminali</div>
+      <div className="mb-1 mt-5 px-3 text-[10px] font-bold uppercase tracking-wide text-muted">POS Sistemi</div>
       <nav className="flex-1 space-y-1 overflow-y-auto">
-        {items.map((it) => (
+        {views.map((it) => (
           <button
             key={it.key}
-            onClick={it.onClick}
+            onClick={() => onView(it.key)}
             className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
-              it.active ? 'bg-brand-50 text-brand-700' : 'text-muted hover:bg-canvas hover:text-ink'
+              view === it.key ? 'bg-brand-50 text-brand-700' : 'text-muted hover:bg-canvas hover:text-ink'
             }`}
           >
             <span className="w-5 text-center">{it.icon}</span>
             {it.label}
+          </button>
+        ))}
+        <div className="my-2 border-t border-line" />
+        {actions.map((a) => (
+          <button
+            key={a.key}
+            onClick={a.onClick}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-muted transition hover:bg-canvas hover:text-ink"
+          >
+            <span className="w-5 text-center">{a.icon}</span>
+            {a.label}
           </button>
         ))}
       </nav>
