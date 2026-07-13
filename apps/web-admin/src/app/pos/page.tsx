@@ -461,8 +461,8 @@ export default function PosPage() {
             </select>
           </div>
 
-          {/* Category pills — auto-wrap into as many rows as needed */}
-          <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto border-b border-line px-4 py-2.5">
+          {/* Category pills — auto-wrap into as many rows as needed, no scroll */}
+          <div className="flex flex-wrap gap-2 border-b border-line px-4 py-2.5">
             {favorites.length > 0 && (
               <CatPill active={favView} onClick={() => setFavView(true)}>⭐ Sık</CatPill>
             )}
