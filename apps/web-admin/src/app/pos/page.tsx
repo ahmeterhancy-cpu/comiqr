@@ -840,14 +840,14 @@ function CatPill({ active, onClick, img, children }: { active: boolean; onClick:
   return (
     <button
       onClick={onClick}
-      className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full text-xs font-semibold transition ${
-        img ? 'py-1 pl-1 pr-3' : 'px-3.5 py-1.5'
-      } ${active ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted hover:border-brand-300'}`}
+      className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition ${
+        img ? 'py-1.5 pl-1.5 pr-4' : 'px-5 py-2.5'
+      } ${active ? 'bg-brand-500 text-white shadow-sm' : 'border border-line bg-surface text-muted hover:border-brand-300'}`}
       style={active ? { color: '#ffffff' } : undefined}
     >
       {img && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={img} alt="" className={`h-6 w-6 shrink-0 rounded-full object-cover ring-1 ${active ? 'ring-white/40' : 'ring-black/5'}`} />
+        <img src={img} alt="" className={`h-9 w-9 shrink-0 rounded-full object-cover ring-2 ${active ? 'ring-white/50' : 'ring-black/5'}`} />
       )}
       {children}
     </button>
