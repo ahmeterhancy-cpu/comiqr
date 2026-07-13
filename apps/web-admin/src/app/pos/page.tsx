@@ -458,7 +458,7 @@ export default function PosPage() {
             )}
             <CatPill active={!favView && activeCat === null} onClick={() => { setFavView(false); setActiveCat(null); }}>Tümü</CatPill>
             {categories.map((c) => (
-              <CatPill key={c.id} active={!favView && activeCat === c.id} onClick={() => { setFavView(false); setActiveCat(c.id); }}>{c.name}</CatPill>
+              <CatPill key={c.id} active={!favView && activeCat === c.id} img={c.image_path} onClick={() => { setFavView(false); setActiveCat(c.id); }}>{c.name}</CatPill>
             ))}
           </div>
 
@@ -836,14 +836,19 @@ export default function PosPage() {
   );
 }
 
-function CatPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function CatPill({ active, onClick, img, children }: { active: boolean; onClick: () => void; img?: string | null; children: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-        active ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted hover:border-brand-300'
-      }`}
+      className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full text-xs font-semibold transition ${
+        img ? 'py-1 pl-1 pr-3' : 'px-3.5 py-1.5'
+      } ${active ? 'bg-brand-500 text-white' : 'border border-line bg-surface text-muted hover:border-brand-300'}`}
+      style={active ? { color: '#ffffff' } : undefined}
     >
+      {img && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={img} alt="" className={`h-6 w-6 shrink-0 rounded-full object-cover ring-1 ${active ? 'ring-white/40' : 'ring-black/5'}`} />
+      )}
       {children}
     </button>
   );
