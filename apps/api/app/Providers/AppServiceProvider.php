@@ -85,8 +85,19 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiters(): void
     {
-        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)
-            ->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('api', function (Request $request) {
+            // Public menu reads are server-rendered, so every diner's request reaches
+            // the API from the SAME (Next server) IP — an IP-keyed limit would throttle
+            // the whole customer base together and show diners a rate-limit error on a
+            // busy venue. Give menu GETs a generous per-tenant budget instead (the menu
+            // is a cacheable public read; no venue can starve another).
+            if ($request->isMethod('GET') && $request->is('v1/menu', 'v1/menu/*')) {
+                return Limit::perMinute(600)
+                    ->by($request->query('tenant') ?: $request->route('qrToken') ?: $request->header('X-Tenant') ?: $request->ip());
+            }
+
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
 
         RateLimiter::for('login', fn (Request $request) => [
             Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()),
