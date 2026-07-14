@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { PlanOption } from '@comiqr/shared-types';
 import { ApiError } from '@comiqr/shared-types/client';
 import { Button, Card } from '@/components/ui';
@@ -29,14 +30,17 @@ function fmtDate(iso: string | null): string {
 }
 
 export default function BillingPage() {
+  const c = useTranslations('common');
   return (
-    <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted">Yükleniyor…</div>}>
+    <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted">{c('loading')}</div>}>
       <BillingInner />
     </Suspense>
   );
 }
 
 function BillingInner() {
+  const t = useTranslations('billing');
+  const c = useTranslations('common');
   const { api, ready } = useApi();
   const params = useSearchParams();
   const [plans, setPlans] = useState<PlanOption[]>([]);
@@ -58,7 +62,7 @@ function BillingInner() {
         const payable = p.filter((x) => Number(x.price_monthly) > 0);
         setSelected(s.plan_code && payable.some((x) => x.code === s.plan_code) ? s.plan_code : payable[0]?.code ?? null);
       })
-      .catch(() => setError('Bilgiler yüklenemedi.'));
+      .catch(() => setError(c('loadError')));
   }, [ready, api]);
 
   const chosen = plans.find((p) => p.code === selected && Number(p.price_monthly) > 0) ?? null;
@@ -77,32 +81,32 @@ function BillingInner() {
       const res = await api.subscribe({ plan: chosen.code, billing_cycle: cycle });
       setCheckout(res);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Ödeme başlatılamadı, tekrar deneyin.');
+      setError(err instanceof ApiError ? err.message : t('paymentStartFailed'));
     } finally {
       setBusy(false);
     }
   }
 
   if (!ready) {
-    return <div className="grid min-h-screen place-items-center text-sm text-muted">Yükleniyor…</div>;
+    return <div className="grid min-h-screen place-items-center text-sm text-muted">{c('loading')}</div>;
   }
 
   return (
     <div style={ORANGE} className="min-h-screen bg-canvas text-ink">
       <div className="mx-auto max-w-3xl px-5 py-10">
-        <Link href="/dashboard" className="text-sm font-semibold text-brand-600 hover:underline">← Panele dön</Link>
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight">Abonelik & Ödeme</h1>
-        <p className="mt-1 text-sm text-muted">Planınızı seçin, kartınızla güvenli tekrarlı ödeme başlatın.</p>
+        <Link href="/dashboard" className="text-sm font-semibold text-brand-600 hover:underline">← {t('backToPanel')}</Link>
+        <h1 className="mt-3 text-2xl font-extrabold tracking-tight">{t('title')}</h1>
+        <p className="mt-1 text-sm text-muted">{t('subtitle')}</p>
 
         {/* Return banner (3DS result) */}
         {returned === 'success' && (
           <div className="mt-5 rounded-xl bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
-            ✓ Ödemeniz alındı, aboneliğiniz aktif. Kartınız sonraki dönemler için güvenle kaydedildi.
+            ✓ {t('returnSuccess')}
           </div>
         )}
         {(returned === 'failed' || returned === 'error') && (
           <div className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            Ödeme tamamlanamadı. Kart bilgilerinizi kontrol edip tekrar deneyin.
+            {t('returnFailed')}
           </div>
         )}
 
@@ -121,18 +125,18 @@ function BillingInner() {
             <Card className="mt-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-muted">Mevcut durum</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted">{t('currentStatus')}</div>
                   <div className="mt-1 text-lg font-bold">
-                    {status?.plan_name ?? 'Plan seçilmedi'}
+                    {status?.plan_name ?? t('noPlanSelected')}
                     {status?.tenant_status === 'trialing' && status?.trial_ends_at && (
                       <span className="ml-2 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 align-middle">
-                        Deneme · {fmtDate(status.trial_ends_at)} bitiyor
+                        {t('trialEndsAt', { date: fmtDate(status.trial_ends_at) })}
                       </span>
                     )}
                   </div>
                   {sub?.card_last4 && (
                     <div className="mt-1 text-xs text-muted">
-                      Kayıtlı kart: {sub.card_brand ? `${sub.card_brand} ` : ''}•••• {sub.card_last4}
+                      {t('savedCard')} {sub.card_brand ? `${sub.card_brand} ` : ''}•••• {sub.card_last4}
                     </div>
                   )}
                 </div>
@@ -142,7 +146,7 @@ function BillingInner() {
                       pastDue ? 'bg-red-100 text-red-700' : pending ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
                     }`}
                   >
-                    {pastDue ? 'Ödeme alınamadı' : pending ? 'Ödeme bekleniyor' : sub.status === 'active' ? 'Aktif' : sub.status}
+                    {pastDue ? t('statusPastDue') : pending ? t('statusPending') : sub.status === 'active' ? c('active') : sub.status}
                   </span>
                 )}
               </div>
@@ -150,14 +154,13 @@ function BillingInner() {
               {/* Payment failed → prompt to update the card */}
               {pastDue && (
                 <div className="mt-3 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-800">
-                  Son ödeme kartınızdan tahsil edilemedi
-                  {sub?.grace_ends_at && <> — {fmtDate(sub.grace_ends_at)} tarihine kadar ek süreniz var</>}. Aşağıdan kart
-                  bilgilerinizi güncelleyerek ödemeyi tamamlayın.
+                  {t('pastDueLead')}
+                  {sub?.grace_ends_at && <> — {t('graceUntil', { date: fmtDate(sub.grace_ends_at) })}</>}. {t('pastDueAction')}
                 </div>
               )}
               {pending && (
                 <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                  Ödeme henüz tamamlanmadı. Aşağıdan planınızı seçip kart bilgilerinizle ödemeyi tamamlayın.
+                  {t('pendingNotice')}
                 </p>
               )}
             </Card>
@@ -173,11 +176,11 @@ function BillingInner() {
                     className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition ${cycle === c ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`}
                     style={cycle === c ? { color: '#ffffff' } : undefined}
                   >
-                    {c === 'monthly' ? 'Aylık' : 'Yıllık'}
+                    {c === 'monthly' ? t('monthly') : t('yearly')}
                   </button>
                 ))}
               </div>
-              {cycle === 'yearly' && <span className="text-xs font-semibold text-brand-600">2 ay hediye 🎉</span>}
+              {cycle === 'yearly' && <span className="text-xs font-semibold text-brand-600">{t('yearlyBonus')} 🎉</span>}
             </div>
 
             {/* Plans — all packages; payable ones selectable, free/enterprise informational */}
@@ -198,7 +201,7 @@ function BillingInner() {
                   <div className="flex items-center justify-between">
                     <span className="text-base font-bold">
                       {p.name}
-                      {current && <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 align-middle text-[10px] font-bold text-brand-700">Mevcut</span>}
+                      {current && <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 align-middle text-[10px] font-bold text-brand-700">{t('current')}</span>}
                     </span>
                     {payable && active && (
                       <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-500 text-white">
@@ -218,7 +221,7 @@ function BillingInner() {
                     >
                       {head}
                       <div className="mt-2 text-2xl font-extrabold tracking-tight">
-                        {price} {p.currency}<span className="text-sm font-semibold text-muted">/{cycle === 'yearly' ? 'yıl' : 'ay'}</span>
+                        {price} {p.currency}<span className="text-sm font-semibold text-muted">/{cycle === 'yearly' ? t('year') : t('month')}</span>
                       </div>
                       {verticals}
                     </button>
@@ -230,17 +233,17 @@ function BillingInner() {
                   <div key={p.code} className="rounded-2xl border border-line bg-surface p-5">
                     {head}
                     <div className="mt-2 text-2xl font-extrabold tracking-tight">
-                      {isEnterprise ? 'Özel' : 'Ücretsiz'}
-                      {!isEnterprise && <span className="text-sm font-semibold text-muted"> / ay</span>}
+                      {isEnterprise ? t('custom') : t('free')}
+                      {!isEnterprise && <span className="text-sm font-semibold text-muted"> / {t('month')}</span>}
                     </div>
                     {verticals}
                     <div className="mt-3 text-xs">
                       {isEnterprise ? (
-                        <a href="/iletisim" className="inline-flex rounded-lg border border-line px-3 py-1.5 font-bold text-ink transition hover:bg-canvas">İletişime Geç</a>
+                        <a href="/iletisim" className="inline-flex rounded-lg border border-line px-3 py-1.5 font-bold text-ink transition hover:bg-canvas">{t('contactUs')}</a>
                       ) : current ? (
-                        <span className="font-semibold text-brand-600">Şu an bu plandasınız</span>
+                        <span className="font-semibold text-brand-600">{t('currentPlan')}</span>
                       ) : (
-                        <span className="text-muted">Ödeme gerektirmez</span>
+                        <span className="text-muted">{t('noPaymentRequired')}</span>
                       )}
                     </div>
                   </div>
@@ -255,20 +258,19 @@ function BillingInner() {
               <div className="flex items-center justify-between gap-4">
                 <div className="text-sm text-muted">
                   {chosen ? (
-                    <>Tahsil edilecek: <b className="text-ink">{amount} {chosen.currency}</b> / {cycle === 'yearly' ? 'yıl' : 'ay'}</>
+                    <>{t('toCharge')} <b className="text-ink">{amount} {chosen.currency}</b> / {cycle === 'yearly' ? t('year') : t('month')}</>
                   ) : (
-                    'Bir plan seçin'
+                    t('selectPlan')
                   )}
                 </div>
                 <Button onClick={startCheckout} loading={busy} disabled={!chosen}>
-                  {busy ? 'Hazırlanıyor…' : pastDue ? 'Kartı Güncelle & Öde' : 'Kart Bilgilerine Geç'}
+                  {busy ? t('preparing') : pastDue ? t('updateCardPay') : t('continueToCard')}
                 </Button>
               </div>
             </Card>
 
             <p className="mt-4 text-center text-xs text-muted">
-              Kart bilgileriniz doğrudan güvenli ödeme sağlayıcısına gönderilir, sunucularımızda saklanmaz. Ödemeler 3D Secure
-              ile korunur; istediğiniz an iptal edebilirsiniz.
+              {t('securityNote')}
             </p>
           </>
         )}
@@ -297,13 +299,14 @@ function TikoCardForm({
   cycle: 'monthly' | 'yearly';
   onBack: () => void;
 }) {
+  const t = useTranslations('billing');
   const stored = 'CardId' in session.meta.fields;
   return (
     <Card className="mt-6">
-      <button type="button" onClick={onBack} className="text-sm font-semibold text-brand-600 hover:underline">← Plan seçimine dön</button>
-      <h2 className="mt-3 text-lg font-bold">Kart ile Öde · {amount} {currency} / {cycle === 'yearly' ? 'yıl' : 'ay'}</h2>
+      <button type="button" onClick={onBack} className="text-sm font-semibold text-brand-600 hover:underline">← {t('backToPlans')}</button>
+      <h2 className="mt-3 text-lg font-bold">{t('payWithCard')} · {amount} {currency} / {cycle === 'yearly' ? t('year') : t('month')}</h2>
       <p className="mt-1 text-sm text-muted">
-        {planName} aboneliği. {stored ? 'Kayıtlı kartınızla güvenli ödeme yapılacak.' : 'Kart bilgileriniz doğrudan güvenli ödeme sayfasına iletilir.'}
+        {t('subscriptionOf', { plan: planName })} {stored ? t('storedCardNote') : t('newCardNote')}
       </p>
 
       <form method="POST" action={session.url} className="mt-5 space-y-3">
@@ -312,12 +315,12 @@ function TikoCardForm({
         ))}
         {!stored && (
           <>
-            <CardField name="CardName" label="Kart Üzerindeki İsim" placeholder="Ad Soyad" />
-            <CardField name="CardNo" label="Kart Numarası" placeholder="0000 0000 0000 0000" inputMode="numeric" autoComplete="cc-number" />
+            <CardField name="CardName" label={t('cardName')} placeholder={t('cardNamePlaceholder')} />
+            <CardField name="CardNo" label={t('cardNumber')} placeholder="0000 0000 0000 0000" inputMode="numeric" autoComplete="cc-number" />
             <div className="grid grid-cols-3 gap-2">
-              <CardField name="CardExpireMonth" label="Ay" placeholder="12" inputMode="numeric" autoComplete="cc-exp-month" />
-              <CardField name="CardExpireYear" label="Yıl" placeholder="27" inputMode="numeric" autoComplete="cc-exp-year" />
-              <CardField name="CardCvv" label="CVV" placeholder="123" inputMode="numeric" autoComplete="cc-csc" />
+              <CardField name="CardExpireMonth" label={t('expMonth')} placeholder="12" inputMode="numeric" autoComplete="cc-exp-month" />
+              <CardField name="CardExpireYear" label={t('expYear')} placeholder="27" inputMode="numeric" autoComplete="cc-exp-year" />
+              <CardField name="CardCvv" label={t('cvv')} placeholder="123" inputMode="numeric" autoComplete="cc-csc" />
             </div>
           </>
         )}
@@ -326,13 +329,13 @@ function TikoCardForm({
           className="w-full rounded-xl bg-brand-500 py-3.5 text-sm font-bold text-white transition hover:bg-brand-600"
           style={{ color: '#ffffff' }}
         >
-          {amount} {currency} Öde ve Aboneliği Başlat
+          {amount} {currency} {t('payAndStart')}
         </button>
       </form>
 
       <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted">
         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-        3D Secure korumalı · Kart bilgileri sunucularımıza gelmez
+        {t('secureFooter')}
       </p>
     </Card>
   );

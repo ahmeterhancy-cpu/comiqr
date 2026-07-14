@@ -1,19 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { Card } from '@/components/ui';
 import { getActiveBranchId } from '@/lib/branch';
 import { createEcho } from '@/lib/echo';
 import { useApi } from '@/lib/useApi';
 
-const NEXT: Record<string, { label: string; to?: string; bump?: boolean }> = {
-  pending: { label: 'Hazırla', to: 'preparing' },
-  preparing: { label: 'Hazır', to: 'ready' },
-  ready: { label: 'Servis Et', bump: true },
+const NEXT: Record<string, { labelKey: string; to?: string; bump?: boolean }> = {
+  pending: { labelKey: 'actionPrepare', to: 'preparing' },
+  preparing: { labelKey: 'actionReady', to: 'ready' },
+  ready: { labelKey: 'actionServe', bump: true },
 };
 
 export default function OrdersPage() {
+  const t = useTranslations('orders');
   const { api, ready } = useApi();
   const [branchId, setBranchId] = useState<number | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -81,17 +83,17 @@ export default function OrdersPage() {
   }
 
   return (
-    <AdminShell title="Canlı Siparişler (Mutfak)">
+    <AdminShell title={t('title')}>
       {orders.length === 0 ? (
         <Card>
-          <p className="text-sm text-muted">Bekleyen aktif sipariş yok. Bir masadan sipariş verildiğinde burada belirir.</p>
+          <p className="text-sm text-muted">{t('empty')}</p>
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {orders.map((o) => (
             <Card key={o.order_id}>
               <div className="mb-2 flex items-center justify-between">
-                <span className="font-bold text-ink">Sipariş #{o.order_id}</span>
+                <span className="font-bold text-ink">{t('orderNumber', { id: o.order_id })}</span>
                 <span className="rounded bg-canvas px-2 py-0.5 text-xs text-muted">{o.status}</span>
               </div>
               <ul className="space-y-2">
@@ -105,7 +107,7 @@ export default function OrdersPage() {
                         onClick={() => advance(it)}
                         className="rounded-md bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white"
                       >
-                        {NEXT[it.status].label}
+                        {t(NEXT[it.status].labelKey)}
                       </button>
                     )}
                   </li>

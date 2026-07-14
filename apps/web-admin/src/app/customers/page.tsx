@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { Card } from '@/components/ui';
 import { useApi } from '@/lib/useApi';
 
 export default function CustomersPage() {
+  const t = useTranslations('customers');
+  const c = useTranslations('common');
   const { api, ready } = useApi();
   const [customers, setCustomers] = useState<any[]>([]);
 
@@ -14,22 +17,22 @@ export default function CustomersPage() {
   }, [ready, api]);
 
   return (
-    <AdminShell title="Müşteriler & Sadakat">
+    <AdminShell title={t('title')}>
       <Card>
         {customers.length === 0 ? (
           <p className="text-sm text-muted">
-            Henüz müşteri yok. Müşteri sipariş sırasında telefonunu verince (sadakat) burada görünür.
+            {t('empty')}
           </p>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
-                <th className="py-2">Ad</th>
-                <th>Telefon</th>
-                <th className="text-right">Sipariş</th>
-                <th className="text-right">Harcama</th>
-                <th className="text-right">Puan</th>
-                <th>Seviye</th>
+                <th className="py-2">{c('name')}</th>
+                <th>{t('phone')}</th>
+                <th className="text-right">{t('orders')}</th>
+                <th className="text-right">{t('spend')}</th>
+                <th className="text-right">{t('points')}</th>
+                <th>{t('tier')}</th>
               </tr>
             </thead>
             <tbody>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Card, Input } from '@/components/ui';
 import { ThemeThumb } from '@/components/ThemeThumb';
 import { compressImage } from '@/lib/image';
@@ -19,13 +20,13 @@ const THEMES: [string, string][] = [
 ];
 
 type DayHours = { closed: boolean; open: string; close: string };
-const DAY_LABELS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const;
 
-const VERTICALS: [string, string, string][] = [
-  ['restaurant', 'Restoran / Kafe', 'Masa siparişi, gel-al, teslimat'],
-  ['hotel', 'Otel', 'Oda servisi + odaya yansıt (folyo)'],
-  ['beach', 'Plaj Kulübü', 'Şezlong servisi + şezlonga yansıt (folyo)'],
-  ['bar', 'Bar / Pub', 'Adisyon akışı'],
+const VERTICAL_KEYS: [string, string, string][] = [
+  ['restaurant', 'verticalRestaurant', 'verticalRestaurantHint'],
+  ['hotel', 'verticalHotel', 'verticalHotelHint'],
+  ['beach', 'verticalBeach', 'verticalBeachHint'],
+  ['bar', 'verticalBar', 'verticalBarHint'],
 ];
 
 const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
@@ -51,6 +52,10 @@ export function RestaurantSettingsForm({
   onSave: (payload: Record<string, unknown>) => Promise<unknown>;
   onUpload?: (type: 'logo' | 'cover', file: File) => Promise<{ url: string }>;
 }) {
+  const t = useTranslations('settings');
+  const c = useTranslations('common');
+  const DAY_LABELS = DAY_KEYS.map((k) => t(k));
+  const VERTICALS: [string, string, string][] = VERTICAL_KEYS.map(([val, label, hint]) => [val, t(label), t(hint)]);
   const s = initialSettings ?? {};
   const [name, setName] = useState(initialName ?? '');
   const [vertical, setVertical] = useState<string>(s.vertical ?? 'restaurant');
@@ -137,7 +142,7 @@ export function RestaurantSettingsForm({
       });
       setSaved(true);
     } catch {
-      setError('Kaydedilemedi.');
+      setError(t('saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -158,7 +163,7 @@ export function RestaurantSettingsForm({
       if (type === 'logo') setLogo(res.url);
       else setCover(res.url);
     } catch {
-      setError('Görsel yüklenemedi.');
+      setError(t('uploadFailed'));
     } finally {
       setUploading(null);
     }
@@ -167,12 +172,12 @@ export function RestaurantSettingsForm({
   return (
     <div className="space-y-5">
       <Card>
-        <h3 className="mb-3 text-sm font-semibold text-ink">Restoran Bilgileri</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">{t('restaurantInfo')}</h3>
         <div className="space-y-3">
-          <Field label="Restoran Adı">
+          <Field label={t('restaurantName')}>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="İşletme Türü">
+          <Field label={t('businessType')}>
             <div className="grid gap-2 sm:grid-cols-2">
               {VERTICALS.map(([val, label, hint]) => {
                 const locked = allowedVerticals ? !allowedVerticals.includes(val) : false;
@@ -182,7 +187,7 @@ export function RestaurantSettingsForm({
                     type="button"
                     disabled={locked}
                     onClick={() => setVertical(val)}
-                    title={locked ? 'Bu tür planınızda yok — yükseltin' : undefined}
+                    title={locked ? t('verticalLocked') : undefined}
                     className={`rounded-lg border px-3 py-2 text-left transition ${
                       vertical === val
                         ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200'
@@ -201,10 +206,10 @@ export function RestaurantSettingsForm({
               })}
             </div>
           </Field>
-          <Field label="Alt Başlık">
-            <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
+          <Field label={t('subTitle')}>
+            <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder={t('subTitlePlaceholder')} />
           </Field>
-          <Field label="Çalışma Saatleri">
+          <Field label={t('workingHours')}>
             <div className="space-y-1.5">
               {hours.map((d, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -216,10 +221,10 @@ export function RestaurantSettingsForm({
                       d.closed ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'
                     }`}
                   >
-                    {d.closed ? 'Kapalı' : 'Açık'}
+                    {d.closed ? t('closed') : t('open')}
                   </button>
                   {d.closed ? (
-                    <span className="text-xs text-muted">Kapalı</span>
+                    <span className="text-xs text-muted">{t('closed')}</span>
                   ) : (
                     <div className="flex items-center gap-1.5">
                       <Input type="time" value={d.open} onChange={(e) => setDay(i, { open: e.target.value })} className="w-28" />
@@ -230,9 +235,9 @@ export function RestaurantSettingsForm({
                 </div>
               ))}
             </div>
-            <p className="mt-1.5 text-[11px] text-muted">Gece yarısını geçen saatler desteklenir (ör. 20:00 – 02:00). Kapanış 00:00 = gece yarısı.</p>
+            <p className="mt-1.5 text-[11px] text-muted">{t('hoursHint')}</p>
           </Field>
-          <Field label="Açıklama">
+          <Field label={c('description')}>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -240,56 +245,56 @@ export function RestaurantSettingsForm({
               className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
           </Field>
-          <Field label="Adres">
-            <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="İşletme adresi" />
+          <Field label={t('address')}>
+            <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('addressPlaceholder')} />
           </Field>
         </div>
       </Card>
 
       <Card>
-        <h3 className="mb-1 text-sm font-semibold text-ink">İletişim & Sosyal Medya</h3>
-        <p className="mb-3 text-xs text-muted">Doldurduğunuz alanlar menünüzün üst kısmında müşterilere gösterilir. Boş bırakılanlar gizlenir.</p>
+        <h3 className="mb-1 text-sm font-semibold text-ink">{t('contactSocial')}</h3>
+        <p className="mb-3 text-xs text-muted">{t('contactHint')}</p>
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="E-posta">
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@restoran.com" />
+            <Field label={t('email')}>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('emailPlaceholder')} />
             </Field>
-            <Field label="Web Sitesi">
-              <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="restoran.com" />
+            <Field label={t('website')}>
+              <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder={t('websitePlaceholder')} />
             </Field>
-            <Field label="Telefon">
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90 5xx xxx xx xx" />
+            <Field label={t('phone')}>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
             </Field>
             <Field label="WhatsApp">
-              <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+90 5xx xxx xx xx" />
+              <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder={t('phonePlaceholder')} />
             </Field>
             <Field label="Instagram">
-              <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@kullaniciadi" />
+              <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder={t('usernamePlaceholder')} />
             </Field>
             <Field label="Facebook">
-              <Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="facebook.com/sayfa" />
+              <Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder={t('facebookPlaceholder')} />
             </Field>
             <Field label="X (Twitter)">
-              <Input value={x} onChange={(e) => setX(e.target.value)} placeholder="@kullaniciadi" />
+              <Input value={x} onChange={(e) => setX(e.target.value)} placeholder={t('usernamePlaceholder')} />
             </Field>
             <Field label="TikTok">
-              <Input value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder="@kullaniciadi" />
+              <Input value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder={t('usernamePlaceholder')} />
             </Field>
             <Field label="YouTube">
-              <Input value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="youtube.com/@kanal" />
+              <Input value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder={t('youtubePlaceholder')} />
             </Field>
           </div>
         </div>
       </Card>
 
       <Card>
-        <h3 className="mb-1 text-sm font-semibold text-ink">Misafir WiFi</h3>
-        <p className="mb-3 text-xs text-muted">Girilirse menüde WiFi adı ve şifresi (göster/gizle ile) müşterilere sunulur.</p>
+        <h3 className="mb-1 text-sm font-semibold text-ink">{t('guestWifi')}</h3>
+        <p className="mb-3 text-xs text-muted">{t('wifiHint')}</p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="WiFi Adı (SSID)">
+          <Field label={t('wifiName')}>
             <Input value={wifiSsid} onChange={(e) => setWifiSsid(e.target.value)} placeholder="Guest_WiFi" />
           </Field>
-          <Field label="WiFi Şifresi">
+          <Field label={t('wifiPassword')}>
             <Input value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} placeholder="••••••••" />
           </Field>
         </div>
@@ -297,8 +302,8 @@ export function RestaurantSettingsForm({
 
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-ink">Görünüm & Tema</h3>
-          <span className="text-xs text-muted">Menü düzeni</span>
+          <h3 className="text-sm font-semibold text-ink">{t('appearanceTheme')}</h3>
+          <span className="text-xs text-muted">{t('menuLayout')}</span>
         </div>
         <div className="mb-3 grid grid-cols-3 gap-3">
           {THEMES.map(([val, label]) => (
@@ -308,7 +313,7 @@ export function RestaurantSettingsForm({
                 theme === val ? 'border-brand-500 ring-2 ring-brand-200' : 'border-line hover:border-brand-300'
               }`}
             >
-              <button type="button" onClick={() => setTheme(val)} className="block w-full bg-canvas p-2" title={`${label} temasını seç`}>
+              <button type="button" onClick={() => setTheme(val)} className="block w-full bg-canvas p-2" title={t('selectTheme', { theme: label })}>
                 <ThemeThumb theme={val} />
               </button>
               <div
@@ -333,27 +338,27 @@ export function RestaurantSettingsForm({
         </div>
         {slug && (
           <p className="mb-4 text-xs text-muted">
-            Küçük görseller her düzeni temsil eder; <b>↗</b> ile menünüzde canlı önizleyin, beğendiğinizi seçip <b>Kaydet</b>'e basın.
+            {t.rich('themeHint', { b: (chunks) => <b>{chunks}</b> })}
           </p>
         )}
         {onUpload && (
           <div className="grid gap-4 sm:grid-cols-2">
-            <ImageUpload label="Logo" url={logo} busy={uploading === 'logo'} onPick={(f) => upload('logo', f)} />
-            <ImageUpload label="Kapak Görseli" url={cover} busy={uploading === 'cover'} onPick={(f) => upload('cover', f)} wide />
+            <ImageUpload label={t('logo')} url={logo} busy={uploading === 'logo'} onPick={(f) => upload('logo', f)} />
+            <ImageUpload label={t('coverImage')} url={cover} busy={uploading === 'cover'} onPick={(f) => upload('cover', f)} wide />
           </div>
         )}
       </Card>
 
       <Card>
-        <h3 className="mb-3 text-sm font-semibold text-ink">Sipariş & Ödeme</h3>
+        <h3 className="mb-3 text-sm font-semibold text-ink">{t('orderPayment')}</h3>
         <div className="divide-y divide-line">
-          <YesNo label="Garson çağırma (masada)" value={callWaiter} onChange={setCallWaiter} />
-          <YesNo label="Masada sipariş" value={onTable} onChange={setOnTable} />
-          <YesNo label="Gel-al siparişi" value={takeaway} onChange={setTakeaway} />
-          <YesNo label="Teslimat siparişi" value={delivery} onChange={setDelivery} />
+          <YesNo label={t('callWaiter')} value={callWaiter} onChange={setCallWaiter} />
+          <YesNo label={t('onTableOrder')} value={onTable} onChange={setOnTable} />
+          <YesNo label={t('takeawayOrder')} value={takeaway} onChange={setTakeaway} />
+          <YesNo label={t('deliveryOrder')} value={delivery} onChange={setDelivery} />
           {delivery && (
             <div className="flex items-center justify-between py-2.5">
-              <span className="text-sm text-ink">Teslimat Ücreti{currency ? ` (${currency})` : ''}</span>
+              <span className="text-sm text-ink">{t('deliveryCharge')}{currency ? ` (${currency})` : ''}</span>
               <Input
                 type="number"
                 className="w-28 text-right"
@@ -362,8 +367,8 @@ export function RestaurantSettingsForm({
               />
             </div>
           )}
-          <YesNo label="Yeni sipariş bildirimi" value={notify} onChange={setNotify} />
-          <YesNo label="Online ödeme (Tiko)" value={online} onChange={setOnline} />
+          <YesNo label={t('newOrderNotification')} value={notify} onChange={setNotify} />
+          <YesNo label={t('onlinePayment')} value={online} onChange={setOnline} />
         </div>
       </Card>
 
@@ -373,22 +378,22 @@ export function RestaurantSettingsForm({
             <h3 className="text-sm font-semibold text-ink">Happy Hour</h3>
             <span className="text-xs text-muted">Bar</span>
           </div>
-          <YesNo label="Happy Hour indirimi" value={hhEnabled} onChange={setHhEnabled} />
+          <YesNo label={t('happyHourDiscount')} value={hhEnabled} onChange={setHhEnabled} />
           {hhEnabled && (
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <Field label="Başlangıç">
+              <Field label={t('startTime')}>
                 <Input type="time" value={hhStart} onChange={(e) => setHhStart(e.target.value)} />
               </Field>
-              <Field label="Bitiş">
+              <Field label={t('endTime')}>
                 <Input type="time" value={hhEnd} onChange={(e) => setHhEnd(e.target.value)} />
               </Field>
-              <Field label="İndirim (%)">
+              <Field label={t('discountPercent')}>
                 <Input type="number" value={hhPercent} onChange={(e) => setHhPercent(e.target.value)} />
               </Field>
             </div>
           )}
           <p className="mt-2 text-xs text-muted">
-            Bu saat aralığında verilen siparişlere otomatik indirim uygulanır (gece yarısını geçen aralık desteklenir, ör. 22:00–02:00).
+            {t('happyHourHint')}
           </p>
         </Card>
       )}
@@ -400,7 +405,7 @@ export function RestaurantSettingsForm({
             <span className="text-xs text-muted">Enterprise</span>
           </div>
           <div className="space-y-3">
-            <Field label="Marka rengi (menü başlığı)">
+            <Field label={t('brandColor')}>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -411,16 +416,16 @@ export function RestaurantSettingsForm({
                 <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} className="w-32" />
               </div>
             </Field>
-            <YesNo label="“Powered by ComiQR” yazısını gizle" value={hidePoweredBy} onChange={setHidePoweredBy} />
+            <YesNo label={t('hidePoweredBy')} value={hidePoweredBy} onChange={setHidePoweredBy} />
           </div>
         </Card>
       )}
 
       <div className="flex items-center gap-3">
         <Button onClick={save} disabled={busy}>
-          {busy ? 'Kaydediliyor…' : 'Kaydet'}
+          {busy ? c('saving') : c('save')}
         </Button>
-        {saved && <span className="text-sm font-medium text-emerald-700">✓ Kaydedildi</span>}
+        {saved && <span className="text-sm font-medium text-emerald-700">✓ {c('saved')}</span>}
         {error && <span className="text-sm text-red-600">{error}</span>}
       </div>
     </div>
@@ -450,6 +455,8 @@ function ImageUpload({
   onPick: (file: File) => void;
   wide?: boolean;
 }) {
+  const t = useTranslations('settings');
+  const c = useTranslations('common');
   return (
     <div>
       <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
@@ -462,7 +469,7 @@ function ImageUpload({
         )}
       </div>
       <label className="inline-block cursor-pointer rounded-md border border-line px-3 py-1.5 text-xs font-medium text-muted hover:bg-canvas">
-        {busy ? 'Yükleniyor…' : 'Görsel Yükle'}
+        {busy ? c('loading') : t('uploadImage')}
         <input
           type="file"
           accept="image/*"
@@ -475,6 +482,7 @@ function ImageUpload({
 }
 
 function YesNo({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  const c = useTranslations('common');
   return (
     <div className="flex items-center justify-between py-2.5">
       <span className="text-sm text-ink">{label}</span>
@@ -488,7 +496,7 @@ function YesNo({ label, value, onChange }: { label: string; value: boolean; onCh
               value === v ? (v ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-white text-muted'
             }`}
           >
-            {v ? 'Evet' : 'Hayır'}
+            {v ? c('yes') : c('no')}
           </button>
         ))}
       </div>

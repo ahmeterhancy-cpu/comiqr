@@ -1,15 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { ThemeThumb } from '@/components/ThemeThumb';
 import { useApi } from '@/lib/useApi';
 
 /** Görsel menü temaları — kaynak: RestaurantSettings::THEMES (classic/flipbook/modern). */
-const THEMES: { key: 'modern' | 'classic' | 'flipbook'; name: string; tag: string | null; desc: string }[] = [
-  { key: 'modern', name: 'Modern', tag: 'Varsayılan', desc: 'Kart tabanlı çağdaş düzen: ürün fotoğrafı, kalori rozetleri ve yapışkan kategori navigasyonu.' },
-  { key: 'classic', name: 'Classic', tag: null, desc: 'Görsel odaklı: üstte kapak görseli + yuvarlak logo + hakkında metni, her üründe fotoğraf.' },
-  { key: 'flipbook', name: 'Flipbook', tag: null, desc: 'Basılı menü / dergi estetiği: krem zemin, serif başlıklar, noktalı fiyat çizgileri, fotoğrafsız.' },
+const THEMES: { key: 'modern' | 'classic' | 'flipbook'; name: string; descKey: string }[] = [
+  { key: 'modern', name: 'Modern', descKey: 'themeModernDesc' },
+  { key: 'classic', name: 'Classic', descKey: 'themeClassicDesc' },
+  { key: 'flipbook', name: 'Flipbook', descKey: 'themeFlipbookDesc' },
 ];
 
 const LANGS: [string, string][] = [
@@ -22,13 +23,15 @@ const LANGS: [string, string][] = [
 const TEXT_COLORS = ['#111827', '#ffffff', '#4b5563', '#15803d', '#2563eb', '#7c3aed', '#ea580c', '#dc2626'];
 const PAGE_COLORS = ['#ffffff', '#f9fafb', '#f3f4f6', '#faf7f2', '#f7f7f4', '#fdf6e3', '#f0f7f0', '#fdf2f2'];
 const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
-const DEVICES: { key: 'phone' | 'tablet' | 'desktop'; label: string; w: number; h: number }[] = [
-  { key: 'phone', label: 'Telefon', w: 390, h: 720 },
-  { key: 'tablet', label: 'Tablet', w: 768, h: 820 },
-  { key: 'desktop', label: 'Masaüstü', w: 1024, h: 720 },
+const DEVICES: { key: 'phone' | 'tablet' | 'desktop'; labelKey: string; w: number; h: number }[] = [
+  { key: 'phone', labelKey: 'devicePhone', w: 390, h: 720 },
+  { key: 'tablet', labelKey: 'deviceTablet', w: 768, h: 820 },
+  { key: 'desktop', labelKey: 'deviceDesktop', w: 1024, h: 720 },
 ];
 
 export default function MenuBuilderPage() {
+  const t = useTranslations('menuBuilder');
+  const c = useTranslations('common');
   const { api, me, ready } = useApi();
   const [menu, setMenu] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -184,10 +187,10 @@ export default function MenuBuilderPage() {
   const contactList = useMemo(() => {
     const s = tenantSettings;
     const out: { key: string; label: string; value: string }[] = [];
-    if (s.phone) out.push({ key: 'phone', label: 'Telefon', value: s.phone });
+    if (s.phone) out.push({ key: 'phone', label: t('contactPhone'), value: s.phone });
     if (s.whatsapp) out.push({ key: 'whatsapp', label: 'WhatsApp', value: s.whatsapp });
-    if (s.email) out.push({ key: 'email', label: 'E-posta', value: s.email });
-    if (s.website) out.push({ key: 'website', label: 'Web', value: s.website });
+    if (s.email) out.push({ key: 'email', label: t('contactEmail'), value: s.email });
+    if (s.website) out.push({ key: 'website', label: t('contactWeb'), value: s.website });
     return out;
   }, [tenantSettings]);
 
@@ -205,7 +208,7 @@ export default function MenuBuilderPage() {
   }
 
   return (
-    <AdminShell title="Menü Builder">
+    <AdminShell title={t('title')}>
       {/* Print isolation: only the sheet prints */}
       <style>{`@media print {
         body * { visibility: hidden !important; }
@@ -226,20 +229,20 @@ export default function MenuBuilderPage() {
             style={{ color: '#ffffff' }}
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-9" /></svg>
-            {saving ? 'Kaydediliyor…' : saved ? 'QR Menüye Kaydedildi' : 'QR Menüye Kaydet'}
+            {saving ? c('saving') : saved ? t('savedToQr') : t('saveToQr')}
           </button>
 
           {/* Export */}
-          <Section title="Dışa Aktarım">
+          <Section title={t('exportSection')}>
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Menü Dili">
+              <Field label={t('menuLanguage')}>
                 <Select value={lang} onChange={setLang} options={LANGS} />
               </Field>
-              <Field label="İkinci Dil">
-                <Select value={''} onChange={() => undefined} options={[['', 'Seçilmedi'], ...LANGS]} disabled />
+              <Field label={t('secondLanguage')}>
+                <Select value={''} onChange={() => undefined} options={[['', t('notSelected')], ...LANGS]} disabled />
               </Field>
             </div>
-            <p className="mt-2 text-xs text-muted">Menü <b className="text-ink">{LANGS.find((l) => l[0] === lang)?.[1]}</b> dilinde indirilecek.</p>
+            <p className="mt-2 text-xs text-muted">{t.rich('downloadNotice', { lang: LANGS.find((l) => l[0] === lang)?.[1] ?? lang, b: (chunks) => <b className="text-ink">{chunks}</b> })}</p>
             <button
               type="button"
               onClick={() => window.print()}
@@ -247,50 +250,50 @@ export default function MenuBuilderPage() {
               style={{ color: '#ffffff' }}
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
-              İndir (PDF / Yazdır)
+              {t('downloadPdf')}
             </button>
           </Section>
 
           {/* Content */}
-          <Section title="İçerik">
-            <Toggle label="Açıklamaları göster" value={showDesc} onChange={setShowDesc} />
-            <Toggle label="İçindekileri göster" value={showIng} onChange={setShowIng} />
-            <Toggle label="Fiyatları göster" value={showPrices} onChange={setShowPrices} />
-            <Toggle label="WiFi göster" value={showWifi} onChange={setShowWifi} />
-            <Toggle label="Çalışma saatleri" value={showHours} onChange={setShowHours} />
-            <Toggle label="Sepete ekle / sepet" value={showCart} onChange={setShowCart} />
-            <Toggle label="Garson çağır" value={showCallWaiter} onChange={setShowCallWaiter} />
-            <Toggle label="Hesap iste" value={showBill} onChange={setShowBill} />
-            <Toggle label="Arama" value={showSearch} onChange={setShowSearch} />
-            <Toggle label="Alerjen filtreleri" value={showAllergens} onChange={setShowAllergens} />
+          <Section title={t('contentSection')}>
+            <Toggle label={t('showDescriptions')} value={showDesc} onChange={setShowDesc} />
+            <Toggle label={t('showIngredients')} value={showIng} onChange={setShowIng} />
+            <Toggle label={t('showPrices')} value={showPrices} onChange={setShowPrices} />
+            <Toggle label={t('showWifi')} value={showWifi} onChange={setShowWifi} />
+            <Toggle label={t('showHours')} value={showHours} onChange={setShowHours} />
+            <Toggle label={t('showCart')} value={showCart} onChange={setShowCart} />
+            <Toggle label={t('showCallWaiter')} value={showCallWaiter} onChange={setShowCallWaiter} />
+            <Toggle label={t('showBill')} value={showBill} onChange={setShowBill} />
+            <Toggle label={t('showSearch')} value={showSearch} onChange={setShowSearch} />
+            <Toggle label={t('showAllergens')} value={showAllergens} onChange={setShowAllergens} />
           </Section>
 
           {/* Menu theme */}
-          <Section title="Menü Tasarımı">
-            <p className="-mt-1 mb-3 text-[11px] text-muted">Müşterilerin gördüğü QR menünün görsel düzeni. Seçim canlı önizlemeye anında yansır.</p>
+          <Section title={t('menuDesignSection')}>
+            <p className="-mt-1 mb-3 text-[11px] text-muted">{t('menuDesignHint')}</p>
             <div className="space-y-2">
-              {THEMES.map((t) => {
-                const active = theme === t.key;
+              {THEMES.map((th) => {
+                const active = theme === th.key;
                 return (
                   <button
-                    key={t.key}
+                    key={th.key}
                     type="button"
-                    onClick={() => setTheme(t.key)}
+                    onClick={() => setTheme(th.key)}
                     aria-pressed={active}
                     className={`flex w-full items-center gap-3 rounded-xl border p-2 text-left transition ${active ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30' : 'border-line hover:border-brand-300'}`}
                   >
                     <div className="w-10 shrink-0 overflow-hidden rounded-md border border-line/60">
-                      <ThemeThumb theme={t.key} />
+                      <ThemeThumb theme={th.key} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className={`text-sm font-bold ${active ? 'text-brand-700' : 'text-ink'}`}>{t.name}</span>
-                        {t.tag && <span className="rounded-full bg-brand-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-brand-600">{t.tag}</span>}
+                        <span className={`text-sm font-bold ${active ? 'text-brand-700' : 'text-ink'}`}>{th.name}</span>
+                        {th.key === 'modern' && <span className="rounded-full bg-brand-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-brand-600">{t('defaultTag')}</span>}
                         {active && (
                           <svg viewBox="0 0 24 24" className="ml-auto h-4 w-4 shrink-0 text-brand-600" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-9" /></svg>
                         )}
                       </div>
-                      <p className="mt-0.5 text-[11px] leading-snug text-muted">{t.desc}</p>
+                      <p className="mt-0.5 text-[11px] leading-snug text-muted">{t(th.descKey)}</p>
                     </div>
                   </button>
                 );
@@ -301,20 +304,20 @@ export default function MenuBuilderPage() {
           {/* Contacts */}
           {contactList.length > 0 && (
             <Section
-              title="İletişim"
+              title={t('contactsSection')}
               right={
                 <div className="flex gap-1.5 text-xs">
-                  <button type="button" onClick={() => setContacts(Object.fromEntries(contactList.map((c) => [c.key, true])))} className="rounded-lg border border-line px-2 py-0.5 font-semibold text-muted hover:bg-canvas">Tümü</button>
-                  <button type="button" onClick={() => setContacts({})} className="rounded-lg border border-line px-2 py-0.5 font-semibold text-muted hover:bg-canvas">Temizle</button>
+                  <button type="button" onClick={() => setContacts(Object.fromEntries(contactList.map((ct) => [ct.key, true])))} className="rounded-lg border border-line px-2 py-0.5 font-semibold text-muted hover:bg-canvas">{c('all')}</button>
+                  <button type="button" onClick={() => setContacts({})} className="rounded-lg border border-line px-2 py-0.5 font-semibold text-muted hover:bg-canvas">{c('clear')}</button>
                 </div>
               }
             >
               <div className="space-y-1.5">
-                {contactList.map((c) => (
-                  <label key={c.key} className="flex items-center gap-2.5 rounded-lg border border-line px-3 py-2 text-sm">
-                    <input type="checkbox" checked={!!contacts[c.key]} onChange={(e) => setContacts((p) => ({ ...p, [c.key]: e.target.checked }))} className="accent-brand-500" />
-                    <span className="font-medium text-muted">{c.label}</span>
-                    <span className="ml-auto truncate text-ink">{c.value}</span>
+                {contactList.map((ct) => (
+                  <label key={ct.key} className="flex items-center gap-2.5 rounded-lg border border-line px-3 py-2 text-sm">
+                    <input type="checkbox" checked={!!contacts[ct.key]} onChange={(e) => setContacts((p) => ({ ...p, [ct.key]: e.target.checked }))} className="accent-brand-500" />
+                    <span className="font-medium text-muted">{ct.label}</span>
+                    <span className="ml-auto truncate text-ink">{ct.value}</span>
                   </label>
                 ))}
               </div>
@@ -322,20 +325,20 @@ export default function MenuBuilderPage() {
           )}
 
           {/* Colors */}
-          <Section title="Renkler">
-            <div className="mb-1.5 text-xs font-medium text-muted">Yazı Rengi</div>
+          <Section title={t('colorsSection')}>
+            <div className="mb-1.5 text-xs font-medium text-muted">{t('textColor')}</div>
             <Swatches colors={TEXT_COLORS} value={textColor} onChange={setTextColor} />
-            <div className="mb-1.5 mt-3 text-xs font-medium text-muted">Sayfa Rengi</div>
+            <div className="mb-1.5 mt-3 text-xs font-medium text-muted">{t('pageColor')}</div>
             <Swatches colors={PAGE_COLORS} value={pageColor} onChange={setPageColor} />
-            <div className="mb-1.5 mt-3 text-xs font-medium text-muted">Sayfa Süsü</div>
+            <div className="mb-1.5 mt-3 text-xs font-medium text-muted">{t('pageDecoration')}</div>
             <Select
               value={decoration}
               onChange={(v) => setDecoration(v as any)}
               options={[
-                ['none', 'Süs yok'],
-                ['border', 'İnce çerçeve'],
-                ['double', 'Çift çerçeve'],
-                ['dotted', 'Noktalı çerçeve'],
+                ['none', t('decorationNone')],
+                ['border', t('decorationBorder')],
+                ['double', t('decorationDouble')],
+                ['dotted', t('decorationDotted')],
               ]}
             />
           </Section>
@@ -345,18 +348,18 @@ export default function MenuBuilderPage() {
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center justify-center gap-3">
             <div className="inline-flex rounded-xl border border-line bg-surface p-0.5">
-              {(['qr', 'pdf'] as const).map((t) => (
-                <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-lg px-4 py-1.5 text-xs font-bold transition ${tab === t ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={tab === t ? { color: '#ffffff' } : undefined}>{t === 'qr' ? 'QR Menü' : 'PDF'}</button>
+              {(['qr', 'pdf'] as const).map((tk) => (
+                <button key={tk} type="button" onClick={() => setTab(tk)} className={`rounded-lg px-4 py-1.5 text-xs font-bold transition ${tab === tk ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={tab === tk ? { color: '#ffffff' } : undefined}>{tk === 'qr' ? t('tabQr') : 'PDF'}</button>
               ))}
             </div>
             {tab === 'qr' ? (
               <>
                 <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
                   {DEVICES.map((d) => (
-                    <button key={d.key} type="button" onClick={() => setDevice(d.key)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${device === d.key ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={device === d.key ? { color: '#ffffff' } : undefined}>{d.label}</button>
+                    <button key={d.key} type="button" onClick={() => setDevice(d.key)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${device === d.key ? 'bg-brand-500 text-white' : 'text-muted hover:text-ink'}`} style={device === d.key ? { color: '#ffffff' } : undefined}>{t(d.labelKey)}</button>
                   ))}
                 </div>
-                <button type="button" onClick={() => setReloadKey((k) => k + 1)} title="Yenile" className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted transition hover:bg-canvas">
+                <button type="button" onClick={() => setReloadKey((k) => k + 1)} title={t('refresh')} className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted transition hover:bg-canvas">
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" /></svg>
                 </button>
               </>
@@ -381,7 +384,7 @@ export default function MenuBuilderPage() {
                 <iframe
                   key={previewUrl}
                   src={previewUrl}
-                  title="QR Menü"
+                  title={t('tabQr')}
                   onLoad={() => setPreviewLoading(false)}
                   className={`block bg-white ${device === 'phone' ? 'rounded-[1.7rem]' : device === 'tablet' ? 'rounded-[1rem]' : 'rounded-lg'}`}
                   style={{ width: dev.w, height: dev.h, transform: `scale(${frameScale})`, transformOrigin: 'top left', border: 0, marginRight: dev.w * (1 - frameScale) * -1, marginBottom: dev.h * (1 - frameScale) * -1 }}
@@ -444,7 +447,7 @@ export default function MenuBuilderPage() {
                       <section key={c.id} style={{ breakInside: 'avoid', marginBottom: 18 }}>
                         <h2 style={{ fontSize: 15, textTransform: 'uppercase', letterSpacing: 1.5, borderBottom: `1.5px solid currentColor`, paddingBottom: 3, marginBottom: 9, fontWeight: 700 }}>
                           {c.name}
-                          {c.promo?.active && <span style={{ float: 'right', color: '#dc2626', fontSize: 11 }}>%{Math.round(c.promo.percent)} indirim</span>}
+                          {c.promo?.active && <span style={{ float: 'right', color: '#dc2626', fontSize: 11 }}>{t('discountBadge', { percent: Math.round(c.promo.percent) })}</span>}
                         </h2>
                         {(c.products ?? []).map((p: any) => {
                           const pp = priceParts(p);
@@ -464,7 +467,7 @@ export default function MenuBuilderPage() {
                               </div>
                               {showDesc && p.description && <div style={{ fontSize: 11, opacity: 0.65, marginTop: 1 }}>{p.description}</div>}
                               {showIng && Array.isArray(p.recipe) && p.recipe.length > 0 && (
-                                <div style={{ fontSize: 10.5, opacity: 0.5, marginTop: 1 }}>İçindekiler: {p.recipe.map((r: any) => r.name).join(', ')}</div>
+                                <div style={{ fontSize: 10.5, opacity: 0.5, marginTop: 1 }}>{t('ingredientsLabel')}: {p.recipe.map((r: any) => r.name).join(', ')}</div>
                               )}
                               {pp && priceRow && (
                                 <div style={{ fontWeight: 700, fontSize: 12, marginTop: 2 }}>
@@ -480,7 +483,7 @@ export default function MenuBuilderPage() {
                   </div>
 
                   <div style={{ textAlign: 'center', opacity: 0.45, fontSize: 9, marginTop: 24, borderTop: '1px solid currentColor', paddingTop: 8 }}>
-                    {venue.name} · ComiQR ile hazırlandı
+                    {venue.name} · {t('preparedWith')}
                   </div>
                 </div>
           </div>
@@ -534,10 +537,11 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   );
 }
 function PreviewSpinner() {
+  const c = useTranslations('common');
   return (
     <div className="flex flex-col items-center gap-3 text-muted">
       <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-line border-t-brand-500" />
-      <span className="text-xs">Yükleniyor…</span>
+      <span className="text-xs">{c('loading')}</span>
     </div>
   );
 }

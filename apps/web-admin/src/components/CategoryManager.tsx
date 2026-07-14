@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ImageCropperField } from '@/components/ImageCropperField';
 
 type Promo = { active: boolean; percent: number; label: string | null };
@@ -37,6 +38,8 @@ export function CategoryManager({
   onReorder?: (ids: number[]) => void;
   onChanged: () => void;
 }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const [order, setOrder] = useState<Cat[]>(categories);
   const [modal, setModal] = useState<null | { mode: 'create' | 'edit'; cat?: Cat }>(null);
   const [promoFor, setPromoFor] = useState<Cat | null>(null);
@@ -66,7 +69,7 @@ export function CategoryManager({
 
   async function remove(cat: Cat) {
     setMenuFor(null);
-    if (!window.confirm(`"${cat.name}" kategorisi ve içindeki ürünler silinsin mi?`)) return;
+    if (!window.confirm(t('deleteCategoryConfirm', { name: cat.name }))) return;
     await api.deleteCategory(cat.id);
     onChanged();
   }
@@ -99,7 +102,7 @@ export function CategoryManager({
         >
           <div className="text-center">
             <svg viewBox="0 0 24 24" className="mx-auto h-7 w-7" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            <span className="mt-1 block text-xs font-semibold">Kategori Ekle</span>
+            <span className="mt-1 block text-xs font-semibold">{t('addCategory')}</span>
           </div>
         </button>
 
@@ -123,7 +126,7 @@ export function CategoryManager({
               className={`group relative h-36 w-36 shrink-0 cursor-pointer overflow-hidden rounded-2xl border bg-canvas shadow-sm transition ${
                 selected ? 'border-brand-500 ring-2 ring-brand-200' : 'border-line hover:border-brand-300'
               } ${dragId === c.id ? 'opacity-50' : ''} ${!c.is_active ? 'grayscale' : ''}`}
-              title="Sürükleyerek sıralayın"
+              title={t('dragToSort')}
             >
               {c.image_path ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -142,7 +145,7 @@ export function CategoryManager({
                   e.stopPropagation();
                   toggle(c);
                 }}
-                title={c.is_active ? 'Açık — kapatmak için tıkla' : 'Kapalı — açmak için tıkla'}
+                title={c.is_active ? t('onClickToDisable') : t('offClickToEnable')}
                 className={`absolute left-2 top-2 flex h-5 w-9 items-center rounded-full p-0.5 transition ${c.is_active ? 'bg-emerald-500' : 'bg-white/50'}`}
               >
                 <span className={`h-4 w-4 rounded-full bg-white shadow transition ${c.is_active ? 'translate-x-4' : ''}`} />
@@ -155,7 +158,7 @@ export function CategoryManager({
                   e.stopPropagation();
                   setMenuFor(menuFor === c.id ? null : c.id);
                 }}
-                aria-label="Menü"
+                aria-label={t('menuAria')}
                 className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-white/85 text-ink shadow transition hover:bg-white"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>
@@ -164,17 +167,17 @@ export function CategoryManager({
                 <>
                   <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setMenuFor(null); }} />
                   <div className="absolute right-2 top-10 z-20 w-36 overflow-hidden rounded-xl border border-line bg-white py-1 text-left shadow-lg" onClick={(e) => e.stopPropagation()}>
-                    <button type="button" onClick={() => { setMenuFor(null); setModal({ mode: 'edit', cat: c }); }} className="block w-full px-3 py-1.5 text-left text-sm text-ink hover:bg-canvas">Düzenle</button>
-                    <button type="button" onClick={() => remove(c)} className="block w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50">Sil</button>
+                    <button type="button" onClick={() => { setMenuFor(null); setModal({ mode: 'edit', cat: c }); }} className="block w-full px-3 py-1.5 text-left text-sm text-ink hover:bg-canvas">{cm('edit')}</button>
+                    <button type="button" onClick={() => remove(c)} className="block w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50">{cm('delete')}</button>
                   </div>
                 </>
               )}
 
               {!c.is_active ? (
-                <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white shadow" style={{ color: '#ffffff' }}>Kapalı</span>
+                <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white shadow" style={{ color: '#ffffff' }}>{cm('disabled')}</span>
               ) : c.promo?.active ? (
                 <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white shadow" style={{ color: '#ffffff' }}>
-                  %{Math.round(c.promo.percent)} İNDİRİM
+                  {t('discountBadge', { percent: Math.round(c.promo.percent) })}
                 </span>
               ) : null}
 
@@ -189,8 +192,8 @@ export function CategoryManager({
                   e.stopPropagation();
                   setPromoFor(c);
                 }}
-                title={c.promo?.active ? `Promosyon: %${Math.round(c.promo.percent)} indirim` : 'Promosyon ekle'}
-                aria-label="Promosyon"
+                title={c.promo?.active ? t('promoActive', { percent: Math.round(c.promo.percent) }) : t('addPromo')}
+                aria-label={t('promoAria')}
                 className={`absolute bottom-2 right-2 grid h-7 w-7 place-items-center rounded-lg shadow transition ${c.promo?.active ? 'bg-red-500 text-white' : 'bg-white/85 text-ink hover:bg-white'}`}
                 style={c.promo?.active ? { color: '#ffffff' } : undefined}
               >
@@ -246,6 +249,8 @@ function CategoryPromoModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const [percent, setPercent] = useState<number>(cat.promo?.active ? Math.round(cat.promo.percent) : 20);
   const [label, setLabel] = useState<string>(cat.promo?.label ?? '');
   const [showLabel, setShowLabel] = useState<boolean>(!!cat.promo?.label);
@@ -263,7 +268,7 @@ function CategoryPromoModal({
       });
       onSaved();
     } catch {
-      setError('Kaydedilemedi, tekrar deneyin.');
+      setError(t('saveFailed'));
       setBusy(false);
     }
   }
@@ -273,10 +278,10 @@ function CategoryPromoModal({
       <div className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div>
-            <h2 className="text-lg font-extrabold tracking-tight text-ink">Promosyon: {cat.name}</h2>
-            <p className="text-xs text-muted">Bu kategorideki tüm ürünler için yüzde indirim belirleyin.</p>
+            <h2 className="text-lg font-extrabold tracking-tight text-ink">{t('promoTitle', { name: cat.name })}</h2>
+            <p className="text-xs text-muted">{t('promoSubtitle')}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink">
+          <button type="button" onClick={onClose} aria-label={cm('close')} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </div>
@@ -299,7 +304,7 @@ function CategoryPromoModal({
           {/* Slider */}
           <div className="mt-4 rounded-xl bg-canvas p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-ink">İndirim Oranı</span>
+              <span className="text-sm font-semibold text-ink">{t('discountRate')}</span>
               <span className="text-2xl font-black text-red-500">%{percent}</span>
             </div>
             <input type="range" min={1} max={95} step={1} value={percent} onChange={(e) => setPercent(Number(e.target.value))} className="mt-2 w-full accent-[#ef4444]" />
@@ -308,24 +313,24 @@ function CategoryPromoModal({
 
           {/* Optional label */}
           <button type="button" onClick={() => setShowLabel((v) => !v)} className="mt-4 flex w-full items-center justify-between rounded-xl border border-line px-4 py-3 text-sm font-medium text-ink">
-            <span>Tanıtım açıklaması <span className="text-muted">( İsteğe bağlı )</span></span>
+            <span>{t('promoLabelToggle')} <span className="text-muted">( {t('optionalNote')} )</span></span>
             <svg viewBox="0 0 24 24" className={`h-4 w-4 text-muted transition ${showLabel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
           </button>
           {showLabel && (
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Örn. Hafta sonu fırsatı" className="mt-2 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500" />
+            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('promoLabelPlaceholder')} className="mt-2 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500" />
           )}
 
           {/* Price preview */}
           <div className="mt-5">
-            <h3 className="mb-2 text-sm font-bold text-ink">Fiyat Önizlemesi</h3>
+            <h3 className="mb-2 text-sm font-bold text-ink">{t('pricePreview')}</h3>
             {products.length === 0 ? (
-              <p className="rounded-lg bg-canvas px-3 py-2 text-sm text-muted">Bu kategoride ürün yok.</p>
+              <p className="rounded-lg bg-canvas px-3 py-2 text-sm text-muted">{t('noProductsInCategory')}</p>
             ) : (
               <div className="space-y-3 rounded-xl border border-line p-3">
                 {products.map((p) => {
                   const rows: { name: string; base: number }[] = (p.variants ?? []).length
                     ? p.variants.map((v: any) => ({ name: v.name, base: Number(p.price) + Number(v.price_delta) }))
-                    : [{ name: '1 Porsiyon', base: Number(p.price) }];
+                    : [{ name: t('onePortion'), base: Number(p.price) }];
                   return (
                     <div key={p.id}>
                       <div className="text-xs font-bold uppercase tracking-wide text-muted">{p.name}</div>
@@ -354,14 +359,14 @@ function CategoryPromoModal({
 
         <div className="flex items-center justify-between gap-2 border-t border-line px-6 py-4">
           {cat.promo?.active ? (
-            <button type="button" onClick={() => save(false)} disabled={busy} className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60">Promosyonu Kaldır</button>
+            <button type="button" onClick={() => save(false)} disabled={busy} className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60">{t('removePromo')}</button>
           ) : (
             <span />
           )}
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onClose} className="rounded-xl border border-line px-5 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">İptal</button>
+            <button type="button" onClick={onClose} className="rounded-xl border border-line px-5 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">{cm('cancel')}</button>
             <button type="button" onClick={() => save(true)} disabled={busy} className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-bold text-white transition hover:bg-brand-600 disabled:opacity-60" style={{ color: '#ffffff' }}>
-              {busy ? 'Kaydediliyor…' : cat.promo?.active ? 'Güncelle' : 'Uygula'}
+              {busy ? cm('saving') : cat.promo?.active ? cm('update') : cm('apply')}
             </button>
           </div>
         </div>
@@ -383,6 +388,8 @@ function CategoryModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const [name, setName] = useState(cat?.name ?? '');
   const [image, setImage] = useState<string | null>(cat?.image_path ?? null);
   const [busy, setBusy] = useState(false);
@@ -390,7 +397,7 @@ function CategoryModal({
 
   async function save() {
     if (!name.trim()) {
-      setError('Kategori adı gerekli.');
+      setError(t('categoryNameRequired'));
       return;
     }
     setBusy(true);
@@ -400,7 +407,7 @@ function CategoryModal({
       else if (cat) await api.updateCategory(cat.id, { name: name.trim(), image_path: image });
       onSaved();
     } catch {
-      setError('Kaydedilemedi, tekrar deneyin.');
+      setError(t('saveFailed'));
       setBusy(false);
     }
   }
@@ -409,29 +416,29 @@ function CategoryModal({
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
       <div className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
-          <h2 className="text-lg font-extrabold tracking-tight text-ink">{mode === 'create' ? 'Kategori Oluştur' : 'Kategori Düzenle'}</h2>
-          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink">
+          <h2 className="text-lg font-extrabold tracking-tight text-ink">{mode === 'create' ? t('createCategory') : t('editCategory')}</h2>
+          <button type="button" onClick={onClose} aria-label={cm('close')} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
           <label className="mb-1.5 block text-sm font-medium text-ink">
-            Kategori Adı <span className="text-red-500">*</span>
+            {t('categoryName')} <span className="text-red-500">*</span>
           </label>
           <div className="flex overflow-hidden rounded-xl border border-line focus-within:border-brand-500">
-            <span className="grid place-items-center border-r border-line bg-canvas px-3 text-sm font-semibold text-brand-600">Türkçe</span>
+            <span className="grid place-items-center border-r border-line bg-canvas px-3 text-sm font-semibold text-brand-600">{t('turkish')}</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Kategori adı girin"
+              placeholder={t('categoryNamePlaceholder')}
               autoFocus
               className="min-w-0 flex-1 bg-white px-3.5 py-2.5 text-sm outline-none"
             />
           </div>
 
           <div className="mt-4">
-            <label className="mb-1.5 block text-sm font-medium text-ink">Kategori Görseli</label>
+            <label className="mb-1.5 block text-sm font-medium text-ink">{t('categoryImage')}</label>
             <ImageCropperField kind="category" aspect={1} url={image} onChange={setImage} upload={(f) => api.uploadCategoryImage(f)} />
           </div>
 
@@ -439,9 +446,9 @@ function CategoryModal({
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-line px-6 py-4">
-          <button type="button" onClick={onClose} className="rounded-xl border border-line px-5 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">İptal</button>
+          <button type="button" onClick={onClose} className="rounded-xl border border-line px-5 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">{cm('cancel')}</button>
           <button type="button" onClick={save} disabled={busy} className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-bold text-white transition hover:bg-brand-600 disabled:opacity-60" style={{ color: '#ffffff' }}>
-            {busy ? 'Kaydediliyor…' : mode === 'create' ? 'Oluştur' : 'Kaydet'}
+            {busy ? cm('saving') : mode === 'create' ? cm('create') : cm('save')}
           </button>
         </div>
       </div>

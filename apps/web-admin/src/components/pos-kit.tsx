@@ -7,6 +7,7 @@
  * Kept framework-light (plain state) and styled with the admin theme tokens.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui';
 
 export function money(n: number | string, currency = 'TRY'): string {
@@ -84,6 +85,8 @@ export function Customizer({
   onClose: () => void;
   onAdd: (variant: any, ids: number[], names: string[]) => void;
 }) {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const variants = product.variants ?? [];
   const groups = product.modifier_groups ?? [];
   const [variantId, setVariantId] = useState<number | undefined>(
@@ -116,7 +119,7 @@ export function Customizer({
     <Modal title={product.name} onClose={onClose}>
       {variants.length > 0 && (
         <div className="mb-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Boyut</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{t('size')}</p>
           <div className="flex flex-wrap gap-2">
             {variants.map((v: any) => (
               <button
@@ -136,7 +139,7 @@ export function Customizer({
       {groups.map((g: any) => (
         <div key={g.id} className="mb-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            {g.name} {g.is_required ? <span className="text-brand-600">• zorunlu</span> : ''}
+            {g.name} {g.is_required ? <span className="text-brand-600">• {c('required')}</span> : ''}
           </p>
           <div className="flex flex-wrap gap-2">
             {g.modifiers.map((m: any) => (
@@ -161,7 +164,7 @@ export function Customizer({
         disabled={missingRequired}
         className="mt-2 w-full py-3.5 text-base"
       >
-        Sepete Ekle
+        {t('addToCart')}
       </Button>
     </Modal>
   );
@@ -180,6 +183,8 @@ export function DiscountModal({
   onClose: () => void;
   onApply: (type: 'percent' | 'amount', value: number, reason?: string) => void;
 }) {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const [type, setType] = useState<'percent' | 'amount'>('percent');
   const [value, setValue] = useState('');
   const [reason, setReason] = useState('');
@@ -187,17 +192,17 @@ export function DiscountModal({
     type === 'percent' ? round2((subtotal * Math.min(100, Number(value) || 0)) / 100) : Math.min(subtotal, Number(value) || 0);
 
   return (
-    <Modal title="İndirim Uygula" onClose={onClose}>
+    <Modal title={t('applyDiscountTitle')} onClose={onClose}>
       <div className="mb-4 grid grid-cols-2 gap-2">
-        {(['percent', 'amount'] as const).map((t) => (
+        {(['percent', 'amount'] as const).map((opt) => (
           <button
-            key={t}
-            onClick={() => { setType(t); setValue(''); }}
+            key={opt}
+            onClick={() => { setType(opt); setValue(''); }}
             className={`rounded-xl py-3 text-sm font-semibold transition ${
-              type === t ? 'bg-brand-500 text-white' : 'border border-line text-muted'
+              type === opt ? 'bg-brand-500 text-white' : 'border border-line text-muted'
             }`}
           >
-            {t === 'percent' ? 'Yüzde (%)' : 'Tutar'}
+            {opt === 'percent' ? t('percentType') : t('amount')}
           </button>
         ))}
       </div>
@@ -216,25 +221,25 @@ export function DiscountModal({
         value={value}
         onChange={(e) => setValue(e.target.value.replace(/[^0-9.]/g, ''))}
         inputMode="decimal"
-        placeholder={type === 'percent' ? 'Yüzde' : 'Tutar'}
+        placeholder={type === 'percent' ? t('percentShort') : t('amount')}
         className="mb-3 w-full rounded-xl border border-line px-4 py-3 text-2xl font-bold text-ink outline-none focus:border-brand-500"
       />
       <input
         value={reason}
         onChange={(e) => setReason(e.target.value)}
-        placeholder="Sebep (opsiyonel)"
+        placeholder={t('reasonOptional')}
         className="mb-4 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-500"
       />
       <div className="mb-4 flex items-center justify-between rounded-xl bg-canvas px-4 py-3 text-sm">
-        <span className="text-muted">İndirim tutarı</span>
+        <span className="text-muted">{t('discountAmount')}</span>
         <span className="text-lg font-bold text-brand-600">− {money(preview, currency)}</span>
       </div>
       <div className="flex gap-2">
         <Button variant="ghost" onClick={() => onApply('amount', 0)} className="flex-1">
-          İndirimi Kaldır
+          {t('removeDiscount')}
         </Button>
         <Button onClick={() => onApply(type, Number(value) || 0, reason || undefined)} disabled={!value} className="flex-1">
-          Uygula
+          {c('apply')}
         </Button>
       </div>
     </Modal>
@@ -258,6 +263,8 @@ export function PaymentModal({
   onClose: () => void;
   onDone: (order: any) => void;
 }) {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const [order, setOrder] = useState<any>(initial);
   const [amount, setAmount] = useState('');
   const [tip, setTip] = useState('');
@@ -307,7 +314,7 @@ export function PaymentModal({
       setOrder(res);
       if (res.payment_status === 'paid') onDone(res);
     } catch (e: any) {
-      setError(e?.message ?? 'Tahsilat başarısız.');
+      setError(e?.message ?? t('tenderFailed'));
     } finally {
       setBusy(false);
     }
@@ -319,7 +326,7 @@ export function PaymentModal({
       const res = await api.posChargeRoom(order.id);
       onDone(res);
     } catch (e: any) {
-      setError(e?.message ?? 'İşlem başarısız.');
+      setError(e?.message ?? t('operationFailed'));
     } finally {
       setBusy(false);
     }
@@ -336,7 +343,7 @@ export function PaymentModal({
       if (res.payment_status === 'paid') onDone(res);
       else setShowRedeem(false);
     } catch (e: any) {
-      setRedeemMsg(e?.message ?? 'Puan kullanılamadı.');
+      setRedeemMsg(e?.message ?? t('redeemFailed'));
     } finally {
       setBusy(false);
     }
@@ -351,17 +358,17 @@ export function PaymentModal({
     (v, i, a) => v > 0 && a.indexOf(v) === i,
   );
   const methods = [
-    { key: 'cash' as const, label: 'Nakit', icon: '💵', show: true },
-    { key: 'card' as const, label: 'Kart', icon: '💳', show: true },
-    { key: 'room' as const, label: canRoomCharge ? 'Odaya Yaz' : 'Açık Hesap', icon: '🧾', show: canRoomCharge },
+    { key: 'cash' as const, label: t('cash'), icon: '💵', show: true },
+    { key: 'card' as const, label: t('card'), icon: '💳', show: true },
+    { key: 'room' as const, label: canRoomCharge ? t('chargeRoom') : t('openTab'), icon: '🧾', show: canRoomCharge },
   ].filter((m) => m.show);
 
   return (
-    <Modal title="Ödeme Al" onClose={onClose}>
+    <Modal title={t('takePayment')} onClose={onClose}>
       <div className="mx-auto w-full max-w-md">
         {/* Order + total */}
         <div className="mb-4 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted">🧾 Sipariş #{order.id}</span>
+          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted">🧾 {t('orderNo', { id: order.id })}</span>
           <span className="text-2xl font-black text-brand-600">{money(outstanding, currency)}</span>
         </div>
 
@@ -372,14 +379,14 @@ export function PaymentModal({
             className={`rounded-xl py-2.5 text-sm font-bold transition ${tab === 'full' ? 'bg-brand-500 text-white' : 'bg-canvas text-muted hover:text-ink'}`}
             style={tab === 'full' ? { color: '#ffffff' } : undefined}
           >
-            Tam Ödeme
+            {t('fullPayment')}
           </button>
           <button
             onClick={() => setTab('split')}
             className={`rounded-xl py-2.5 text-sm font-bold transition ${tab === 'split' ? 'bg-slate-900 text-white' : 'bg-canvas text-muted hover:text-ink'}`}
             style={tab === 'split' ? { color: '#ffffff' } : undefined}
           >
-            Böl
+            {t('split')}
           </button>
         </div>
 
@@ -406,11 +413,11 @@ export function PaymentModal({
 
         {/* Totals */}
         <div className="mb-3 space-y-1 text-sm">
-          <div className="flex justify-between text-muted"><span>Toplam</span><span className="font-semibold text-ink">{money(grand, currency)}</span></div>
-          <div className="flex justify-between text-muted"><span>Ödenen</span><span>{money(paid, currency)}</span></div>
-          <div className="flex justify-between font-semibold text-red-600"><span>Kalan</span><span>{money(outstanding, currency)}</span></div>
+          <div className="flex justify-between text-muted"><span>{c('total')}</span><span className="font-semibold text-ink">{money(grand, currency)}</span></div>
+          <div className="flex justify-between text-muted"><span>{t('paid')}</span><span>{money(paid, currency)}</span></div>
+          <div className="flex justify-between font-semibold text-red-600"><span>{t('remaining')}</span><span>{money(outstanding, currency)}</span></div>
           {change > 0 && (
-            <div className="flex justify-between font-semibold text-emerald-600"><span>Para üstü</span><span>{money(change, currency)}</span></div>
+            <div className="flex justify-between font-semibold text-emerald-600"><span>{t('change')}</span><span>{money(change, currency)}</span></div>
           )}
         </div>
 
@@ -418,16 +425,16 @@ export function PaymentModal({
         {tab === 'split' && (
           <div className="mb-3 rounded-xl bg-canvas p-2.5 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted">Eşit böl:</span>
+              <span className="font-semibold text-muted">{t('splitEqually')}</span>
               {[2, 3, 4].map((n) => (
                 <button key={n} onClick={() => setAmount(String(round2(outstanding / n)))} className="rounded-lg border border-line bg-white px-2.5 py-1 font-semibold text-ink hover:border-brand-400">
-                  {n} kişi
+                  {t('peopleCount', { n })}
                 </button>
               ))}
             </div>
             {liveItems.length > 1 && (
               <div className="mt-2">
-                <button onClick={() => setShowItemSplit((v) => !v)} className="font-semibold text-brand-600">🍽️ Ürüne göre böl</button>
+                <button onClick={() => setShowItemSplit((v) => !v)} className="font-semibold text-brand-600">🍽️ {t('splitByItem')}</button>
                 {showItemSplit && (
                   <div className="mt-1.5 max-h-32 space-y-1 overflow-y-auto rounded-lg border border-line bg-white p-2">
                     {liveItems.map((i: any) => (
@@ -463,7 +470,7 @@ export function PaymentModal({
         {/* Tip + redeem (secondary) */}
         <div className="mt-2 flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-muted">Bahşiş</span>
+            <span className="font-semibold text-muted">{t('tip')}</span>
             <input
               value={tip}
               onChange={(e) => setTip(e.target.value.replace(/[^0-9.]/g, ''))}
@@ -473,18 +480,18 @@ export function PaymentModal({
             />
           </div>
           {!showRedeem && (
-            <button onClick={() => setShowRedeem(true)} className="font-semibold text-brand-600">⭐ Puan Kullan</button>
+            <button onClick={() => setShowRedeem(true)} className="font-semibold text-brand-600">⭐ {t('redeemPoints')}</button>
           )}
         </div>
         {showRedeem && (
           <div className="mt-2 space-y-2 rounded-xl border border-line p-2.5 text-xs">
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Müşteri telefonu" className="w-full rounded-lg border border-line px-3 py-1.5 outline-none focus:border-brand-500" />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('customerPhone')} className="w-full rounded-lg border border-line px-3 py-1.5 outline-none focus:border-brand-500" />
             <div className="flex gap-2">
-              <input value={points} onChange={(e) => setPoints(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="Puan" className="flex-1 rounded-lg border border-line px-3 py-1.5 outline-none focus:border-brand-500" />
-              <Button onClick={applyRedeem} loading={busy} className="px-4 py-1.5 text-xs">Kullan</Button>
+              <input value={points} onChange={(e) => setPoints(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder={t('points')} className="flex-1 rounded-lg border border-line px-3 py-1.5 outline-none focus:border-brand-500" />
+              <Button onClick={applyRedeem} loading={busy} className="px-4 py-1.5 text-xs">{t('redeem')}</Button>
             </div>
             {redeemMsg && <p className="text-red-600">{redeemMsg}</p>}
-            <p className="text-[10px] text-muted">1 puan = {money(1, currency)}</p>
+            <p className="text-[10px] text-muted">{t('pointValue', { value: money(1, currency) })}</p>
           </div>
         )}
 
@@ -493,10 +500,10 @@ export function PaymentModal({
         {/* Actions */}
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button onClick={onClose} className="rounded-xl border border-line py-3 text-sm font-bold text-ink transition hover:bg-canvas">
-            İptal
+            {c('cancel')}
           </button>
           <Button onClick={onComplete} loading={busy} className="py-3 text-sm font-bold">
-            {method === 'room' ? (canRoomCharge ? '🧾 Odaya Yaz' : 'Açık Hesap') : 'Ödemeyi Tamamla'}
+            {method === 'room' ? (canRoomCharge ? `🧾 ${t('chargeRoom')}` : t('openTab')) : t('completePayment')}
           </Button>
         </div>
       </div>
@@ -519,6 +526,7 @@ export function RefundModal({
   onClose: () => void;
   onDone: (order: any) => void;
 }) {
+  const t = useTranslations('pos');
   const collected = Number(order.paid_total ?? 0);
   const [amount, setAmount] = useState(String(collected));
   const [gateway, setGateway] = useState<'cash' | 'card'>('cash');
@@ -535,19 +543,19 @@ export function RefundModal({
       const res = await api.posRefund(order.id, { amount: amt, gateway, reason: reason || undefined });
       onDone(res);
     } catch (e: any) {
-      setError(e?.message ?? 'İade başarısız.');
+      setError(e?.message ?? t('refundFailed'));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Modal title="İade" onClose={onClose}>
+    <Modal title={t('refund')} onClose={onClose}>
       <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-canvas px-4 py-3">
-        <span className="text-sm text-muted">Tahsil edilen</span>
+        <span className="text-sm text-muted">{t('collected')}</span>
         <span className="text-2xl font-black text-ink">{money(collected, currency)}</span>
       </div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">İade tutarı</label>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">{t('refundAmount')}</label>
       <input
         value={amount}
         onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
@@ -561,7 +569,7 @@ export function RefundModal({
             onClick={() => setAmount(String(round2(q)))}
             className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-ink hover:border-brand-400"
           >
-            {i === 0 ? 'Yarısı' : 'Tamamı'} · {money(round2(q), currency)}
+            {i === 0 ? t('half') : t('full')} · {money(round2(q), currency)}
           </button>
         ))}
       </div>
@@ -574,19 +582,19 @@ export function RefundModal({
               gateway === g ? 'bg-brand-500 text-white' : 'border border-line text-muted'
             }`}
           >
-            {g === 'cash' ? '💵 Nakit iade' : '💳 Kart iade'}
+            {g === 'cash' ? `💵 ${t('cashRefund')}` : `💳 ${t('cardRefund')}`}
           </button>
         ))}
       </div>
       <input
         value={reason}
         onChange={(e) => setReason(e.target.value)}
-        placeholder="Sebep (opsiyonel)"
+        placeholder={t('reasonOptional')}
         className="mb-4 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-500"
       />
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
       <Button onClick={submit} loading={busy} disabled={amt <= 0} className="w-full bg-red-600 py-3.5 hover:bg-red-700">
-        {money(amt, currency)} İade Et
+        {t('refundDo', { amount: money(amt, currency) })}
       </Button>
     </Modal>
   );
@@ -603,42 +611,43 @@ export function TableMapModal({
   onPick: (tableId: number | null) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('pos');
   const areas = useMemo(() => {
     const map = new Map<string, any[]>();
-    for (const t of tables) {
-      const area = t.area?.name ?? t.dining_area?.name ?? 'Salon';
+    for (const tbl of tables) {
+      const area = tbl.area?.name ?? tbl.dining_area?.name ?? t('defaultArea');
       if (!map.has(area)) map.set(area, []);
-      map.get(area)!.push(t);
+      map.get(area)!.push(tbl);
     }
     return [...map.entries()];
-  }, [tables]);
+  }, [tables, t]);
 
   return (
-    <Modal title="Masa Seç" onClose={onClose} wide>
+    <Modal title={t('selectTable')} onClose={onClose} wide>
       <button
         onClick={() => onPick(null)}
         className="mb-4 w-full rounded-xl border border-dashed border-line py-3 text-sm font-semibold text-muted hover:border-brand-400"
       >
-        🛍️ Gel-Al / Paket (masasız)
+        🛍️ {t('takeawayNoTable')}
       </button>
       {areas.map(([area, ts]) => (
         <div key={area} className="mb-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{area}</p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {ts.map((t) => {
-              const busy = t.has_open_session;
+            {ts.map((tbl) => {
+              const busy = tbl.has_open_session;
               return (
                 <button
-                  key={t.id}
-                  onClick={() => onPick(t.id)}
+                  key={tbl.id}
+                  onClick={() => onPick(tbl.id)}
                   className={`aspect-square rounded-xl border-2 text-sm font-bold transition active:scale-95 ${
                     busy
                       ? 'border-amber-300 bg-amber-50 text-amber-700'
                       : 'border-line bg-white text-ink hover:border-brand-400'
                   }`}
                 >
-                  <div>{t.code}</div>
-                  <div className="mt-0.5 text-[10px] font-medium">{busy ? '● dolu' : 'boş'}</div>
+                  <div>{tbl.code}</div>
+                  <div className="mt-0.5 text-[10px] font-medium">{busy ? `● ${t('occupied')}` : t('free')}</div>
                 </button>
               );
             })}
@@ -666,17 +675,18 @@ export function RecallDrawer({
   onPick: (order: any) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('pos');
   const status = (o: any) =>
     o.payment_status === 'paid'
-      ? 'ödendi'
+      ? t('statusPaid')
       : o.payment_status === 'partially_paid'
-        ? 'kısmi ödendi'
+        ? t('statusPartial')
         : o.charged_to_room
-          ? 'odaya yazıldı'
-          : 'ödenmedi';
+          ? t('statusRoom')
+          : t('statusUnpaid');
 
   return (
-    <Modal title={`Adisyonlar (${orders.length})`} onClose={onClose}>
+    <Modal title={t('tabsTitle', { n: orders.length })} onClose={onClose}>
       <div className="mb-3 grid grid-cols-2 gap-2">
         {(['open', 'today'] as const).map((s) => (
           <button
@@ -686,12 +696,12 @@ export function RecallDrawer({
               scope === s ? 'bg-brand-500 text-white' : 'border border-line text-muted'
             }`}
           >
-            {s === 'open' ? 'Açık' : 'Bugün (ödenenler)'}
+            {s === 'open' ? t('openLabel') : t('todayPaid')}
           </button>
         ))}
       </div>
       {orders.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">Adisyon yok.</p>
+        <p className="py-8 text-center text-sm text-muted">{t('noTabs')}</p>
       ) : (
         <ul className="space-y-2">
           {orders.map((o) => (
@@ -702,11 +712,11 @@ export function RecallDrawer({
               >
                 <div>
                   <div className="text-sm font-semibold text-ink">
-                    {o.table_code ?? 'Gel-Al'}
+                    {o.table_code ?? t('takeaway')}
                     <span className="ml-2 text-xs font-normal text-muted">#{o.id}</span>
                   </div>
                   <div className="text-xs text-muted">
-                    {(o.items ?? []).filter((i: any) => i.status !== 'cancelled').length} ürün · {status(o)}
+                    {t('itemsCount', { n: (o.items ?? []).filter((i: any) => i.status !== 'cancelled').length })} · {status(o)}
                   </div>
                 </div>
                 <span className="text-base font-bold text-ink">{money(o.grand_total, currency)}</span>
@@ -732,12 +742,13 @@ export function KdsPanel({
   productName: (id: number) => string;
   onClose: () => void;
 }) {
+  const t = useTranslations('pos');
   const [orders, setOrders] = useState<any[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!branchId) {
-      setErr('Aktif şube yok.');
+      setErr(t('noBranch'));
       return;
     }
     let alive = true;
@@ -745,14 +756,14 @@ export function KdsPanel({
       api
         .kdsOrders(branchId)
         .then((o: any[]) => alive && (setOrders(o), setErr(null)))
-        .catch(() => alive && setErr('Mutfak siparişleri alınamadı (yetki gerekebilir).'));
+        .catch(() => alive && setErr(t('kdsLoadFailed')));
     load();
     const id = setInterval(load, 4000); // live poll
     return () => {
       alive = false;
       clearInterval(id);
     };
-  }, [api, branchId]);
+  }, [api, branchId, t]);
 
   async function advance(item: any) {
     const next: Record<string, string> = { pending: 'preparing', preparing: 'ready', ready: 'served' };
@@ -769,9 +780,9 @@ export function KdsPanel({
   }
 
   const btn: Record<string, { label: string; cls: string }> = {
-    pending: { label: 'Hazırla →', cls: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
-    preparing: { label: 'Hazır →', cls: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
-    ready: { label: 'Servis ✓', cls: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' },
+    pending: { label: `${t('prepare')} →`, cls: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
+    preparing: { label: `${t('ready')} →`, cls: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
+    ready: { label: `${t('serve')} ✓`, cls: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' },
   };
 
   const active = orders
@@ -779,16 +790,16 @@ export function KdsPanel({
     .filter((o) => o.live.length > 0);
 
   return (
-    <Modal title="Mutfak — Canlı Siparişler" onClose={onClose} wide>
+    <Modal title={t('kdsTitle')} onClose={onClose} wide>
       {err && <p className="mb-2 text-sm text-red-600">{err}</p>}
       {active.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted">Hazırlanacak sipariş yok.</p>
+        <p className="py-10 text-center text-sm text-muted">{t('noKdsOrders')}</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {active.map((o) => (
             <div key={o.order_id} className="rounded-2xl border border-line bg-canvas p-3">
               <div className="mb-2 flex items-center justify-between text-sm font-bold text-ink">
-                <span>{o.table_session_id ? 'Masa' : 'Sipariş'} · #{o.order_id}</span>
+                <span>{o.table_session_id ? t('tableWord') : t('orderWord')} · #{o.order_id}</span>
               </div>
               <ul className="space-y-1.5">
                 {o.live.map((i: any) => (
@@ -831,6 +842,8 @@ export function ShiftModal({
   onChange: (shift: any | null) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const [floatAmt, setFloatAmt] = useState('');
   const [counted, setCounted] = useState('');
   const [busy, setBusy] = useState(false);
@@ -860,22 +873,22 @@ export function ShiftModal({
   if (closed) {
     const over = Number(closed.over_short);
     return (
-      <Modal title="Z Raporu — Vardiya Kapandı" onClose={onClose}>
+      <Modal title={t('zReportTitle')} onClose={onClose}>
         <ZReport report={closed} currency={currency} />
         <div className={`mt-3 rounded-xl px-4 py-3 text-center font-bold ${over === 0 ? 'bg-emerald-50 text-emerald-700' : over > 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'}`}>
-          {over === 0 ? 'Kasa tam ✓' : over > 0 ? `Fazla: ${money(over, currency)}` : `Açık: ${money(Math.abs(over), currency)}`}
+          {over === 0 ? `${t('drawerBalanced')} ✓` : over > 0 ? t('over', { amount: money(over, currency) }) : t('short', { amount: money(Math.abs(over), currency) })}
         </div>
-        <Button onClick={onClose} className="mt-4 w-full">Kapat</Button>
+        <Button onClick={onClose} className="mt-4 w-full">{c('close')}</Button>
       </Modal>
     );
   }
 
   return (
-    <Modal title="Kasa / Vardiya" onClose={onClose}>
+    <Modal title={t('shiftTitle')} onClose={onClose}>
       {!shift ? (
         <>
-          <p className="mb-3 text-sm text-muted">Kasayı açılış bozuk parasıyla başlatın.</p>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Açılış kasası</label>
+          <p className="mb-3 text-sm text-muted">{t('openDrawerHint')}</p>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">{t('openingFloat')}</label>
           <input
             value={floatAmt}
             onChange={(e) => setFloatAmt(e.target.value.replace(/[^0-9.]/g, ''))}
@@ -883,12 +896,12 @@ export function ShiftModal({
             placeholder="0"
             className="mb-4 w-full rounded-xl border border-line px-4 py-3 text-2xl font-bold text-ink outline-none focus:border-brand-500"
           />
-          <Button onClick={openShift} loading={busy} className="w-full py-3.5">Vardiyayı Aç</Button>
+          <Button onClick={openShift} loading={busy} className="w-full py-3.5">{t('openShift')}</Button>
         </>
       ) : (
         <>
           <ZReport report={shift} currency={currency} />
-          <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-wide text-muted">Sayılan nakit</label>
+          <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-wide text-muted">{t('countedCash')}</label>
           <input
             value={counted}
             onChange={(e) => setCounted(e.target.value.replace(/[^0-9.]/g, ''))}
@@ -897,7 +910,7 @@ export function ShiftModal({
             className="mb-4 w-full rounded-xl border border-line px-4 py-3 text-2xl font-bold text-ink outline-none focus:border-brand-500"
           />
           <Button onClick={closeShift} loading={busy} disabled={!counted} className="w-full py-3.5">
-            Vardiyayı Kapat (Z Raporu)
+            {t('closeShift')}
           </Button>
         </>
       )}
@@ -906,11 +919,12 @@ export function ShiftModal({
 }
 
 function ZReport({ report, currency }: { report: any; currency: string }) {
+  const t = useTranslations('pos');
   const rows = [
-    ['Açılış kasası', report.opening_float],
-    ['Nakit satış', report.cash_sales],
-    ['Kart satış', report.card_sales],
-    ['Beklenen kasa', report.expected_cash],
+    [t('openingFloat'), report.opening_float],
+    [t('cashSales'), report.cash_sales],
+    [t('cardSales'), report.card_sales],
+    [t('expectedCash'), report.expected_cash],
   ] as const;
   return (
     <div className="space-y-1.5 rounded-2xl border border-line bg-canvas p-4">
@@ -921,7 +935,7 @@ function ZReport({ report, currency }: { report: any; currency: string }) {
         </div>
       ))}
       <div className="flex justify-between border-t border-line pt-1.5 text-sm">
-        <span className="text-muted">Sipariş</span>
+        <span className="text-muted">{t('orderWord')}</span>
         <span className="font-semibold text-ink">{report.orders_count}</span>
       </div>
     </div>
@@ -930,7 +944,20 @@ function ZReport({ report, currency }: { report: any; currency: string }) {
 
 // --- Receipt (print) ------------------------------------------------------
 
-export function printReceipt(order: any, venueName: string, currency: string) {
+export function printReceipt(
+  order: any,
+  venueName: string,
+  currency: string,
+  labels?: { receiptWord: string; subtotal: string; discount: string; tip: string; total: string; thanks: string },
+) {
+  const L = labels ?? {
+    receiptWord: 'Fiş',
+    subtotal: 'Ara toplam',
+    discount: 'İndirim',
+    tip: 'Bahşiş',
+    total: 'TOPLAM',
+    thanks: 'Teşekkür ederiz',
+  };
   const lines = (order.items ?? [])
     .filter((i: any) => i.status !== 'cancelled')
     .map(
@@ -940,21 +967,21 @@ export function printReceipt(order: any, venueName: string, currency: string) {
         }</td><td style="text-align:right">${money(i.line_total, currency)}</td></tr>`,
     )
     .join('');
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Fiş #${order.id}</title>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${L.receiptWord} #${order.id}</title>
     <style>@page{size:80mm auto;margin:0} body{font:12px/1.45 monospace;width:80mm;max-width:80mm;margin:0 auto;padding:6px 8px;color:#000}
     h2{text-align:center;margin:0 0 4px} .muted{color:#666;text-align:center;font-size:11px}
     table{width:100%;border-collapse:collapse;margin:10px 0} td{padding:2px 0;vertical-align:top}
     .tot{border-top:1px dashed #999;margin-top:8px;padding-top:6px}
     .row{display:flex;justify-content:space-between} .big{font-size:16px;font-weight:bold}</style></head>
-    <body><h2>${venueName}</h2><p class="muted">Fiş #${order.id} · ${new Date().toLocaleString('tr-TR')}</p>
+    <body><h2>${venueName}</h2><p class="muted">${L.receiptWord} #${order.id} · ${new Date().toLocaleString('tr-TR')}</p>
     <table>${lines}</table>
     <div class="tot">
-      <div class="row"><span>Ara toplam</span><span>${money(order.subtotal, currency)}</span></div>
-      ${Number(order.discount_total) > 0 ? `<div class="row"><span>İndirim</span><span>-${money(order.discount_total, currency)}</span></div>` : ''}
-      ${Number(order.tip_total) > 0 ? `<div class="row"><span>Bahşiş</span><span>${money(order.tip_total, currency)}</span></div>` : ''}
-      <div class="row big"><span>TOPLAM</span><span>${money(order.grand_total, currency)}</span></div>
+      <div class="row"><span>${L.subtotal}</span><span>${money(order.subtotal, currency)}</span></div>
+      ${Number(order.discount_total) > 0 ? `<div class="row"><span>${L.discount}</span><span>-${money(order.discount_total, currency)}</span></div>` : ''}
+      ${Number(order.tip_total) > 0 ? `<div class="row"><span>${L.tip}</span><span>${money(order.tip_total, currency)}</span></div>` : ''}
+      <div class="row big"><span>${L.total}</span><span>${money(order.grand_total, currency)}</span></div>
     </div>
-    <p class="muted" style="margin-top:16px">Teşekkür ederiz · ComiQR</p>
+    <p class="muted" style="margin-top:16px">${L.thanks} · ComiQR</p>
     <script>window.print();setTimeout(()=>window.close(),300)</script></body></html>`;
   const w = window.open('', '_blank', 'width=360,height=640');
   if (w) {

@@ -116,7 +116,13 @@ function NavGroup({ node, pathname, onNavigate }: { node: { key: string; childre
   );
 }
 
-const LANGS: [string, string][] = [['tr', 'Türkçe'], ['en', 'English']];
+const LANGS: [string, string][] = [
+  ['tr', 'Türkçe'],
+  ['en', 'English'],
+  ['de', 'Deutsch'],
+  ['ru', 'Русский'],
+  ['ar', 'العربية'],
+];
 
 /** Panel language switcher (cookie-based; reloads in the chosen language). */
 function LangSwitcher() {
@@ -159,6 +165,7 @@ function LangSwitcher() {
 
 export function AdminShell({ title, children }: { title?: string; children: React.ReactNode }) {
   const nav = useTranslations('nav');
+  const sh = useTranslations('shell');
   const pathname = usePathname();
   const router = useRouter();
   const [branches, setBranches] = useState<any[]>([]);
@@ -298,7 +305,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
       <div className="flex min-h-screen min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line bg-surface/90 px-5 backdrop-blur lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <button onClick={() => setOpen(true)} aria-label="Menü" className="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink lg:hidden">
+            <button onClick={() => setOpen(true)} aria-label={nav('menu')} className="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink lg:hidden">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
             </button>
             {title && <h1 className="truncate text-lg font-bold text-ink">{title}</h1>}
@@ -309,7 +316,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
             <button aria-label="Ara" className="grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-ink">
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></svg>
             </button>
-            <button aria-label="Bildirimler" className="relative grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-ink">
+            <button aria-label={sh('notifications')} className="relative grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-ink">
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /></svg>
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-500 ring-2 ring-surface" />
             </button>
@@ -317,7 +324,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
               <span className="grid h-7 w-7 place-items-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#14b8a6,#0ea5e9)' }}>
                 {(currentName || 'C').charAt(0).toUpperCase()}
               </span>
-              <span className="hidden max-w-[8rem] truncate text-sm font-semibold text-ink sm:block">{currentName || 'Hesabım'}</span>
+              <span className="hidden max-w-[8rem] truncate text-sm font-semibold text-ink sm:block">{currentName || sh('myAccount')}</span>
             </div>
           </div>
         </header>
@@ -325,8 +332,8 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
         <main className="flex-1 p-5 lg:p-8">
           {impersonating && (
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <span className="text-sm text-amber-900">🔓 <b>{currentName || 'Bir işletme'}</b> paneline süper admin olarak giriş yaptınız.</span>
-              <button onClick={returnToSuper} className="rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90">← Süper admin&apos;e dön</button>
+              <span className="text-sm text-amber-900">🔓 {sh.rich('impersonateBanner', { name: currentName || sh('aBusiness'), b: (chunks) => <b>{chunks}</b> })}</span>
+              <button onClick={returnToSuper} className="rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90">← {sh('backToSuperadmin')}</button>
             </div>
           )}
           {children}

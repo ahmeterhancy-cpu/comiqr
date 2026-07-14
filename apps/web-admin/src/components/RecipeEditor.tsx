@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Input } from './ui';
 
 interface Item {
@@ -24,6 +25,8 @@ export function RecipeEditor({
   ingredients: any[];
   api: any;
 }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const [items, setItems] = useState<Item[]>([]);
   const [yieldPortions, setYieldPortions] = useState(1);
   const [nutrition, setNutrition] = useState<any | null>(null);
@@ -84,7 +87,7 @@ export function RecipeEditor({
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
           <div className="mb-2 flex items-center gap-2 text-sm">
-            <span className="text-muted">Porsiyon:</span>
+            <span className="text-muted">{t('portionLabel')}</span>
             <Input
               type="number"
               className="w-20"
@@ -103,11 +106,11 @@ export function RecipeEditor({
                   onClick={() => setItems((s) => s.filter((_, i) => i !== idx))}
                   className="text-xs text-red-600"
                 >
-                  Sil
+                  {cm('delete')}
                 </button>
               </li>
             ))}
-            {items.length === 0 && <li className="text-xs text-muted">Henüz malzeme yok.</li>}
+            {items.length === 0 && <li className="text-xs text-muted">{t('noIngredients')}</li>}
           </ul>
 
           <div className="flex gap-2">
@@ -116,46 +119,46 @@ export function RecipeEditor({
               value={ingId}
               onChange={(e) => setIngId(e.target.value)}
             >
-              <option value="">Malzeme seç…</option>
+              <option value="">{t('selectIngredient')}</option>
               {ingredients.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.name} ({i.unit})
                 </option>
               ))}
             </select>
-            <Input placeholder="Miktar" type="number" className="w-24" value={qty} onChange={(e) => setQty(e.target.value)} />
+            <Input placeholder={t('quantity')} type="number" className="w-24" value={qty} onChange={(e) => setQty(e.target.value)} />
             <Button variant="ghost" type="button" onClick={addItem}>
-              Ekle
+              {cm('add')}
             </Button>
           </div>
 
           <div className="mt-3">
             <Button onClick={save} loading={saving}>
-              Reçeteyi Kaydet & Hesapla
+              {t('saveRecipe')}
             </Button>
           </div>
         </div>
 
         <div className="rounded-xl border border-line bg-white p-4">
-          <h4 className="mb-2 text-sm font-semibold text-ink">Besin & Maliyet (otomatik)</h4>
+          <h4 className="mb-2 text-sm font-semibold text-ink">{t('nutritionCost')}</h4>
           {nutrition ? (
             <div className="space-y-1.5 text-sm">
-              <Row label="Kalori" value={nutrition.kcal != null ? `${nutrition.kcal} kcal` : '—'} strong />
+              <Row label={t('calories')} value={nutrition.kcal != null ? `${nutrition.kcal} kcal` : '—'} strong />
               <Row
-                label="Protein / Karb / Yağ"
+                label={t('macros')}
                 value={nutrition.macros ? `${nutrition.macros.protein_g} / ${nutrition.macros.carb_g} / ${nutrition.macros.fat_g} g` : '—'}
               />
-              <Row label="Maliyet / porsiyon" value={`₺${nutrition.cost_per_portion}`} />
-              <Row label="Önerilen fiyat" value={nutrition.suggested_price ? `₺${nutrition.suggested_price}` : '—'} />
-              <Row label="Marj" value={nutrition.margin_pct != null ? `%${nutrition.margin_pct}` : '—'} />
+              <Row label={t('costPerPortion')} value={`₺${nutrition.cost_per_portion}`} />
+              <Row label={t('suggestedPrice')} value={nutrition.suggested_price ? `₺${nutrition.suggested_price}` : '—'} />
+              <Row label={t('margin')} value={nutrition.margin_pct != null ? `%${nutrition.margin_pct}` : '—'} />
               <div className="flex flex-wrap gap-1 pt-1">
-                {nutrition.diet?.vegan && <Tag>Vegan</Tag>}
-                {nutrition.diet?.vegetarian && <Tag>Vejetaryen</Tag>}
-                {nutrition.diet?.gluten_free && <Tag>Glutensiz</Tag>}
+                {nutrition.diet?.vegan && <Tag>{t('vegan')}</Tag>}
+                {nutrition.diet?.vegetarian && <Tag>{t('vegetarian')}</Tag>}
+                {nutrition.diet?.gluten_free && <Tag>{t('glutenFree')}</Tag>}
               </div>
             </div>
           ) : (
-            <p className="text-xs text-muted">Reçete kaydedince kalori, makro, alerjen ve maliyet otomatik hesaplanır.</p>
+            <p className="text-xs text-muted">{t('recipeAutoCalcHint')}</p>
           )}
         </div>
       </div>

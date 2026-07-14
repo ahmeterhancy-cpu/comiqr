@@ -1,18 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { Button, Card, Input } from '@/components/ui';
 import { useApi } from '@/lib/useApi';
 
 const TYPES = [
-  { value: 'pos', label: 'POS (adisyon)' },
-  { value: 'okc', label: 'ÖKC (yazarkasa)' },
-  { value: 'erp', label: 'ERP' },
-  { value: 'delivery', label: 'Teslimat (delivery)' },
+  { value: 'pos', labelKey: 'typePos' },
+  { value: 'okc', labelKey: 'typeOkc' },
+  { value: 'erp', labelKey: 'typeErp' },
+  { value: 'delivery', labelKey: 'typeDelivery' },
 ];
 
 export default function IntegrationsPage() {
+  const t = useTranslations('integrations');
+  const c = useTranslations('common');
   const { api, ready } = useApi();
   const [items, setItems] = useState<any[]>([]);
   const [type, setType] = useState('pos');
@@ -44,7 +47,7 @@ export default function IntegrationsPage() {
       setSecret('');
       load();
     } catch {
-      setError('Entegrasyon eklenemedi. Uç nokta geçerli bir URL olmalı.');
+      setError(t('createError'));
     }
   }
 
@@ -52,9 +55,9 @@ export default function IntegrationsPage() {
     setNote(null);
     try {
       const res = await api.testIntegration(i.id);
-      setNote(res.ok ? `${i.name}: bağlantı başarılı ✓` : `${i.name}: bağlantı başarısız`);
+      setNote(res.ok ? t('testSuccess', { name: i.name }) : t('testFailed', { name: i.name }));
     } catch {
-      setNote(`${i.name}: bağlantı başarısız`);
+      setNote(t('testFailed', { name: i.name }));
     }
   }
 
@@ -64,33 +67,33 @@ export default function IntegrationsPage() {
   }
 
   return (
-    <AdminShell title="Entegrasyonlar">
+    <AdminShell title={t('title')}>
       <Card>
         <form className="flex flex-wrap items-end gap-2" onSubmit={add}>
           <div>
-            <span className="mb-1 block text-xs text-muted">Tür</span>
+            <span className="mb-1 block text-xs text-muted">{t('type')}</span>
             <select
               className="rounded-lg border border-line bg-white px-3 py-2.5 text-sm"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
-              {TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {TYPES.map((ty) => (
+                <option key={ty.value} value={ty.value}>
+                  {t(ty.labelKey)}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <span className="mb-1 block text-xs text-muted">Sağlayıcı</span>
+            <span className="mb-1 block text-xs text-muted">{t('provider')}</span>
             <Input className="w-36" placeholder="webhook" value={provider} onChange={(e) => setProvider(e.target.value)} />
           </div>
           <div>
-            <span className="mb-1 block text-xs text-muted">Ad</span>
-            <Input placeholder="Simpra / Yemeksepeti" value={name} onChange={(e) => setName(e.target.value)} required />
+            <span className="mb-1 block text-xs text-muted">{c('name')}</span>
+            <Input placeholder={t('namePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="min-w-[220px] flex-1">
-            <span className="mb-1 block text-xs text-muted">Uç nokta (webhook URL)</span>
+            <span className="mb-1 block text-xs text-muted">{t('endpoint')}</span>
             <Input
               placeholder="https://…/hook"
               value={endpoint}
@@ -98,17 +101,17 @@ export default function IntegrationsPage() {
             />
           </div>
           <div>
-            <span className="mb-1 block text-xs text-muted">Gizli anahtar (ops.)</span>
+            <span className="mb-1 block text-xs text-muted">{t('secret')}</span>
             <Input className="w-40" value={secret} onChange={(e) => setSecret(e.target.value)} />
           </div>
-          <Button type="submit">Ekle</Button>
+          <Button type="submit">{c('add')}</Button>
         </form>
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
         {note && <p className="mt-2 text-xs text-muted">{note}</p>}
       </Card>
 
       <div className="mt-6 space-y-3">
-        {items.length === 0 && <p className="text-sm text-muted">Henüz entegrasyon yok.</p>}
+        {items.length === 0 && <p className="text-sm text-muted">{t('empty')}</p>}
         {items.map((i) => (
           <Card key={i.id}>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -117,11 +120,11 @@ export default function IntegrationsPage() {
                   <span className="font-semibold text-ink">{i.name}</span>
                   <span className="rounded-full bg-canvas px-2 py-0.5 text-xs uppercase text-muted">{i.type}</span>
                   <span className="text-xs text-muted">{i.provider}</span>
-                  {i.has_secret && <span className="text-xs text-emerald-700">🔒 imzalı</span>}
+                  {i.has_secret && <span className="text-xs text-emerald-700">{t('signed')}</span>}
                 </div>
                 <p className="mt-1 truncate text-xs text-muted">{i.endpoint ?? '—'}</p>
                 {i.last_synced_at && (
-                  <p className="text-xs text-muted">Son senkron: {new Date(i.last_synced_at).toLocaleString()}</p>
+                  <p className="text-xs text-muted">{t('lastSync', { date: new Date(i.last_synced_at).toLocaleString() })}</p>
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -131,10 +134,10 @@ export default function IntegrationsPage() {
                     i.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-canvas text-muted'
                   }`}
                 >
-                  {i.is_active ? 'Aktif' : 'Pasif'}
+                  {i.is_active ? c('active') : c('inactive')}
                 </button>
                 <Button type="button" variant="ghost" onClick={() => test(i)}>
-                  Test
+                  {t('test')}
                 </Button>
                 <button
                   onClick={async () => {
@@ -143,7 +146,7 @@ export default function IntegrationsPage() {
                   }}
                   className="text-xs text-red-600"
                 >
-                  Sil
+                  {c('delete')}
                 </button>
               </div>
             </div>

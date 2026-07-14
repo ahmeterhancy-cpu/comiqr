@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui';
 import { ThemeThumb } from '@/components/ThemeThumb';
 import { ImageCropperField } from '@/components/ImageCropperField';
@@ -9,17 +10,10 @@ import type { createApi } from '@/lib/api';
 type Api = ReturnType<typeof createApi>;
 type DayHours = { closed: boolean; open: string; close: string };
 
-const DAY_LABELS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 const THEMES: [string, string][] = [
   ['classic', 'Classic'],
   ['flipbook', 'Flipbook'],
   ['modern', 'Modern'],
-];
-const VERTICALS: [string, string, string][] = [
-  ['restaurant', 'Restoran / Kafe', 'Masa siparişi, gel-al, teslimat'],
-  ['hotel', 'Otel', 'Oda servisi + odaya yansıt (folyo)'],
-  ['beach', 'Plaj Kulübü', 'Şezlong servisi + folyo'],
-  ['bar', 'Bar / Pub', 'Adisyon akışı'],
 ];
 
 // Currencies (ISO 4217); Turkish names generated at runtime via Intl.
@@ -85,8 +79,18 @@ export function OnboardingWizard({
   onDone: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('onboarding');
+  const c = useTranslations('common');
   const s = tenant?.settings ?? {};
   const allowedVerticals: string[] | undefined = tenant?.plan?.features?.verticals;
+
+  const DAY_LABELS = [t('dayMon'), t('dayTue'), t('dayWed'), t('dayThu'), t('dayFri'), t('daySat'), t('daySun')];
+  const VERTICALS: [string, string, string][] = [
+    ['restaurant', t('vertRestaurant'), t('vertRestaurantHint')],
+    ['hotel', t('vertHotel'), t('vertHotelHint')],
+    ['beach', t('vertBeach'), t('vertBeachHint')],
+    ['bar', t('vertBar'), t('vertBarHint')],
+  ];
 
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -187,7 +191,7 @@ export function OnboardingWizard({
     }).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   }, []);
 
-  const STEPS = ['Temel Bilgiler', 'İletişim & Adres', 'Çalışma Saatleri', 'Sosyal Medya & WiFi', 'Menü Teması', 'Logo', 'Kapak Görseli', 'Sipariş Tercihleri', 'İşletme Yetkilisi'];
+  const STEPS = [t('stepBasics'), t('stepContact'), t('stepHours'), t('stepSocialWifi'), t('stepTheme'), t('stepLogo'), t('stepCover'), t('stepOrderPrefs'), t('stepAuthorized')];
   const isLast = step === STEPS.length - 1;
 
   /** Persist the current step, then advance (or finish). */
@@ -197,7 +201,7 @@ export function OnboardingWizard({
     try {
       if (step === 0) {
         if (!name.trim()) {
-          setError('İşletme adı gerekli.');
+          setError(t('errNameRequired'));
           setBusy(false);
           return;
         }
@@ -249,7 +253,7 @@ export function OnboardingWizard({
         } as any);
       } else if (step === 8) {
         if (!authName.trim()) {
-          setError('Yetkili ad soyad gerekli.');
+          setError(t('errAuthNameRequired'));
           setBusy(false);
           return;
         }
@@ -272,7 +276,7 @@ export function OnboardingWizard({
       }
       setStep((v) => Math.min(STEPS.length - 1, v + 1));
     } catch (err: any) {
-      setError(err?.message ?? 'Kaydedilemedi, tekrar deneyin.');
+      setError(err?.message ?? t('errSaveFailed'));
     } finally {
       setBusy(false);
     }
@@ -284,10 +288,10 @@ export function OnboardingWizard({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div>
-            <h2 className="text-lg font-extrabold tracking-tight text-ink">İşletme Kurulumu</h2>
-            <p className="text-xs text-muted">Menünüzü yayına hazırlamak için birkaç adım</p>
+            <h2 className="text-lg font-extrabold tracking-tight text-ink">{t('wizardTitle')}</h2>
+            <p className="text-xs text-muted">{t('wizardSubtitle')}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink">
+          <button type="button" onClick={onClose} aria-label={c('close')} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </div>
@@ -305,10 +309,10 @@ export function OnboardingWizard({
 
           {step === 0 && (
             <div className="space-y-4">
-              <Field label="İşletme Adı" required>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. Sahil Restoran" />
+              <Field label={t('fieldName')} required>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('namePlaceholder')} />
               </Field>
-              <Field label="İşletme Türü" required>
+              <Field label={t('fieldVertical')} required>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {VERTICALS.map(([val, label, hint]) => {
                     const locked = allowedVerticals ? !allowedVerticals.includes(val) : false;
@@ -318,7 +322,7 @@ export function OnboardingWizard({
                         type="button"
                         disabled={locked}
                         onClick={() => setVertical(val)}
-                        title={locked ? 'Bu tür planınızda yok — yükseltin' : undefined}
+                        title={locked ? t('verticalLocked') : undefined}
                         className={`rounded-lg border px-3 py-2 text-left transition ${
                           vertical === val ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : locked ? 'cursor-not-allowed border-line bg-canvas opacity-50' : 'border-line hover:border-brand-300'
                         }`}
@@ -331,14 +335,14 @@ export function OnboardingWizard({
                 </div>
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Ülke" hint="Saat dilimi ve dil otomatik ayarlanır.">
+                <Field label={t('fieldCountry')} hint={t('countryHint')}>
                   <div className="relative">
                     <select
                       value={country}
                       onChange={(e) => onCountry(e.target.value)}
                       className="w-full appearance-none rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand-500"
                     >
-                      <option value="">Ülke seçin…</option>
+                      <option value="">{t('countryPlaceholder')}</option>
                       {countries.map((c) => (
                         <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
                       ))}
@@ -346,7 +350,7 @@ export function OnboardingWizard({
                     <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                   </div>
                 </Field>
-                <Field label="Para Birimi" required hint="Menüde fiyatlar bu birimle gösterilir.">
+                <Field label={t('fieldCurrency')} required hint={t('currencyHint')}>
                   <div className="relative">
                     <select
                       value={currency}
@@ -362,7 +366,7 @@ export function OnboardingWizard({
                 </Field>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Varsayılan Dil" required hint="Menü ilk bu dilde açılır.">
+                <Field label={t('fieldLocale')} required hint={t('localeHint')}>
                   <div className="relative">
                     <select
                       value={locale}
@@ -376,8 +380,8 @@ export function OnboardingWizard({
                     <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                   </div>
                 </Field>
-                <Field label="Alt Başlık" hint="Menü başlığının altında görünür.">
-                  <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder="Kebap & Mangal" />
+                <Field label={t('fieldSubTitle')} hint={t('subTitleHint')}>
+                  <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} placeholder={t('subTitlePlaceholder')} />
                 </Field>
               </div>
             </div>
@@ -385,19 +389,19 @@ export function OnboardingWizard({
 
           {step === 1 && (
             <div className="space-y-4">
-              <p className="text-sm text-muted">Bu bilgiler menünüzün üst kısmında müşterilere gösterilir. Boş bırakılanlar gizlenir.</p>
-              <Field label="Adres">
-                <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="İşletme adresi" />
+              <p className="text-sm text-muted">{t('contactIntro')}</p>
+              <Field label={t('fieldAddress')}>
+                <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('addressPlaceholder')} />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Telefon">
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90 5xx xxx xx xx" />
+                <Field label={t('fieldPhone')}>
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
                 </Field>
-                <Field label="E-posta">
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@restoran.com" />
+                <Field label={t('fieldEmail')}>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('emailPlaceholder')} />
                 </Field>
-                <Field label="Web Sitesi">
-                  <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="restoran.com" />
+                <Field label={t('fieldWebsite')}>
+                  <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder={t('websitePlaceholder')} />
                 </Field>
               </div>
             </div>
@@ -405,7 +409,7 @@ export function OnboardingWizard({
 
           {step === 2 && (
             <div className="space-y-3">
-              <p className="text-sm text-muted">Menüde “Açık / Kapalı” durumu ve günlük saatler gösterilir.</p>
+              <p className="text-sm text-muted">{t('hoursIntro')}</p>
               {hours.map((d, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="w-20 shrink-0 text-sm text-ink">{DAY_LABELS[i]}</span>
@@ -414,10 +418,10 @@ export function OnboardingWizard({
                     onClick={() => setDay(i, { closed: !d.closed })}
                     className={`w-16 shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${d.closed ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}
                   >
-                    {d.closed ? 'Kapalı' : 'Açık'}
+                    {d.closed ? t('closed') : t('open')}
                   </button>
                   {d.closed ? (
-                    <span className="text-xs text-muted">Kapalı</span>
+                    <span className="text-xs text-muted">{t('closed')}</span>
                   ) : (
                     <div className="flex items-center gap-1.5">
                       <Input type="time" value={d.open} onChange={(e) => setDay(i, { open: e.target.value })} className="w-28" />
@@ -432,29 +436,29 @@ export function OnboardingWizard({
 
           {step === 3 && (
             <div className="space-y-4">
-              <p className="text-sm text-muted">Sosyal medya ve misafir WiFi — girilirse menüde gösterilir.</p>
+              <p className="text-sm text-muted">{t('socialIntro')}</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Instagram"><Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@kullaniciadi" /></Field>
-                <Field label="Facebook"><Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="facebook.com/sayfa" /></Field>
-                <Field label="WhatsApp"><Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+90 5xx xxx xx xx" /></Field>
-                <Field label="X (Twitter)"><Input value={x} onChange={(e) => setX(e.target.value)} placeholder="@kullaniciadi" /></Field>
-                <Field label="TikTok"><Input value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder="@kullaniciadi" /></Field>
-                <Field label="YouTube"><Input value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="youtube.com/@kanal" /></Field>
+                <Field label="Instagram"><Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder={t('usernamePlaceholder')} /></Field>
+                <Field label="Facebook"><Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder={t('facebookPlaceholder')} /></Field>
+                <Field label="WhatsApp"><Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder={t('phonePlaceholder')} /></Field>
+                <Field label="X (Twitter)"><Input value={x} onChange={(e) => setX(e.target.value)} placeholder={t('usernamePlaceholder')} /></Field>
+                <Field label="TikTok"><Input value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder={t('usernamePlaceholder')} /></Field>
+                <Field label="YouTube"><Input value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder={t('youtubePlaceholder')} /></Field>
               </div>
               <div className="grid gap-3 border-t border-line pt-4 sm:grid-cols-2">
-                <Field label="WiFi Adı (SSID)"><Input value={wifiSsid} onChange={(e) => setWifiSsid(e.target.value)} placeholder="Guest_WiFi" /></Field>
-                <Field label="WiFi Şifresi"><Input value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} placeholder="••••••••" /></Field>
+                <Field label={t('fieldWifiSsid')}><Input value={wifiSsid} onChange={(e) => setWifiSsid(e.target.value)} placeholder="Guest_WiFi" /></Field>
+                <Field label={t('fieldWifiPassword')}><Input value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} placeholder="••••••••" /></Field>
               </div>
             </div>
           )}
 
           {step === 4 && (
             <div>
-              <p className="mb-3 text-sm text-muted">Menünüzün müşterilere görüneceği düzeni seçin. Sonradan Ayarlar’dan değiştirebilirsiniz.</p>
+              <p className="mb-3 text-sm text-muted">{t('themeIntro')}</p>
               <div className="grid grid-cols-3 gap-3">
                 {THEMES.map(([val, label]) => (
                   <div key={val} className={`overflow-hidden rounded-xl border transition ${theme === val ? 'border-brand-500 ring-2 ring-brand-200' : 'border-line hover:border-brand-300'}`}>
-                    <button type="button" onClick={() => setTheme(val)} className="block w-full bg-canvas p-2" title={`${label} temasını seç`}>
+                    <button type="button" onClick={() => setTheme(val)} className="block w-full bg-canvas p-2" title={t('themeSelectTitle', { name: label })}>
                       <ThemeThumb theme={val} />
                     </button>
                     <div className={`py-1.5 text-center text-xs font-semibold ${theme === val ? 'bg-brand-500 text-white' : 'bg-surface text-muted'}`}>{label}</div>
@@ -466,58 +470,58 @@ export function OnboardingWizard({
 
           {step === 5 && (
             <div>
-              <p className="mb-3 text-sm text-muted">İşletmenizin logosu. Kare olarak menü başlığında görünür — yükleyip konumlandırabilirsiniz.</p>
+              <p className="mb-3 text-sm text-muted">{t('logoIntro')}</p>
               <ImageCropperField kind="logo" aspect={1} url={logo} onChange={setLogo} upload={(f) => api.uploadRestaurantMedia('logo', f)} />
             </div>
           )}
 
           {step === 6 && (
             <div>
-              <p className="mb-3 text-sm text-muted">Menünüzün en üstünde görünen geniş kapak görseli. Yükleyip kadrajını ayarlayın.</p>
+              <p className="mb-3 text-sm text-muted">{t('coverIntro')}</p>
               <ImageCropperField kind="cover" aspect={3} url={cover} onChange={setCover} upload={(f) => api.uploadRestaurantMedia('cover', f)} />
             </div>
           )}
 
           {step === 7 && (
             <div className="space-y-1">
-              <p className="mb-2 text-sm text-muted">Müşterilerin menüden neler yapabileceğini seçin. Sonradan Ayarlar’dan değiştirebilirsiniz.</p>
+              <p className="mb-2 text-sm text-muted">{t('orderPrefsIntro')}</p>
               <div className="divide-y divide-line">
-                <YesNo label="Garson çağırma (masada)" value={callWaiter} onChange={setCallWaiter} />
-                <YesNo label="Masada sipariş" value={onTable} onChange={setOnTable} />
-                <YesNo label="Gel-al siparişi" value={takeaway} onChange={setTakeaway} />
-                <YesNo label="Teslimat siparişi" value={delivery} onChange={setDelivery} />
-                <YesNo label="Online ödeme" value={online} onChange={setOnline} />
+                <YesNo label={t('prefCallWaiter')} value={callWaiter} onChange={setCallWaiter} />
+                <YesNo label={t('prefOnTable')} value={onTable} onChange={setOnTable} />
+                <YesNo label={t('prefTakeaway')} value={takeaway} onChange={setTakeaway} />
+                <YesNo label={t('prefDelivery')} value={delivery} onChange={setDelivery} />
+                <YesNo label={t('prefOnline')} value={online} onChange={setOnline} />
               </div>
-              {currency && <p className="mt-3 text-xs text-muted">Para birimi: <b className="text-ink">{currency}</b> · Ayarlar’dan detaylandırabilirsiniz.</p>}
+              {currency && <p className="mt-3 text-xs text-muted">{t('currencyNoteLabel')} <b className="text-ink">{currency}</b> · {t('currencyNoteSuffix')}</p>}
             </div>
           )}
 
           {step === 8 && (
             <div className="space-y-4">
-              <p className="text-sm text-muted">İşletmeden sorumlu yetkili ve fatura bilgileri. Bu bilgiler yalnızca yönetim/fatura amacıyla kullanılır, menüde gösterilmez.</p>
+              <p className="text-sm text-muted">{t('authIntro')}</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Yetkili Ad Soyad" required>
-                  <Input value={authName} onChange={(e) => setAuthName(e.target.value)} placeholder="Ad Soyad" />
+                <Field label={t('fieldAuthName')} required>
+                  <Input value={authName} onChange={(e) => setAuthName(e.target.value)} placeholder={t('authNamePlaceholder')} />
                 </Field>
-                <Field label="Görev / Ünvan">
-                  <Input value={authTitle} onChange={(e) => setAuthTitle(e.target.value)} placeholder="İşletme Sahibi" />
+                <Field label={t('fieldAuthTitle')}>
+                  <Input value={authTitle} onChange={(e) => setAuthTitle(e.target.value)} placeholder={t('authTitlePlaceholder')} />
                 </Field>
-                <Field label="Telefon">
-                  <Input value={authPhone} onChange={(e) => setAuthPhone(e.target.value)} placeholder="+90 5xx xxx xx xx" />
+                <Field label={t('fieldPhone')}>
+                  <Input value={authPhone} onChange={(e) => setAuthPhone(e.target.value)} placeholder={t('phonePlaceholder')} />
                 </Field>
-                <Field label="E-posta">
-                  <Input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="yetkili@restoran.com" />
+                <Field label={t('fieldEmail')}>
+                  <Input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder={t('authEmailPlaceholder')} />
                 </Field>
               </div>
               <div className="grid gap-3 border-t border-line pt-4 sm:grid-cols-2">
-                <Field label="Fatura Ünvanı" hint="Yasal şirket/işletme ünvanı (fatura için)">
-                  <Input value={authCompany} onChange={(e) => setAuthCompany(e.target.value)} placeholder="Örn. Sahil Turizm Gıda Ltd." />
+                <Field label={t('fieldCompany')} hint={t('companyHint')}>
+                  <Input value={authCompany} onChange={(e) => setAuthCompany(e.target.value)} placeholder={t('companyPlaceholder')} />
                 </Field>
-                <Field label="Vergi Dairesi">
-                  <Input value={authTaxOffice} onChange={(e) => setAuthTaxOffice(e.target.value)} placeholder="Lefkoşa" />
+                <Field label={t('fieldTaxOffice')}>
+                  <Input value={authTaxOffice} onChange={(e) => setAuthTaxOffice(e.target.value)} placeholder={t('taxOfficePlaceholder')} />
                 </Field>
-                <Field label="Vergi / Kimlik No">
-                  <Input value={authTaxNo} onChange={(e) => setAuthTaxNo(e.target.value)} placeholder="1234567890" />
+                <Field label={t('fieldTaxNo')}>
+                  <Input value={authTaxNo} onChange={(e) => setAuthTaxNo(e.target.value)} placeholder={t('taxNoPlaceholder')} />
                 </Field>
               </div>
             </div>
@@ -533,7 +537,7 @@ export function OnboardingWizard({
             className="inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted transition hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>
-            Geri
+            {c('back')}
           </button>
           <span className="text-xs font-semibold text-muted">{step + 1} / {STEPS.length} · {STEPS[step]}</span>
           <button
@@ -543,7 +547,7 @@ export function OnboardingWizard({
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-5 py-2 text-sm font-bold text-white transition hover:bg-brand-600 disabled:opacity-60"
             style={{ color: '#ffffff' }}
           >
-            {busy ? 'Kaydediliyor…' : isLast ? 'Kurulumu Tamamla' : 'İleri'}
+            {busy ? c('saving') : isLast ? t('finishSetup') : c('next')}
             {!isLast && <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
           </button>
         </div>
@@ -566,6 +570,7 @@ function Field({ label, hint, required, children }: { label: string; hint?: stri
 }
 
 function YesNo({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  const c = useTranslations('common');
   return (
     <div className="flex items-center justify-between py-2.5">
       <span className="text-sm text-ink">{label}</span>
@@ -577,7 +582,7 @@ function YesNo({ label, value, onChange }: { label: string; value: boolean; onCh
             onClick={() => onChange(v)}
             className={`px-3 py-1 text-xs font-semibold ${value === v ? (v ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-white text-muted'}`}
           >
-            {v ? 'Evet' : 'Hayır'}
+            {v ? c('yes') : c('no')}
           </button>
         ))}
       </div>

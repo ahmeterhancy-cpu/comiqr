@@ -6,8 +6,8 @@ export const LOCALES = ['tr', 'en', 'de', 'ru', 'ar'] as const;
 export type AppLocale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: AppLocale = 'tr';
 
-// Locales with their own message file today; others fall back to EN messages.
-const TRANSLATED: AppLocale[] = ['tr', 'en'];
+// Locales with their own message file; any others fall back to EN messages.
+const TRANSLATED: AppLocale[] = ['tr', 'en', 'de', 'ru', 'ar'];
 
 export default getRequestConfig(async () => {
   const store = await cookies();

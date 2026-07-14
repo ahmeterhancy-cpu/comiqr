@@ -1,47 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 const KEY = 'cq.onboarded';
 
 type Step = { title: string; body: string; pos: 'right' | 'left' | 'center'; cta: string };
 
-const STEPS: Step[] = [
-  {
-    title: 'Dilinizi seçin',
-    body: 'Sağ üstteki menüden panelin dilini ayarlayın (Türkçe / English). Dilediğiniz an değiştirebilirsiniz.',
-    pos: 'right',
-    cta: 'Devam',
-  },
-  {
-    title: 'Mekanınızı hazırlayın',
-    body: 'Sol menüdeki “Ayarlar”dan işletme adınızı, adresinizi, çalışma saatlerinizi ve logonuzu girin.',
-    pos: 'left',
-    cta: 'Devam',
-  },
-  {
-    title: 'Menünüzü oluşturun',
-    body: 'Sol menüdeki “Menü”den kategori ve ürünleri ekleyin — ya da fotoğraftan otomatik içe aktarın.',
-    pos: 'left',
-    cta: 'Devam',
-  },
-  {
-    title: 'Başka neler yapabileceğinize bakın',
-    body: 'Sipariş, garson çağırma, kampanya, sadakat ve entegrasyonlar — hepsi sol menüde sizi bekliyor.',
-    pos: 'left',
-    cta: 'Devam',
-  },
-  {
-    title: 'ComiQR’a hoş geldiniz',
-    body: 'Sağ üstten hesabınıza, bildirimlere ve profil ayarlarına ulaşırsınız. Her şey hazır — hadi başlayalım!',
-    pos: 'center',
-    cta: 'Başlayalım',
-  },
-];
-
 /** First-visit onboarding tour on the dashboard. Shows once (localStorage flag). */
 export function OnboardingTour() {
+  const t = useTranslations('onboarding');
+  const c = useTranslations('common');
   const [i, setI] = useState<number | null>(null);
+
+  const STEPS: Step[] = [
+    { title: t('tourLangTitle'), body: t('tourLangBody'), pos: 'right', cta: t('tourContinue') },
+    { title: t('tourVenueTitle'), body: t('tourVenueBody'), pos: 'left', cta: t('tourContinue') },
+    { title: t('tourMenuTitle'), body: t('tourMenuBody'), pos: 'left', cta: t('tourContinue') },
+    { title: t('tourExploreTitle'), body: t('tourExploreBody'), pos: 'left', cta: t('tourContinue') },
+    { title: t('tourWelcomeTitle'), body: t('tourWelcomeBody'), pos: 'center', cta: t('tourStart') },
+  ];
 
   useEffect(() => {
     try {
@@ -81,7 +59,7 @@ export function OnboardingTour() {
           <span className="text-xs font-bold uppercase tracking-widest text-brand-600">
             {i + 1} / {STEPS.length}
           </span>
-          <button type="button" onClick={finish} aria-label="Kapat" className={`text-muted transition hover:text-ink ${centered ? 'absolute right-0 top-0' : ''}`}>
+          <button type="button" onClick={finish} aria-label={c('close')} className={`text-muted transition hover:text-ink ${centered ? 'absolute right-0 top-0' : ''}`}>
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
           </button>
         </div>
@@ -93,10 +71,10 @@ export function OnboardingTour() {
           {i > 0 ? (
             <button type="button" onClick={back} className="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
-              Geri
+              {c('back')}
             </button>
           ) : (
-            !centered && <button type="button" onClick={finish} className="text-sm font-medium text-muted transition hover:text-ink">Geç</button>
+            !centered && <button type="button" onClick={finish} className="text-sm font-medium text-muted transition hover:text-ink">{t('skip')}</button>
           )}
           <button type="button" onClick={next} className="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-5 py-2 text-sm font-bold text-white transition hover:bg-brand-600">
             {step.cta}

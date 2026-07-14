@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { RestaurantSettingsForm } from '@/components/RestaurantSettingsForm';
 import { useApi } from '@/lib/useApi';
 
 export default function SettingsPage() {
+  const t = useTranslations('settings');
+  const c = useTranslations('common');
   const { api, ready } = useApi();
   const [tenant, setTenant] = useState<any | null>(null);
 
@@ -14,7 +17,7 @@ export default function SettingsPage() {
   }, [ready, api]);
 
   return (
-    <AdminShell title="Restoran Ayarları">
+    <AdminShell title={t('title')}>
       {tenant ? (
         <RestaurantSettingsForm
           initialName={tenant.name}
@@ -27,7 +30,7 @@ export default function SettingsPage() {
           onUpload={(type, file) => api.uploadRestaurantMedia(type, file)}
         />
       ) : (
-        <p className="text-sm text-muted">Yükleniyor…</p>
+        <p className="text-sm text-muted">{c('loading')}</p>
       )}
     </AdminShell>
   );

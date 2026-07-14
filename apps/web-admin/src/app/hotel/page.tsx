@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { HotelFolioRoom } from '@comiqr/shared-types';
 import { AdminShell } from '@/components/AdminShell';
 import { Button, Card } from '@/components/ui';
@@ -19,11 +20,15 @@ const spot = (t?: string | null) => SPOT[t ?? ''] ?? { icon: '📍', noun: '' };
  * closed). Reachable for hotel + beach verticals (AdminShell adds the nav entry).
  */
 export default function HotelFolioPage() {
+  const t = useTranslations('hotel');
+  const c = useTranslations('common');
   const { api, me, ready } = useApi();
   const [rooms, setRooms] = useState<HotelFolioRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [settling, setSettling] = useState<number | null>(null);
   const currency = me?.tenant?.currency ?? '';
+  const spotNoun = (areaType?: string | null) =>
+    areaType === 'room' ? t('room') : areaType === 'sunbed' ? t('sunbed') : '';
 
   const refresh = useCallback(async () => {
     try {
@@ -44,8 +49,7 @@ export default function HotelFolioPage() {
   }, [ready, refresh]);
 
   async function settle(room: HotelFolioRoom) {
-    const s = spot(room.area_type);
-    if (!window.confirm(`${s.noun} ${room.code}: folyo ${money(room.total, currency)} nakit tahsil edilip oturum kapatılsın mı?`)) return;
+    if (!window.confirm(t('settleConfirm', { spot: spotNoun(room.area_type), code: room.code, amount: money(room.total, currency) }))) return;
     setSettling(room.table_id);
     try {
       await api.settleRoom(room.table_id);
@@ -60,25 +64,25 @@ export default function HotelFolioPage() {
   const grandTotal = rooms.reduce((sum, r) => sum + Number(r.total || 0), 0);
 
   return (
-    <AdminShell title="Folyo">
+    <AdminShell title={t('title')}>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Card className="flex-1">
-          <div className="text-xs font-medium text-muted">Açık folyo</div>
+          <div className="text-xs font-medium text-muted">{t('openFolios')}</div>
           <div className="mt-1 text-2xl font-bold text-ink">{rooms.length}</div>
         </Card>
         <Card className="flex-1">
-          <div className="text-xs font-medium text-muted">Toplam açık folyo</div>
+          <div className="text-xs font-medium text-muted">{t('totalOpenFolio')}</div>
           <div className="mt-1 text-2xl font-bold text-ink">{money(grandTotal, currency)}</div>
         </Card>
       </div>
 
       {loading ? (
-        <Card>Yükleniyor…</Card>
+        <Card>{c('loading')}</Card>
       ) : rooms.length === 0 ? (
         <Card>
           <div className="py-8 text-center text-muted">
             <div className="text-3xl">🧾</div>
-            <p className="mt-2 text-sm">Açık folyo yok. Misafirler odaya/şezlonga sipariş yansıttıkça burada görünür.</p>
+            <p className="mt-2 text-sm">{t('emptyFolio')}</p>
           </div>
         </Card>
       ) : (
@@ -88,12 +92,12 @@ export default function HotelFolioPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-lg font-bold text-ink">
-                    {spot(room.area_type).icon} {spot(room.area_type).noun} {room.code}
+                    {spot(room.area_type).icon} {spotNoun(room.area_type)} {room.code}
                   </div>
                   {room.area && <div className="text-xs text-muted">{room.area}</div>}
                 </div>
                 <div className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">
-                  {room.order_count} sipariş
+                  {t('orderCount', { count: room.order_count })}
                 </div>
               </div>
 
@@ -101,7 +105,7 @@ export default function HotelFolioPage() {
                 {room.orders.map((o) => (
                   <li key={o.id} className="flex items-center justify-between">
                     <span className="text-muted">
-                      #{o.id} · {o.items_count} kalem
+                      #{o.id} · {t('itemCount', { count: o.items_count })}
                       {o.placed_at ? ` · ${time(o.placed_at)}` : ''}
                     </span>
                     <span className="font-medium text-ink">{money(o.grand_total, currency)}</span>
@@ -110,12 +114,12 @@ export default function HotelFolioPage() {
               </ul>
 
               <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-                <span className="text-sm text-muted">Folyo</span>
+                <span className="text-sm text-muted">{t('folio')}</span>
                 <span className="text-lg font-bold text-ink">{money(room.total, currency)}</span>
               </div>
 
               <Button className="mt-3 w-full" onClick={() => settle(room)} disabled={settling === room.table_id}>
-                {settling === room.table_id ? 'Tahsil ediliyor…' : 'Tahsil Et & Çıkış'}
+                {settling === room.table_id ? t('settling') : t('settleCheckout')}
               </Button>
             </Card>
           ))}

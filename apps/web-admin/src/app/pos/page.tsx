@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { BrandLogo } from '@/components/BrandLogo';
 import { getActiveBranchId } from '@/lib/branch';
 import { createEcho } from '@/lib/echo';
@@ -49,6 +50,8 @@ const productImg = (p: any): string | undefined => p?.images?.[0] ?? p?.image_pa
  * receipt — plus a cash-drawer shift with a Z-report.
  */
 export default function PosPage() {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const router = useRouter();
   const { api, me, ready } = useApi('/pos/login');
   const isCashier = me?.user.role === 'cashier';
@@ -296,7 +299,7 @@ export default function PosPage() {
       setCart({});
       return res;
     } catch (e: any) {
-      setError(e?.message ?? 'Sipariş kaydedilemedi.');
+      setError(e?.message ?? t('orderSaveFailed'));
       return null;
     } finally {
       setBusy(false);
@@ -328,7 +331,7 @@ export default function PosPage() {
       const res = await api.posDiscount(order.id, { type, value, reason });
       setOrder(res);
     } catch (e: any) {
-      setError(e?.message ?? 'İndirim uygulanamadı.');
+      setError(e?.message ?? t('discountFailed'));
     }
   }
 
@@ -337,7 +340,7 @@ export default function PosPage() {
     try {
       setOrder(await api.posServiceCharge(order.id, percent));
     } catch (e: any) {
-      setError(e?.message ?? 'Servis ücreti uygulanamadı.');
+      setError(e?.message ?? t('serviceChargeFailed'));
     }
   }
 
@@ -347,7 +350,7 @@ export default function PosPage() {
       const res = await api.posVoidItem(order.id, itemId);
       setOrder(res);
     } catch (e: any) {
-      setError(e?.message ?? 'Ürün çıkarılamadı.');
+      setError(e?.message ?? t('itemVoidFailed'));
     }
   }
 
@@ -365,7 +368,7 @@ export default function PosPage() {
       setRecallOrders(list);
       setShowRecall(true);
     } catch {
-      setError('Adisyonlar yüklenemedi.');
+      setError(t('tabsLoadFailed'));
     }
   }
 
@@ -386,7 +389,7 @@ export default function PosPage() {
   }
 
   if (!ready) {
-    return <div className="grid h-screen place-items-center bg-[#f4f6f8] text-muted">Yükleniyor…</div>;
+    return <div className="grid h-screen place-items-center bg-[#f4f6f8] text-muted">{c('loading')}</div>;
   }
 
   return (
@@ -408,7 +411,7 @@ export default function PosPage() {
         {/* Top bar: breadcrumb + actions */}
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-5 py-3">
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-ink">Point of Sale (POS)</h1>
+            <h1 className="text-lg font-extrabold tracking-tight text-ink">{t('title')}</h1>
             <div className="text-[11px] font-medium text-muted">{venueName} · {now.toLocaleTimeString('tr-TR')}</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -418,19 +421,19 @@ export default function PosPage() {
                 shift ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-canvas text-muted hover:bg-line/40'
               }`}
             >
-              {shift ? `🟢 ${money(shift.expected_cash, currency)}` : '🔒 Kasa Kapalı'}
+              {shift ? `🟢 ${money(shift.expected_cash, currency)}` : `🔒 ${t('drawerClosed')}`}
             </button>
-            <TopBtn onClick={resetTicket}><span className="text-brand-600">＋</span> Yeni</TopBtn>
+            <TopBtn onClick={resetTicket}><span className="text-brand-600">＋</span> {t('newTicket')}</TopBtn>
             <TopBtn onClick={() => loadRecall('today')}>
-              ▤ QR Siparişleri
+              ▤ {t('qrOrders')}
               {liveAlert && <span className="ml-1 inline-block h-2 w-2 rounded-full bg-red-500 align-middle" />}
             </TopBtn>
-            <TopBtn onClick={() => loadRecall('open')}>❏ Taslak Listesi</TopBtn>
-            <TopBtn onClick={() => !order && setShowMap(true)}>🍽️ Masa Siparişi</TopBtn>
+            <TopBtn onClick={() => loadRecall('open')}>❏ {t('draftList')}</TopBtn>
+            <TopBtn onClick={() => !order && setShowMap(true)}>🍽️ {t('tableOrder')}</TopBtn>
             {!isCashier && (
               <>
-                <TopBtn onClick={() => setShowKds(true)}>🍳 Mutfak</TopBtn>
-                <TopBtn onClick={() => router.push('/dashboard')}>← Panel</TopBtn>
+                <TopBtn onClick={() => setShowKds(true)}>🍳 {t('kitchen')}</TopBtn>
+                <TopBtn onClick={() => router.push('/dashboard')}>← {t('panel')}</TopBtn>
               </>
             )}
           </div>
@@ -447,7 +450,7 @@ export default function PosPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Ürün ara…"
+                placeholder={t('searchProduct')}
                 className="w-full rounded-lg border border-line bg-canvas py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500"
               />
             </div>
@@ -460,8 +463,8 @@ export default function PosPage() {
               }}
               className="rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none"
             >
-              <option value="">Tüm Kategoriler</option>
-              {favorites.length > 0 && <option value="fav">⭐ Sık kullanılan</option>}
+              <option value="">{t('allCategories')}</option>
+              {favorites.length > 0 && <option value="fav">⭐ {t('favorites')}</option>}
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -471,9 +474,9 @@ export default function PosPage() {
           {/* Category pills — auto-wrap into as many rows as needed, no scroll */}
           <div className="flex flex-wrap gap-2 border-b border-line px-4 py-2.5">
             {favorites.length > 0 && (
-              <CatPill active={favView} onClick={() => setFavView(true)}>⭐ Sık</CatPill>
+              <CatPill active={favView} onClick={() => setFavView(true)}>⭐ {t('favShort')}</CatPill>
             )}
-            <CatPill active={!favView && activeCat === null} onClick={() => { setFavView(false); setActiveCat(null); }}>Tümü</CatPill>
+            <CatPill active={!favView && activeCat === null} onClick={() => { setFavView(false); setActiveCat(null); }}>{c('all')}</CatPill>
             {categories.map((c) => (
               <CatPill key={c.id} active={!favView && activeCat === c.id} img={c.image_path} onClick={() => { setFavView(false); setActiveCat(c.id); }}>{c.name}</CatPill>
             ))}
@@ -518,7 +521,7 @@ export default function PosPage() {
                 </div>
               </button>
             ))}
-            {shown.length === 0 && <p className="col-span-full py-10 text-center text-sm text-muted">Ürün bulunamadı.</p>}
+            {shown.length === 0 && <p className="col-span-full py-10 text-center text-sm text-muted">{t('noProducts')}</p>}
           </div>
         </section>
 
@@ -530,7 +533,7 @@ export default function PosPage() {
               onClick={() => loadRecall('open')}
               className="flex w-full items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-2 text-left text-sm text-muted transition hover:border-brand-400"
             >
-              🔍 Mevcut siparişlerde ara
+              🔍 {t('searchExistingOrders')}
             </button>
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -543,23 +546,23 @@ export default function PosPage() {
                 }}
                 className="rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none disabled:opacity-60"
               >
-                <option value="table">🍽️ Masa Servisi</option>
-                <option value="takeaway">🛍️ Gel-Al</option>
+                <option value="table">🍽️ {t('dineIn')}</option>
+                <option value="takeaway">🛍️ {t('takeaway')}</option>
               </select>
               <button
                 onClick={() => !order && orderType === 'table' && setShowMap(true)}
                 disabled={!!order || orderType !== 'table'}
                 className="truncate rounded-lg border border-line bg-white px-3 py-2 text-left text-sm text-ink outline-none transition hover:border-brand-400 disabled:opacity-60"
               >
-                {tableCode ? `${tableCode} ✎` : 'Masa Seç →'}
+                {tableCode ? `${tableCode} ✎` : `${t('selectTable')} →`}
               </button>
             </div>
             <div className="flex items-center justify-between pt-0.5">
               <span className="flex items-center gap-1.5 text-sm font-bold text-ink">
-                🧾 {order ? `Sipariş #${order.id}` : 'Yeni Sipariş'}
+                🧾 {order ? t('orderNo', { id: order.id }) : t('newOrder')}
               </span>
               {order && (
-                <button onClick={resetTicket} className="text-xs font-semibold text-brand-600 hover:underline">+ Yeni</button>
+                <button onClick={resetTicket} className="text-xs font-semibold text-brand-600 hover:underline">+ {t('newTicket')}</button>
               )}
             </div>
           </div>
@@ -567,7 +570,7 @@ export default function PosPage() {
           {/* Lines */}
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
             {committedItems.length === 0 && cartLines.length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted">Ürün ekleyin…</p>
+              <p className="py-12 text-center text-sm text-muted">{t('addProducts')}</p>
             ) : (
               <>
                 {committedItems.map((i: any) => (
@@ -580,17 +583,17 @@ export default function PosPage() {
                         )}
                         <div className="mt-0.5 text-xs text-brand-600">
                           {money(i.unit_price, currency)} × {i.quantity} = <b>{money(i.line_total, currency)}</b>
-                          {Number(i.discount_total) > 0 && <span className="ml-1 text-[10px] text-emerald-600">✓ indirim</span>}
+                          {Number(i.discount_total) > 0 && <span className="ml-1 text-[10px] text-emerald-600">✓ {t('discountTag')}</span>}
                         </div>
                       </div>
                       {order?.payment_status !== 'paid' && (
-                        <button onClick={() => voidCommitted(i.id)} title="Çıkar" className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-red-50 text-red-500 hover:bg-red-100">🗑</button>
+                        <button onClick={() => voidCommitted(i.id)} title={t('voidItem')} className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-red-50 text-red-500 hover:bg-red-100">🗑</button>
                       )}
                     </div>
                     <div className="mt-1.5 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold uppercase text-emerald-600">✓ mutfağa gönderildi</span>
+                      <span className="text-[10px] font-semibold uppercase text-emerald-600">✓ {t('sentToKitchen')}</span>
                       {order?.payment_status !== 'paid' && (
-                        <button onClick={() => setLineDisc(i)} className="rounded-md border border-line px-2 py-0.5 text-[11px] font-medium text-muted hover:border-brand-300">% indir</button>
+                        <button onClick={() => setLineDisc(i)} className="rounded-md border border-line px-2 py-0.5 text-[11px] font-medium text-muted hover:border-brand-300">{t('lineDiscount')}</button>
                       )}
                     </div>
                   </div>
@@ -605,7 +608,7 @@ export default function PosPage() {
                         )}
                         <div className="mt-0.5 text-xs text-brand-600">{money(l.unitPrice, currency)} × {l.qty} = <b>{money(l.unitPrice * l.qty, currency)}</b></div>
                       </div>
-                      <button onClick={() => setQty(l.key, 0)} title="Kaldır" className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-red-50 text-red-500 hover:bg-red-100">🗑</button>
+                      <button onClick={() => setQty(l.key, 0)} title={c('remove')} className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-red-50 text-red-500 hover:bg-red-100">🗑</button>
                     </div>
                     <div className="mt-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
@@ -613,13 +616,13 @@ export default function PosPage() {
                         <span className="w-5 text-center text-sm font-bold text-ink">{l.qty}</span>
                         <button onClick={() => setQty(l.key, l.qty + 1)} className="grid h-6 w-6 place-items-center rounded-md bg-white text-ink shadow-sm">+</button>
                       </div>
-                      <button onClick={() => toggleNote(l.key)} className="rounded-md border border-line bg-white px-2 py-0.5 text-[11px] font-medium text-muted hover:border-brand-300">📝 Not Ekle</button>
+                      <button onClick={() => toggleNote(l.key)} className="rounded-md border border-line bg-white px-2 py-0.5 text-[11px] font-medium text-muted hover:border-brand-300">📝 {t('addNote')}</button>
                     </div>
                     {notesOpen.has(l.key) && (
                       <input
                         value={l.note ?? ''}
                         onChange={(e) => setLineNote(l.key, e.target.value)}
-                        placeholder="Bu ürün için not…"
+                        placeholder={t('itemNote')}
                         className="mt-1.5 w-full rounded-md border border-line px-2 py-1 text-xs outline-none focus:border-brand-500"
                       />
                     )}
@@ -635,13 +638,13 @@ export default function PosPage() {
               <input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Sipariş notu…"
+                placeholder={t('orderNote')}
                 className="mb-2 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
             )}
             <div className="mb-3 space-y-1.5 text-sm">
               <div className="flex justify-between text-muted">
-                <span>Ara toplam</span>
+                <span>{t('subtotal')}</span>
                 <span className="font-semibold text-ink">{money(runningSubtotal, currency)}</span>
               </div>
               <button
@@ -649,22 +652,22 @@ export default function PosPage() {
                 disabled={busy || (committedItems.length === 0 && cartLines.length === 0)}
                 className="flex w-full items-center justify-between text-muted transition hover:text-brand-600 disabled:opacity-60"
               >
-                <span>İndirim ✎</span>
+                <span>{t('discount')} ✎</span>
                 <span className={discountTotal > 0 ? 'font-semibold text-brand-600' : ''}>
                   {discountTotal > 0 ? `− ${money(discountTotal, currency)}` : money(0, currency)}
                 </span>
               </button>
               {Number(order?.tip_total ?? 0) > 0 && (
-                <div className="flex justify-between text-muted"><span>Bahşiş</span><span>{money(order.tip_total, currency)}</span></div>
+                <div className="flex justify-between text-muted"><span>{t('tip')}</span><span>{money(order.tip_total, currency)}</span></div>
               )}
               {Number(order?.tax_total ?? 0) > 0 && (
-                <div className="flex justify-between text-muted"><span>Servis</span><span>{money(order.tax_total, currency)}</span></div>
+                <div className="flex justify-between text-muted"><span>{t('service')}</span><span>{money(order.tax_total, currency)}</span></div>
               )}
               {order?.charged_to_room && (
-                <div className="flex justify-between font-semibold text-amber-600"><span>🧾 Odaya yazıldı</span><span></span></div>
+                <div className="flex justify-between font-semibold text-amber-600"><span>🧾 {t('chargedToRoom')}</span><span></span></div>
               )}
               <div className="flex justify-between border-t border-line pt-1.5 text-lg font-black text-ink">
-                <span>Toplam</span>
+                <span>{c('total')}</span>
                 <span>{money(grandTotal, currency)}</span>
               </div>
             </div>
@@ -673,9 +676,9 @@ export default function PosPage() {
             {order && (
               <div className="mb-2 text-xs">
                 {Number(order.tax_total) > 0 ? (
-                  <button onClick={() => applyServiceCharge(0)} className="font-medium text-muted hover:underline">✕ Servis ücretini kaldır</button>
+                  <button onClick={() => applyServiceCharge(0)} className="font-medium text-muted hover:underline">✕ {t('removeServiceCharge')}</button>
                 ) : (
-                  <button onClick={() => applyServiceCharge(10)} className="font-semibold text-brand-600 hover:underline">+ Servis ücreti %10</button>
+                  <button onClick={() => applyServiceCharge(10)} className="font-semibold text-brand-600 hover:underline">+ {t('serviceCharge10')}</button>
                 )}
               </div>
             )}
@@ -684,7 +687,7 @@ export default function PosPage() {
                 onClick={() => setRefundOrder(order)}
                 className="mb-2 w-full rounded-xl border border-red-200 bg-red-50 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
               >
-                ↩ İade · {money(order.paid_total, currency)} tahsil edildi
+                ↩ {t('refundCollected', { amount: money(order.paid_total, currency) })}
               </button>
             )}
 
@@ -695,14 +698,14 @@ export default function PosPage() {
                 className="rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-40"
                 style={{ color: '#ffffff' }}
               >
-                🍳 KOT & Yazdır
+                🍳 {t('kotPrint')}
               </button>
               <button
                 onClick={onPark}
                 disabled={busy || (cartLines.length === 0 && !order)}
                 className="rounded-xl border border-line bg-white py-3 text-sm font-bold text-ink transition hover:bg-canvas disabled:opacity-40"
               >
-                ❏ Taslak
+                ❏ {t('draft')}
               </button>
               <button
                 onClick={onPay}
@@ -710,7 +713,7 @@ export default function PosPage() {
                 className="rounded-xl bg-brand-500 py-3 text-sm font-bold text-white transition hover:bg-brand-600 disabled:opacity-40"
                 style={{ color: '#ffffff' }}
               >
-                {busy ? '…' : '💳 Öde'}
+                {busy ? '…' : `💳 ${t('pay')}`}
               </button>
               <button
                 onClick={onPay}
@@ -718,7 +721,7 @@ export default function PosPage() {
                 className="rounded-xl bg-emerald-500 py-3 text-sm font-bold text-white transition hover:bg-emerald-600 disabled:opacity-40"
                 style={{ color: '#ffffff' }}
               >
-                🖨️ Fiş & Öde
+                🖨️ {t('receiptPay')}
               </button>
             </div>
           </div>
@@ -787,7 +790,7 @@ export default function PosPage() {
             try {
               setOrder(await api.posLineDiscount(order.id, item.id, { type, value }));
             } catch (e: any) {
-              setError(e?.message ?? 'Satır indirimi uygulanamadı.');
+              setError(e?.message ?? t('lineDiscountFailed'));
             }
           }}
         />
@@ -839,24 +842,31 @@ export default function PosPage() {
         />
       )}
       {receipt && (
-        <Modal title="Ödeme Tamamlandı ✓" onClose={() => { setReceipt(null); resetTicket(); }}>
+        <Modal title={`${t('paymentComplete')} ✓`} onClose={() => { setReceipt(null); resetTicket(); }}>
           <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
             <div className="text-4xl">✅</div>
             <div className="mt-2 text-2xl font-black text-ink">{money(receipt.grand_total, currency)}</div>
-            <div className="text-sm text-muted">Adisyon #{receipt.id} kapatıldı</div>
+            <div className="text-sm text-muted">{t('tabClosed', { id: receipt.id })}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => printReceipt(receipt, venueName, currency)}
+              onClick={() => printReceipt(receipt, venueName, currency, {
+                receiptWord: t('receiptWord'),
+                subtotal: t('subtotal'),
+                discount: t('discount'),
+                tip: t('tip'),
+                total: t('totalReceipt'),
+                thanks: t('thanks'),
+              })}
               className="rounded-xl border border-line py-3 text-sm font-semibold text-ink hover:bg-canvas"
             >
-              🖨️ Fiş Yazdır
+              🖨️ {t('printReceipt')}
             </button>
             <button
               onClick={() => { setReceipt(null); resetTicket(); }}
               className="rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white hover:bg-brand-600"
             >
-              + Yeni Sipariş
+              + {t('newOrder')}
             </button>
           </div>
         </Modal>
@@ -913,18 +923,19 @@ function PosSidebar({
   onShift: () => void;
   onLogout: () => void;
 }) {
+  const t = useTranslations('pos');
   // POS-only sections — mirrors the admin menu structure but stays in the terminal.
   const views: { key: PosView; label: string; icon: string }[] = [
-    { key: 'summary', label: 'Özet', icon: '🏠' },
-    { key: 'sale', label: 'Satış', icon: '🧾' },
-    { key: 'orders', label: 'Siparişler', icon: '📋' },
-    { key: 'tables', label: 'Masalar', icon: '🍽️' },
-    { key: 'customers', label: 'Müşteriler', icon: '👤' },
-    { key: 'reports', label: 'Raporlar', icon: '📊' },
+    { key: 'summary', label: t('summary'), icon: '🏠' },
+    { key: 'sale', label: t('sale'), icon: '🧾' },
+    { key: 'orders', label: t('orders'), icon: '📋' },
+    { key: 'tables', label: t('tables'), icon: '🍽️' },
+    { key: 'customers', label: t('customers'), icon: '👤' },
+    { key: 'reports', label: t('reports'), icon: '📊' },
   ];
   const actions = [
-    ...(isCashier ? [] : [{ key: 'kds', label: 'Mutfak (KDS)', icon: '🍳', onClick: onKds }]),
-    { key: 'shift', label: shiftOpen ? 'Vardiya · Açık' : 'Vardiya', icon: shiftOpen ? '🟢' : '🔒', onClick: onShift },
+    ...(isCashier ? [] : [{ key: 'kds', label: t('kitchenKds'), icon: '🍳', onClick: onKds }]),
+    { key: 'shift', label: shiftOpen ? t('shiftOpenLabel') : t('shift'), icon: shiftOpen ? '🟢' : '🔒', onClick: onShift },
   ];
 
   return (
@@ -938,10 +949,10 @@ function PosSidebar({
         </span>
         <div className="min-w-0">
           <div className="truncate text-sm font-bold text-ink">{userName}</div>
-          <div className="text-[11px] text-muted">{isCashier ? 'Kasa' : 'POS'}</div>
+          <div className="text-[11px] text-muted">{isCashier ? t('cashier') : 'POS'}</div>
         </div>
       </div>
-      <div className="mb-1 mt-5 px-3 text-[10px] font-bold uppercase tracking-wide text-muted">POS Sistemi</div>
+      <div className="mb-1 mt-5 px-3 text-[10px] font-bold uppercase tracking-wide text-muted">{t('posSystem')}</div>
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {views.map((it) => (
           <button
@@ -971,7 +982,7 @@ function PosSidebar({
         onClick={onLogout}
         className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-muted transition hover:bg-canvas hover:text-red-600"
       >
-        <span className="w-5 text-center">⎋</span> Çıkış
+        <span className="w-5 text-center">⎋</span> {t('logout')}
       </button>
     </aside>
   );

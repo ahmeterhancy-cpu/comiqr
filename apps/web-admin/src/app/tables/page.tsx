@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { AreaType, DiningArea } from '@comiqr/shared-types';
 import { AdminShell } from '@/components/AdminShell';
 import { Button, Card, Input } from '@/components/ui';
@@ -16,7 +17,17 @@ const AREA_TYPES: { value: AreaType; label: string; icon: string }[] = [
 ];
 const areaMeta = (t?: string) => AREA_TYPES.find((a) => a.value === t) ?? AREA_TYPES[0];
 
+const AREA_TYPE_KEY: Record<string, string> = {
+  table: 'areaTypeTable',
+  room: 'areaTypeRoom',
+  sunbed: 'areaTypeSunbed',
+  stand: 'areaTypeStand',
+};
+
 export default function TablesPage() {
+  const t = useTranslations('tables');
+  const c = useTranslations('common');
+  const atLabel = (v?: string) => t(AREA_TYPE_KEY[areaMeta(v).value]);
   const { api, ready } = useApi();
   const [tables, setTables] = useState<any[]>([]);
   const [areas, setAreas] = useState<DiningArea[]>([]);
@@ -45,7 +56,7 @@ export default function TablesPage() {
   }
 
   async function removeArea(id: number) {
-    if (!window.confirm('Alan silinsin mi? İçindeki noktalar alansız kalır.')) return;
+    if (!window.confirm(t('confirmDeleteArea'))) return;
     await api.deleteDiningArea(id);
     load();
   }
@@ -79,14 +90,14 @@ export default function TablesPage() {
   }, [tables, areas]);
 
   return (
-    <AdminShell title="Masalar & Alanlar">
+    <AdminShell title={t('title')}>
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Areas */}
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-ink">Alanlar</h3>
+          <h3 className="mb-3 text-sm font-semibold text-ink">{t('areasHeading')}</h3>
           <form onSubmit={addArea} className="flex flex-wrap gap-2">
             <Input
-              placeholder="Alan adı (ör. Odalar, Şezlonglar)"
+              placeholder={t('areaNamePlaceholder')}
               value={newAreaName}
               onChange={(e) => setNewAreaName(e.target.value)}
               className="min-w-[9rem] flex-1"
@@ -96,16 +107,16 @@ export default function TablesPage() {
               onChange={(e) => setNewAreaType(e.target.value as AreaType)}
               className="rounded-lg border border-line bg-white px-3 text-sm text-ink"
             >
-              {AREA_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.icon} {t.label}
+              {AREA_TYPES.map((at) => (
+                <option key={at.value} value={at.value}>
+                  {at.icon} {atLabel(at.value)}
                 </option>
               ))}
             </select>
-            <Button type="submit">Alan Ekle</Button>
+            <Button type="submit">{t('addArea')}</Button>
           </form>
           <ul className="mt-3 divide-y divide-line">
-            {areas.length === 0 && <li className="py-2 text-sm text-muted">Henüz alan yok.</li>}
+            {areas.length === 0 && <li className="py-2 text-sm text-muted">{t('noAreas')}</li>}
             {areas.map((a) => {
               const m = areaMeta(a.type);
               return (
@@ -113,11 +124,11 @@ export default function TablesPage() {
                   <span className="text-sm text-ink">
                     <span className="mr-1.5">{m.icon}</span>
                     {a.name}
-                    <span className="ml-2 rounded-full bg-canvas px-2 py-0.5 text-xs text-muted">{m.label}</span>
-                    <span className="ml-1 text-xs text-muted">· {a.tables_count ?? 0} nokta</span>
+                    <span className="ml-2 rounded-full bg-canvas px-2 py-0.5 text-xs text-muted">{atLabel(a.type)}</span>
+                    <span className="ml-1 text-xs text-muted">· {t('points', { count: a.tables_count ?? 0 })}</span>
                   </span>
                   <button onClick={() => removeArea(a.id)} className="text-xs font-medium text-red-600 hover:underline">
-                    Sil
+                    {c('delete')}
                   </button>
                 </li>
               );
@@ -127,11 +138,11 @@ export default function TablesPage() {
 
         {/* Add point (table/room/sunbed/stand) */}
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-ink">Nokta Ekle (Masa / Oda / Şezlong)</h3>
+          <h3 className="mb-3 text-sm font-semibold text-ink">{t('addPointHeading')}</h3>
           <form onSubmit={addTable} className="space-y-2">
             <div className="flex flex-wrap gap-2">
               <Input
-                placeholder="Kod (ör. 101, Masa 5, Ş-12)"
+                placeholder={t('codePlaceholder')}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="min-w-[9rem] flex-1"
@@ -141,7 +152,7 @@ export default function TablesPage() {
                 onChange={(e) => setAreaId(e.target.value ? Number(e.target.value) : '')}
                 className="rounded-lg border border-line bg-white px-3 text-sm text-ink"
               >
-                <option value="">Alansız</option>
+                <option value="">{t('unassigned')}</option>
                 {areas.map((a) => (
                   <option key={a.id} value={a.id}>
                     {areaMeta(a.type).icon} {a.name}
@@ -150,14 +161,14 @@ export default function TablesPage() {
               </select>
             </div>
             <div className="flex gap-2">
-              <Button type="submit">Ekle</Button>
+              <Button type="submit">{c('add')}</Button>
               <Button type="button" variant="ghost" onClick={bulk}>
-                5 Üret
+                {t('generateFive')}
               </Button>
             </div>
           </form>
           <p className="mt-2 text-xs text-muted">
-            Otel için “Oda”, plaj/havuz için “Şezlong” tipinde bir alan seçin — QR ve akışlar tipe göre uyarlanır.
+            {t('pointHint')}
           </p>
         </Card>
       </div>
@@ -168,8 +179,8 @@ export default function TablesPage() {
           <section key={area?.id ?? 'none'} className="mt-6">
             <h3 className="mb-3 text-sm font-semibold text-ink">
               <span className="mr-1.5">{m.icon}</span>
-              {area?.name ?? 'Alansız'}
-              <span className="ml-2 text-xs font-normal text-muted">{items.length} nokta</span>
+              {area?.name ?? t('unassigned')}
+              <span className="ml-2 text-xs font-normal text-muted">{t('points', { count: items.length })}</span>
             </h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((t) => (
@@ -179,7 +190,7 @@ export default function TablesPage() {
                       {areaMeta(t.area?.type).icon} {t.code}
                     </span>
                     <span className={`text-xs ${t.is_active ? 'text-emerald-700' : 'text-muted'}`}>
-                      {t.is_active ? 'Aktif' : 'Pasif'}
+                      {t.is_active ? c('active') : c('inactive')}
                     </span>
                   </div>
                   <a

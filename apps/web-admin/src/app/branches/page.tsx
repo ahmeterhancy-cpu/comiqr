@@ -1,11 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { Button, Card, Field, Input } from '@/components/ui';
 import { useApi } from '@/lib/useApi';
 
 export default function BranchesPage() {
+  const t = useTranslations('branches');
+  const c = useTranslations('common');
   const { api, ready } = useApi();
   const [branches, setBranches] = useState<any[]>([]);
   const [f, setF] = useState<Record<string, string>>({});
@@ -25,7 +28,7 @@ export default function BranchesPage() {
       setF({});
       load();
     } catch {
-      setError('Şube eklenemedi.');
+      setError(t('addError'));
     }
   }
 
@@ -34,25 +37,25 @@ export default function BranchesPage() {
       await api.deleteBranch(id);
       load();
     } catch {
-      setError('En az bir şube kalmalı.');
+      setError(t('minOneBranch'));
     }
   }
 
   return (
-    <AdminShell title="Şubeler">
+    <AdminShell title={t('title')}>
       <Card>
         <form className="grid gap-4 sm:grid-cols-3" onSubmit={add}>
-          <Field label="Şube adı">
+          <Field label={t('branchName')}>
             <Input required value={f.name ?? ''} onChange={(e) => setF((s) => ({ ...s, name: e.target.value }))} />
           </Field>
-          <Field label="Adres">
+          <Field label={t('address')}>
             <Input value={f.address ?? ''} onChange={(e) => setF((s) => ({ ...s, address: e.target.value }))} />
           </Field>
-          <Field label="Telefon">
+          <Field label={t('phone')}>
             <Input value={f.phone ?? ''} onChange={(e) => setF((s) => ({ ...s, phone: e.target.value }))} />
           </Field>
           <div className="sm:col-span-3">
-            <Button type="submit">Şube Ekle</Button>
+            <Button type="submit">{t('addBranch')}</Button>
             {error && <span className="ml-3 text-xs text-red-600">{error}</span>}
           </div>
         </form>
@@ -68,7 +71,7 @@ export default function BranchesPage() {
                 {b.phone && <div className="text-xs text-muted">{b.phone}</div>}
               </div>
               <button onClick={() => remove(b.id)} className="text-xs text-red-600">
-                Sil
+                {c('delete')}
               </button>
             </div>
           </Card>

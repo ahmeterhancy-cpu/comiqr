@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { CategoryManager } from '@/components/CategoryManager';
 import { RecipeEditor } from '@/components/RecipeEditor';
@@ -10,6 +11,8 @@ import { printMenu } from '@/lib/print-menu';
 import { useApi } from '@/lib/useApi';
 
 export default function MenuPage() {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const { api, me, ready } = useApi();
   const [printing, setPrinting] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -96,13 +99,13 @@ export default function MenuPage() {
       // are photos → JPEG for the smallest file.
       const optimized = await compressImage(file, { format: 'jpeg' });
       if (optimized.size > 4 * 1024 * 1024) {
-        setNotice('Görsel çok büyük (4 MB üstü). Lütfen daha küçük bir görsel seçin.');
+        setNotice(t('imageTooLarge'));
         return;
       }
       await api.uploadProductImage(p.id, optimized);
       load();
     } catch {
-      setNotice('Görsel yüklenemedi. Lütfen JPG/PNG/WebP bir görsel deneyin.');
+      setNotice(t('imageUploadFailed'));
     } finally {
       setBusy(null);
     }
@@ -114,18 +117,18 @@ export default function MenuPage() {
     setNotice(null);
     try {
       const res = await api.importMenuFromPhotos(Array.from(files).slice(0, 5));
-      setNotice(`📸 İçe aktarıldı: ${res.categories} kategori, ${res.products} ürün. Lütfen gözden geçirin.`);
+      setNotice(t('importSuccess', { categories: res.categories, products: res.products }));
       load();
     } catch (e: any) {
       const s = e?.status;
       setNotice(
         s === 402
-          ? 'Fotoğraftan aktarma AI planı gerektirir (Pro ve üzeri).'
+          ? t('importNeedsAiPlan')
           : s === 503
-            ? 'AI yapılandırılmamış (ANTHROPIC_API_KEY) veya sağlayıcı görsel okumayı desteklemiyor.'
+            ? t('aiNotConfiguredVision')
             : s === 422
-              ? e?.message ?? 'Menü okunamadı — daha net bir fotoğraf deneyin.'
-              : 'İçe aktarma başarısız oldu.',
+              ? e?.message ?? t('menuUnreadable')
+              : t('importFailed'),
       );
     } finally {
       setImporting(false);
@@ -139,7 +142,7 @@ export default function MenuPage() {
       const menu = await api.menu(me?.tenant?.slug);
       printMenu(menu);
     } catch {
-      setNotice('Menü yüklenemedi — yazdırılamadı.');
+      setNotice(t('printLoadFailed'));
     } finally {
       setPrinting(false);
     }
@@ -159,7 +162,7 @@ export default function MenuPage() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      setNotice('PDF indirilemedi.');
+      setNotice(t('pdfDownloadFailed'));
     } finally {
       setPdfBusy(false);
     }
@@ -170,10 +173,10 @@ export default function MenuPage() {
     setNotice(null);
     try {
       const res = await api.aiProductCopy(p.id, true);
-      setNotice(`AI açıklama üretildi: "${res.description}"`);
+      setNotice(t('aiCopyGenerated', { description: res.description }));
       load();
     } catch {
-      setNotice('AI bu planda kapalı veya yapılandırılmamış (ANTHROPIC_API_KEY).');
+      setNotice(t('aiDisabledOrUnconfigured'));
     } finally {
       setBusy(null);
     }
@@ -181,22 +184,22 @@ export default function MenuPage() {
 
   if (!ready || loading) {
     return (
-      <AdminShell title="Menü">
-        <p className="text-sm text-muted">Yükleniyor…</p>
+      <AdminShell title={t('title')}>
+        <p className="text-sm text-muted">{cm('loading')}</p>
       </AdminShell>
     );
   }
 
   return (
-    <AdminShell title="Menü Yönetimi">
+    <AdminShell title={t('managementTitle')}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">Kategorileri ve ürünleri yönetin; menüyü önizleyip yazdırın veya PDF indirin.</p>
+        <p className="text-sm text-muted">{t('subtitle')}</p>
         <div className="flex shrink-0 gap-2">
           <Button variant="ghost" onClick={handlePrintMenu} loading={printing}>
-            🖨️ Yazdır / Önizle
+            🖨️ {t('printPreview')}
           </Button>
           <Button variant="primary" onClick={downloadPdf} loading={pdfBusy}>
-            📄 PDF İndir
+            📄 {t('downloadPdf')}
           </Button>
         </div>
       </div>
@@ -204,18 +207,15 @@ export default function MenuPage() {
       <Card className="mb-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-sm font-bold text-ink">📸 Menüyü Fotoğraftan Aktar</h2>
-            <p className="mt-0.5 text-xs text-muted">
-              Basılı menünün 1–5 fotoğrafını veya PDF&apos;ini yükleyin; yapay zeka kategorileri, ürünleri,
-              açıklamaları ve fiyatları çıkarıp menünüze eklesin.
-            </p>
+            <h2 className="text-sm font-bold text-ink">📸 {t('importFromPhotoTitle')}</h2>
+            <p className="mt-0.5 text-xs text-muted">{t('importFromPhotoDesc')}</p>
           </div>
           <label
             className={`shrink-0 cursor-pointer rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 ${
               importing ? 'pointer-events-none opacity-60' : ''
             }`}
           >
-            {importing ? 'Okunuyor…' : 'Dosya Seç'}
+            {importing ? t('reading') : t('selectFile')}
             <input
               type="file"
               accept="image/*,application/pdf"
@@ -232,8 +232,8 @@ export default function MenuPage() {
       </Card>
 
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-ink">Kategoriler</h2>
-        <span className="text-xs text-muted">Sürükleyerek sıralayın · aç/kapa için düğmeye tıklayın</span>
+        <h2 className="text-sm font-bold text-ink">{t('categories')}</h2>
+        <span className="text-xs text-muted">{t('categoriesHint')}</span>
       </div>
       <CategoryManager
         categories={categories}
@@ -261,8 +261,8 @@ export default function MenuPage() {
           <div key={c.id} id={`cat-${c.id}`} className="scroll-mt-24">
           <Card className={selectedCat === c.id ? 'ring-2 ring-brand-200' : ''}>
             <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-600">
-              {c.name} · Ürünler
-              {!c.is_active && <span className="ml-2 rounded bg-canvas px-1.5 py-0.5 text-[10px] font-bold text-muted">Kapalı</span>}
+              {c.name} · {t('products')}
+              {!c.is_active && <span className="ml-2 rounded bg-canvas px-1.5 py-0.5 text-[10px] font-bold text-muted">{cm('disabled')}</span>}
             </h2>
             <ul className="divide-y divide-line">
               {products
@@ -286,7 +286,7 @@ export default function MenuPage() {
                             draggingProdRef.current = null;
                             setDragProdId(null);
                           }}
-                          title="Sürükleyerek sırala"
+                          title={t('dragToReorder')}
                           className="shrink-0 cursor-grab select-none text-muted/60 hover:text-muted active:cursor-grabbing"
                         >
                           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
@@ -312,7 +312,7 @@ export default function MenuPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <label className="cursor-pointer rounded-md border border-line px-2 py-0.5 text-xs font-medium text-muted">
-                          Görsel
+                          {cm('image')}
                           <input
                             type="file"
                             accept="image/*"
@@ -327,11 +327,11 @@ export default function MenuPage() {
                             p.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-canvas text-muted'
                           }`}
                         >
-                          {p.is_active ? 'Aktif' : 'Pasif'}
+                          {p.is_active ? cm('active') : cm('inactive')}
                         </button>
                         <button
                           onClick={() => toggleAge(p)}
-                          title="18+ (alkol) — bar yaş sınırı"
+                          title={t('ageRestrictTitle')}
                           className={`rounded-md px-2 py-0.5 text-xs font-medium ${
                             p.age_restricted ? 'bg-red-100 text-red-700' : 'bg-canvas text-muted'
                           }`}
@@ -342,14 +342,14 @@ export default function MenuPage() {
                           onClick={() => setExpanded(expanded === p.id ? null : p.id)}
                           className="rounded-md border border-brand-500 px-2 py-0.5 text-xs font-semibold text-brand-600"
                         >
-                          Reçete & Besin
+                          {t('recipeNutrition')}
                         </button>
                         <button
                           onClick={() => aiCopy(p)}
                           disabled={busy === p.id}
                           className="rounded-md border border-line px-2 py-0.5 text-xs font-medium text-muted disabled:opacity-50"
                         >
-                          {busy === p.id ? '…' : 'AI açıklama'}
+                          {busy === p.id ? '…' : t('aiCopy')}
                         </button>
                       </div>
                     </div>
@@ -374,6 +374,7 @@ export default function MenuPage() {
 
 /** Inline, click-to-edit product name. Saves on blur/Enter when changed (non-empty). */
 function NameEdit({ product, onSave }: { product: any; onSave: (name: string) => void | Promise<void> }) {
+  const t = useTranslations('menu');
   const [val, setVal] = useState<string>(product.name);
   const [saving, setSaving] = useState(false);
   useEffect(() => {
@@ -408,7 +409,7 @@ function NameEdit({ product, onSave }: { product: any; onSave: (name: string) =>
           (e.target as HTMLInputElement).blur();
         }
       }}
-      title="Ürün adını düzenle"
+      title={t('editProductName')}
       className={`w-44 max-w-full truncate rounded-md border border-transparent bg-transparent px-1.5 py-0.5 font-medium text-ink outline-none transition hover:border-line focus:w-56 focus:border-brand-400 ${saving ? 'opacity-50' : ''}`}
     />
   );
@@ -416,6 +417,7 @@ function NameEdit({ product, onSave }: { product: any; onSave: (name: string) =>
 
 /** Inline, click-to-edit product price. Saves on blur/Enter when changed. */
 function PriceEdit({ product, onSave }: { product: any; onSave: (price: number) => void | Promise<void> }) {
+  const t = useTranslations('menu');
   const original = Number(product.price).toFixed(0);
   const [val, setVal] = useState(original);
   const [saving, setSaving] = useState(false);
@@ -440,7 +442,7 @@ function PriceEdit({ product, onSave }: { product: any; onSave: (price: number) 
   return (
     <div
       className={`flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 transition ${saving ? 'opacity-50' : 'border-line focus-within:border-brand-400'}`}
-      title="Fiyatı düzenle"
+      title={t('editPrice')}
     >
       <span className="text-xs text-muted">₺</span>
       <input
@@ -462,6 +464,8 @@ function PriceEdit({ product, onSave }: { product: any; onSave: (price: number) 
 
 /** One variant as an inline-editable chip: name + price delta, both save on blur/Enter. */
 function VariantChip({ product, variant, api, onChanged }: { product: any; variant: any; api: any; onChanged: () => void }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const [name, setName] = useState<string>(variant.name);
   const [delta, setDelta] = useState<string>(Number(variant.price_delta).toFixed(0));
   const [saving, setSaving] = useState(false);
@@ -502,7 +506,7 @@ function VariantChip({ product, variant, api, onChanged }: { product: any; varia
         onChange={(e) => setName(e.target.value)}
         onBlur={commitName}
         onKeyDown={enterBlur}
-        title="Varyasyon adı"
+        title={t('variantName')}
         className={`w-20 font-medium ${inputCls}`}
       />
       <span className="text-muted">+₺</span>
@@ -513,7 +517,7 @@ function VariantChip({ product, variant, api, onChanged }: { product: any; varia
         onChange={(e) => setDelta(e.target.value)}
         onBlur={commitDelta}
         onKeyDown={enterBlur}
-        title="Fiyat farkı"
+        title={t('priceDelta')}
         className={`w-12 text-right ${inputCls}`}
       />
       <button
@@ -521,7 +525,7 @@ function VariantChip({ product, variant, api, onChanged }: { product: any; varia
           await api.deleteVariant(product.id, variant.id);
           onChanged();
         }}
-        title="Sil"
+        title={cm('delete')}
         className="ml-0.5 text-red-600"
       >
         ×
@@ -531,18 +535,20 @@ function VariantChip({ product, variant, api, onChanged }: { product: any; varia
 }
 
 function VariantsManager({ product, api, onChanged }: { product: any; api: any; onChanged: () => void }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const [name, setName] = useState('');
   const [delta, setDelta] = useState('');
   const variants = product.variants ?? [];
 
   return (
     <div className="mt-3 rounded-xl border border-line bg-canvas p-4">
-      <h4 className="mb-2 text-sm font-semibold text-ink">Varyasyonlar (boy/porsiyon)</h4>
+      <h4 className="mb-2 text-sm font-semibold text-ink">{t('variantsTitle')}</h4>
       <div className="mb-2 flex flex-wrap gap-2">
         {variants.map((v: any) => (
           <VariantChip key={v.id} product={product} variant={v} api={api} onChanged={onChanged} />
         ))}
-        {variants.length === 0 && <span className="text-xs text-muted">Varyasyon yok.</span>}
+        {variants.length === 0 && <span className="text-xs text-muted">{t('noVariants')}</span>}
       </div>
       <form
         className="flex gap-2"
@@ -555,9 +561,9 @@ function VariantsManager({ product, api, onChanged }: { product: any; api: any; 
           onChanged();
         }}
       >
-        <Input placeholder="Ad (ör. Büyük)" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input placeholder={t('variantNamePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} />
         <Input placeholder="+₺" type="number" className="w-24" value={delta} onChange={(e) => setDelta(e.target.value)} />
-        <Button type="submit" variant="ghost">Ekle</Button>
+        <Button type="submit" variant="ghost">{cm('add')}</Button>
       </form>
     </div>
   );
@@ -574,6 +580,8 @@ function ModifiersManager({
   groups: any[];
   onChanged: () => void;
 }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const attachedIds: number[] = (product.modifier_groups ?? []).map((g: any) => g.id);
   const attached = groups.filter((g) => attachedIds.includes(g.id));
   const available = groups.filter((g) => !attachedIds.includes(g.id));
@@ -602,9 +610,9 @@ function ModifiersManager({
 
   return (
     <div className="mt-3 rounded-xl border border-line bg-canvas p-4">
-      <h4 className="mb-2 text-sm font-semibold text-ink">Ekstra / Seçenek Grupları</h4>
+      <h4 className="mb-2 text-sm font-semibold text-ink">{t('modifierGroupsTitle')}</h4>
 
-      {attached.length === 0 && <p className="mb-2 text-xs text-muted">Bu ürüne bağlı grup yok.</p>}
+      {attached.length === 0 && <p className="mb-2 text-xs text-muted">{t('noModifierGroups')}</p>}
 
       <div className="space-y-3">
         {attached.map((g) => (
@@ -613,7 +621,7 @@ function ModifiersManager({
               <span className="text-sm font-medium text-ink">
                 {g.name}{' '}
                 <span className="text-xs font-normal text-muted">
-                  ({g.is_required ? 'zorunlu' : 'opsiyonel'} · {g.min_select}–{g.max_select})
+                  ({g.is_required ? cm('required') : cm('optional')} · {g.min_select}–{g.max_select})
                 </span>
               </span>
               <button
@@ -623,7 +631,7 @@ function ModifiersManager({
                 }}
                 className="text-xs font-medium text-red-600"
               >
-                Üründen çıkar
+                {t('detachFromProduct')}
               </button>
             </div>
             <div className="mb-2 flex flex-wrap gap-1.5">
@@ -642,7 +650,7 @@ function ModifiersManager({
                   </button>
                 </span>
               ))}
-              {(g.modifiers ?? []).length === 0 && <span className="text-xs text-muted">Seçenek yok.</span>}
+              {(g.modifiers ?? []).length === 0 && <span className="text-xs text-muted">{t('noOptions')}</span>}
             </div>
             <AddOption groupId={g.id} api={api} onChanged={onChanged} />
           </div>
@@ -656,7 +664,7 @@ function ModifiersManager({
             onChange={(e) => setAttachId(e.target.value)}
             className="flex-1 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
           >
-            <option value="">Mevcut grubu bağla…</option>
+            <option value="">{t('attachExistingGroup')}</option>
             {available.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name}
@@ -673,34 +681,34 @@ function ModifiersManager({
               onChanged();
             }}
           >
-            Bağla
+            {t('attach')}
           </Button>
         </div>
       )}
 
       <div className="mt-3 border-t border-line pt-3">
-        <p className="mb-1.5 text-xs font-medium text-muted">Yeni grup oluştur ve bağla</p>
+        <p className="mb-1.5 text-xs font-medium text-muted">{t('createAndAttachGroup')}</p>
         <div className="flex flex-wrap items-center gap-2">
           <Input
-            placeholder="Grup adı (ör. Ekstra Malzeme)"
+            placeholder={t('groupNamePlaceholder')}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="min-w-[180px] flex-1"
           />
           <label className="flex items-center gap-1 text-xs text-muted">
-            min
+            {t('min')}
             <Input type="number" className="w-14" value={minSel} onChange={(e) => setMinSel(e.target.value)} />
           </label>
           <label className="flex items-center gap-1 text-xs text-muted">
-            maks
+            {t('max')}
             <Input type="number" className="w-14" value={maxSel} onChange={(e) => setMaxSel(e.target.value)} />
           </label>
           <label className="flex items-center gap-1.5 text-xs text-muted">
             <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
-            Zorunlu
+            {t('required')}
           </label>
           <Button type="button" variant="ghost" onClick={createAndAttach}>
-            Oluştur
+            {cm('create')}
           </Button>
         </div>
       </div>
@@ -709,6 +717,8 @@ function ModifiersManager({
 }
 
 function AddOption({ groupId, api, onChanged }: { groupId: number; api: any; onChanged: () => void }) {
+  const t = useTranslations('menu');
+  const cm = useTranslations('common');
   const [name, setName] = useState('');
   const [delta, setDelta] = useState('');
   return (
@@ -723,16 +733,17 @@ function AddOption({ groupId, api, onChanged }: { groupId: number; api: any; onC
         onChanged();
       }}
     >
-      <Input placeholder="Seçenek (ör. Ekstra Peynir)" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder={t('optionPlaceholder')} value={name} onChange={(e) => setName(e.target.value)} />
       <Input placeholder="+₺" type="number" className="w-24" value={delta} onChange={(e) => setDelta(e.target.value)} />
       <Button type="submit" variant="ghost">
-        Ekle
+        {cm('add')}
       </Button>
     </form>
   );
 }
 
 function AddProduct({ categoryId, onAdd }: { categoryId: number; onAdd: (c: number, n: string, p: number) => void }) {
+  const t = useTranslations('menu');
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   return (
@@ -747,10 +758,10 @@ function AddProduct({ categoryId, onAdd }: { categoryId: number; onAdd: (c: numb
         }
       }}
     >
-      <Input placeholder="Ürün adı" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder={t('productNamePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} />
       <Input placeholder="₺" type="number" className="w-24" value={price} onChange={(e) => setPrice(e.target.value)} />
       <Button type="submit" variant="ghost">
-        Ürün Ekle
+        {t('addProduct')}
       </Button>
     </form>
   );

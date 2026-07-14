@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ApiError } from '@comiqr/shared-types/client';
 import { BrandLogo } from '@/components/BrandLogo';
 import { Button, Field, Input } from '@/components/ui';
@@ -14,6 +15,8 @@ import { setSession } from '@/lib/auth';
  * full-screen /pos terminal, never the admin panel.
  */
 export default function PosLoginPage() {
+  const t = useTranslations('posLogin');
+  const c = useTranslations('common');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,7 +44,7 @@ export default function PosLoginPage() {
         setErrors(flat);
         if (Object.keys(flat).length === 0) setGeneral(err.message);
       } else {
-        setGeneral('Giriş yapılamadı. Lütfen tekrar deneyin.');
+        setGeneral(t('loginFailed'));
       }
     } finally {
       setLoading(false);
@@ -54,22 +57,22 @@ export default function PosLoginPage() {
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <BrandLogo className="h-10 w-auto" />
           <div>
-            <h1 className="text-lg font-bold text-ink">Kasa Girişi</h1>
-            <p className="mt-0.5 text-xs text-muted">POS terminaline personel hesabınızla giriş yapın.</p>
+            <h1 className="text-lg font-bold text-ink">{t('title')}</h1>
+            <p className="mt-0.5 text-xs text-muted">{t('subtitle')}</p>
           </div>
         </div>
 
         {general && <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{general}</div>}
 
         <form className="space-y-4" onSubmit={onSubmit}>
-          <Field label="E-posta" error={errors.email}>
+          <Field label={t('emailLabel')} error={errors.email}>
             <Input name="email" type="email" required autoComplete="username" />
           </Field>
-          <Field label="Şifre">
+          <Field label={t('passwordLabel')}>
             <Input name="password" type="password" required autoComplete="current-password" />
           </Field>
           <Button type="submit" loading={loading} className="w-full">
-            {loading ? 'Giriş yapılıyor…' : 'Kasaya Gir'}
+            {loading ? t('signingIn') : t('signIn')}
           </Button>
         </form>
       </div>

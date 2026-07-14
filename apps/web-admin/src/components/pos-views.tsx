@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { money } from './pos-kit';
 
 /* ------------------------------------------------------------------ shared */
@@ -32,7 +33,7 @@ function ViewShell({ title, subtitle, right, children }: { title: string; subtit
   );
 }
 
-const orderLabel = (o: any) => (o.table_code ? `🍽️ ${o.table_code}` : '🛍️ Gel-Al');
+const orderLabel = (o: any, takeaway: string) => (o.table_code ? `🍽️ ${o.table_code}` : `🛍️ ${takeaway}`);
 const timeOf = (o: any) => {
   try {
     return new Date(o.placed_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -44,6 +45,8 @@ const timeOf = (o: any) => {
 /* ------------------------------------------------------------------ Özet */
 
 export function SummaryView({ api, currency, branchId, onNewSale, onOpenShift }: { api: any; currency: string; branchId: number | null; onNewSale: () => void; onOpenShift: () => void }) {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const [today, setToday] = useState<any[]>([]);
   const [open, setOpen] = useState<any[]>([]);
   const [shift, setShift] = useState<any | null>(null);
@@ -59,43 +62,43 @@ export function SummaryView({ api, currency, branchId, onNewSale, onOpenShift }:
 
   return (
     <ViewShell
-      title="Özet"
-      subtitle="Bugünün POS durumu"
-      right={<button onClick={onNewSale} className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-600" style={{ color: '#fff' }}>＋ Yeni Satış</button>}
+      title={t('summary')}
+      subtitle={t('summarySubtitle')}
+      right={<button onClick={onNewSale} className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-600" style={{ color: '#fff' }}>＋ {t('newSale')}</button>}
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Bugünkü Ciro" value={money(ciro, currency)} sub={`${paidCount} ödenen sipariş`} tone="brand" />
-        <Stat label="Sipariş" value={String(today.length)} sub="bugün" />
-        <Stat label="Açık Adisyon" value={String(open.length)} sub="şu an açık" tone="amber" />
+        <Stat label={t('todayRevenue')} value={money(ciro, currency)} sub={t('paidOrdersCount', { n: paidCount })} tone="brand" />
+        <Stat label={t('orderWord')} value={String(today.length)} sub={c('today')} />
+        <Stat label={t('openTabs')} value={String(open.length)} sub={t('openNow')} tone="amber" />
         <Stat
-          label="Vardiya Kasası"
-          value={shift ? money(shift.expected_cash, currency) : 'Kapalı'}
-          sub={shift ? 'beklenen nakit' : 'vardiya açık değil'}
+          label={t('shiftDrawer')}
+          value={shift ? money(shift.expected_cash, currency) : t('closed')}
+          sub={shift ? t('expectedCashSub') : t('shiftNotOpen')}
           tone={shift ? 'emerald' : 'default'}
         />
       </div>
 
       {!shift && (
         <button onClick={onOpenShift} className="mt-3 w-full rounded-xl border border-emerald-200 bg-emerald-50 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
-          🟢 Vardiya Aç
+          🟢 {t('openShiftCta')}
         </button>
       )}
 
-      <h3 className="mb-2 mt-6 text-sm font-bold text-ink">Son Siparişler</h3>
+      <h3 className="mb-2 mt-6 text-sm font-bold text-ink">{t('recentOrders')}</h3>
       {today.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">Bugün henüz sipariş yok.</p>
+        <p className="py-8 text-center text-sm text-muted">{t('noOrdersToday')}</p>
       ) : (
         <div className="space-y-1.5">
           {today.slice(0, 8).map((o) => (
             <div key={o.id} className="flex items-center justify-between rounded-xl border border-line px-3 py-2.5 text-sm">
               <span className="flex items-center gap-2">
                 <b className="text-ink">#{o.id}</b>
-                <span className="text-muted">{orderLabel(o)}</span>
+                <span className="text-muted">{orderLabel(o, t('takeaway'))}</span>
                 <span className="text-[11px] text-muted">{timeOf(o)}</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${o.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                  {o.payment_status === 'paid' ? 'Ödendi' : 'Açık'}
+                  {o.payment_status === 'paid' ? t('paidBadge') : t('openBadge')}
                 </span>
                 <b className="text-ink">{money(o.grand_total, currency)}</b>
               </span>
@@ -110,6 +113,8 @@ export function SummaryView({ api, currency, branchId, onNewSale, onOpenShift }:
 /* ------------------------------------------------------------------ Siparişler */
 
 export function OrdersView({ api, currency, branchId, onRecall }: { api: any; currency: string; branchId: number | null; onRecall: (o: any) => void }) {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const [scope, setScope] = useState<'open' | 'today'>('open');
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,22 +126,22 @@ export function OrdersView({ api, currency, branchId, onRecall }: { api: any; cu
 
   return (
     <ViewShell
-      title="Siparişler"
-      subtitle="Açık adisyonlar ve bugünün siparişleri"
+      title={t('orders')}
+      subtitle={t('ordersSubtitle')}
       right={
         <div className="flex gap-1.5">
           {(['open', 'today'] as const).map((s) => (
             <button key={s} onClick={() => setScope(s)} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${scope === s ? 'bg-brand-500 text-white' : 'bg-canvas text-muted hover:text-ink'}`} style={scope === s ? { color: '#fff' } : undefined}>
-              {s === 'open' ? 'Açık' : 'Bugün'}
+              {s === 'open' ? t('openBadge') : c('today')}
             </button>
           ))}
         </div>
       }
     >
       {loading ? (
-        <p className="py-10 text-center text-sm text-muted">Yükleniyor…</p>
+        <p className="py-10 text-center text-sm text-muted">{c('loading')}</p>
       ) : orders.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted">Sipariş yok.</p>
+        <p className="py-10 text-center text-sm text-muted">{t('noOrders')}</p>
       ) : (
         <div className="space-y-2">
           {orders.map((o) => {
@@ -146,16 +151,16 @@ export function OrdersView({ api, currency, branchId, onRecall }: { api: any; cu
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <b className="text-ink">#{o.id}</b>
-                    <span className="text-sm text-muted">{orderLabel(o)}</span>
+                    <span className="text-sm text-muted">{orderLabel(o, t('takeaway'))}</span>
                     <span className="text-[11px] text-muted">{timeOf(o)}</span>
                   </div>
                   <div className="truncate text-[11px] text-muted">
-                    {items.length} ürün{o.note ? ` · ${o.note}` : ''}
+                    {t('itemsCount', { n: items.length })}{o.note ? ` · ${o.note}` : ''}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${o.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {o.payment_status === 'paid' ? 'Ödendi' : 'Açık'}
+                    {o.payment_status === 'paid' ? t('paidBadge') : t('openBadge')}
                   </span>
                   <b className="text-ink">{money(o.grand_total, currency)}</b>
                   <span className="text-brand-600">→</span>
@@ -172,6 +177,7 @@ export function OrdersView({ api, currency, branchId, onRecall }: { api: any; cu
 /* ------------------------------------------------------------------ Masalar */
 
 export function TablesView({ api, tables, currency, branchId, onPickTable, onRecall }: { api: any; tables: any[]; currency: string; branchId: number | null; onPickTable: (id: number, code: string) => void; onRecall: (o: any) => void }) {
+  const t = useTranslations('pos');
   const [openOrders, setOpenOrders] = useState<any[]>([]);
   useEffect(() => {
     api.posOrders({ scope: 'open', branch_id: branchId ?? undefined }).then(setOpenOrders).catch(() => undefined);
@@ -186,9 +192,9 @@ export function TablesView({ api, tables, currency, branchId, onPickTable, onRec
   const free = tables.filter((t) => !t.has_open_session).length;
 
   return (
-    <ViewShell title="Masalar" subtitle={`${tables.length} masa · ${free} boş`}>
+    <ViewShell title={t('tables')} subtitle={t('tablesSubtitle', { total: tables.length, free })}>
       {tables.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted">Masa tanımlı değil.</p>
+        <p className="py-10 text-center text-sm text-muted">{t('noTables')}</p>
       ) : (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
           {tables.map((t) => {
@@ -205,7 +211,7 @@ export function TablesView({ api, tables, currency, branchId, onPickTable, onRec
                 <span className="text-2xl">{occupied ? '🍽️' : '🪑'}</span>
                 <b className="text-sm">{t.code}</b>
                 <span className="text-[10px] font-semibold">
-                  {occupied ? (order ? money(order.grand_total, currency) : 'Dolu') : 'Boş'}
+                  {occupied ? (order ? money(order.grand_total, currency) : t('occupiedBadge')) : t('freeBadge')}
                 </span>
               </button>
             );
@@ -219,6 +225,8 @@ export function TablesView({ api, tables, currency, branchId, onPickTable, onRec
 /* ------------------------------------------------------------------ Müşteriler */
 
 export function CustomersView({ api, currency }: { api: any; currency: string }) {
+  const t = useTranslations('pos');
+  const c = useTranslations('common');
   const [customers, setCustomers] = useState<any[]>([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
@@ -238,16 +246,16 @@ export function CustomersView({ api, currency }: { api: any; currency: string })
 
   return (
     <ViewShell
-      title="Müşteriler"
-      subtitle="Sadakat & iletişim"
+      title={t('customers')}
+      subtitle={t('customersSubtitle')}
       right={
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="İsim / telefon ara…" className="w-48 rounded-lg border border-line bg-canvas px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('searchNamePhone')} className="w-48 rounded-lg border border-line bg-canvas px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
       }
     >
       {loading ? (
-        <p className="py-10 text-center text-sm text-muted">Yükleniyor…</p>
+        <p className="py-10 text-center text-sm text-muted">{c('loading')}</p>
       ) : shown.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted">{customers.length === 0 ? 'Henüz müşteri yok.' : 'Eşleşen müşteri yok.'}</p>
+        <p className="py-10 text-center text-sm text-muted">{customers.length === 0 ? t('noCustomers') : t('noCustomerMatch')}</p>
       ) : (
         <div className="space-y-1.5">
           {shown.map((c) => (
@@ -255,7 +263,7 @@ export function CustomersView({ api, currency }: { api: any; currency: string })
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">{(c.name ?? '?').charAt(0).toUpperCase()}</span>
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-ink">{c.name ?? 'İsimsiz'}</div>
+                  <div className="truncate text-sm font-semibold text-ink">{c.name ?? t('unnamed')}</div>
                   <div className="truncate text-[11px] text-muted">{c.phone ?? c.email ?? ''}</div>
                 </div>
               </div>
@@ -271,6 +279,7 @@ export function CustomersView({ api, currency }: { api: any; currency: string })
 /* ------------------------------------------------------------------ Raporlar */
 
 export function ReportsView({ api, currency, branchId }: { api: any; currency: string; branchId: number | null }) {
+  const t = useTranslations('pos');
   const [today, setToday] = useState<any[]>([]);
   const [shift, setShift] = useState<any | null>(null);
 
@@ -301,17 +310,17 @@ export function ReportsView({ api, currency, branchId }: { api: any; currency: s
   }, [today]);
 
   return (
-    <ViewShell title="Raporlar" subtitle="Bugünün satış özeti (POS)">
+    <ViewShell title={t('reports')} subtitle={t('reportsSubtitle')}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Ciro" value={money(ciro, currency)} sub={`${paid.length} ödenen`} tone="brand" />
-        <Stat label="Sipariş" value={String(today.length)} sub={`${dineIn} masa · ${takeaway} gel-al`} />
-        <Stat label="Ortalama Fiş" value={money(avg, currency)} />
-        <Stat label="Vardiya Kasası" value={shift ? money(shift.expected_cash, currency) : '—'} sub={shift ? 'beklenen nakit' : 'vardiya kapalı'} tone={shift ? 'emerald' : 'default'} />
+        <Stat label={t('revenue')} value={money(ciro, currency)} sub={t('paidCount', { n: paid.length })} tone="brand" />
+        <Stat label={t('orderWord')} value={String(today.length)} sub={t('orderMix', { dineIn, takeaway })} />
+        <Stat label={t('avgTicket')} value={money(avg, currency)} />
+        <Stat label={t('shiftDrawer')} value={shift ? money(shift.expected_cash, currency) : '—'} sub={shift ? t('expectedCashSub') : t('shiftClosed')} tone={shift ? 'emerald' : 'default'} />
       </div>
 
-      <h3 className="mb-2 mt-6 text-sm font-bold text-ink">En Çok Satan Ürünler</h3>
+      <h3 className="mb-2 mt-6 text-sm font-bold text-ink">{t('topProducts')}</h3>
       {topProducts.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">Bugün satış yok.</p>
+        <p className="py-8 text-center text-sm text-muted">{t('noSalesToday')}</p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-line">
           {topProducts.map(([name, s], idx) => (
@@ -321,7 +330,7 @@ export function ReportsView({ api, currency, branchId }: { api: any; currency: s
                 <span className="truncate font-medium text-ink">{name}</span>
               </span>
               <span className="flex shrink-0 items-center gap-4">
-                <span className="text-muted">{s.qty} adet</span>
+                <span className="text-muted">{t('qtyCount', { n: s.qty })}</span>
                 <b className="text-ink">{money(s.total, currency)}</b>
               </span>
             </div>

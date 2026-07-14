@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createApi } from '@/lib/api';
 import { getToken, getUser } from '@/lib/auth';
 
@@ -11,6 +12,7 @@ type Step = { key: string; label: string; done: boolean; href: string | null; fl
 
 /** Persistent getting-started checklist, opened from a progress badge in the top bar. */
 export function SetupGuide() {
+  const t = useTranslations('onboarding');
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(true);
@@ -39,11 +41,11 @@ export function SetupGuide() {
   }, []);
 
   const steps: Step[] = [
-    { key: 'lang', label: 'Dilinizi seçin', done: langDone, href: null },
-    { key: 'venue', label: 'Mekanınızı hazırlayın', done: hasAddress, href: '/settings' },
-    { key: 'menu', label: 'Menünüzü oluşturun', done: hasMenu, href: '/menu' },
-    { key: 'explore', label: 'Başka neler yapabileceğinize bakın', done: !!flags.explore, href: '/integrations', flag: true },
-    { key: 'profile', label: 'Profilinizi tanıyın', done: !!flags.profile, href: '/settings', flag: true },
+    { key: 'lang', label: t('tourLangTitle'), done: langDone, href: null },
+    { key: 'venue', label: t('tourVenueTitle'), done: hasAddress, href: '/settings' },
+    { key: 'menu', label: t('tourMenuTitle'), done: hasMenu, href: '/menu' },
+    { key: 'explore', label: t('tourExploreTitle'), done: !!flags.explore, href: '/integrations', flag: true },
+    { key: 'profile', label: t('guideProfile'), done: !!flags.profile, href: '/settings', flag: true },
   ];
   const total = steps.length;
   const doneCount = steps.filter((s) => s.done).length;
@@ -81,7 +83,7 @@ export function SetupGuide() {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pl-3 pr-1.5 text-sm font-semibold text-ink transition hover:bg-canvas"
       >
-        Kurulum
+        {t('setupBadge')}
         <span className="rounded-full px-2 py-0.5 text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#14b8a6,#0ea5e9)' }}>{doneCount}/{total}</span>
       </button>
 
@@ -90,14 +92,14 @@ export function SetupGuide() {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 z-50 mt-2 w-[340px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-line bg-surface p-5 shadow-2xl">
             <div className="flex items-start justify-between">
-              <h3 className="text-base font-bold text-ink">Hadi başlayalım{name ? `, ${name}` : ''}.</h3>
-              <button type="button" onClick={dismiss} aria-label="Gizle" className="text-muted transition hover:text-ink">
+              <h3 className="text-base font-bold text-ink">{name ? t('guideGreetingNamed', { name }) : t('guideGreeting')}</h3>
+              <button type="button" onClick={dismiss} aria-label={t('hide')} className="text-muted transition hover:text-ink">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
               </button>
             </div>
 
             <div className="mt-3 flex items-center justify-between text-xs font-semibold text-muted">
-              <span>Mekanınızı misafirler için hazırlayın</span>
+              <span>{t('guideProgressLabel')}</span>
               <span>{doneCount}/{total}</span>
             </div>
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-canvas">
@@ -132,7 +134,7 @@ export function SetupGuide() {
               className="mt-4 w-full rounded-xl py-2.5 text-center text-sm font-bold text-white transition"
               style={{ background: 'linear-gradient(135deg,#14b8a6,#0ea5e9)' }}
             >
-              Kuruluma devam et
+              {t('continueSetup')}
             </button>
           </div>
         </>

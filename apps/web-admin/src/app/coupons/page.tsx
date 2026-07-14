@@ -1,11 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
 import { Button, Card, Input } from '@/components/ui';
 import { useApi } from '@/lib/useApi';
 
 export default function CouponsPage() {
+  const t = useTranslations('coupons');
+  const c = useTranslations('common');
   const { api, ready } = useApi();
   const [coupons, setCoupons] = useState<any[]>([]);
   const [code, setCode] = useState('');
@@ -28,49 +31,49 @@ export default function CouponsPage() {
       setValue('');
       load();
     } catch {
-      setError('Kupon oluşturulamadı (kod benzersiz olmalı).');
+      setError(t('createError'));
     }
   }
 
   return (
-    <AdminShell title="Kuponlar">
+    <AdminShell title={t('title')}>
       <Card>
         <form className="flex flex-wrap items-end gap-2" onSubmit={add}>
           <div>
-            <span className="mb-1 block text-xs text-muted">Kod</span>
-            <Input placeholder="INDIRIM20" value={code} onChange={(e) => setCode(e.target.value)} required />
+            <span className="mb-1 block text-xs text-muted">{t('code')}</span>
+            <Input placeholder={t('codePlaceholder')} value={code} onChange={(e) => setCode(e.target.value)} required />
           </div>
           <div>
-            <span className="mb-1 block text-xs text-muted">Tip</span>
+            <span className="mb-1 block text-xs text-muted">{t('type')}</span>
             <select
               className="rounded-lg border border-line bg-white px-3 py-2.5 text-sm"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
-              <option value="percent">Yüzde (%)</option>
-              <option value="amount">Tutar (₺)</option>
+              <option value="percent">{t('typePercent')}</option>
+              <option value="amount">{t('typeAmount')}</option>
             </select>
           </div>
           <div>
-            <span className="mb-1 block text-xs text-muted">Değer</span>
+            <span className="mb-1 block text-xs text-muted">{t('value')}</span>
             <Input type="number" className="w-28" value={value} onChange={(e) => setValue(e.target.value)} required />
           </div>
-          <Button type="submit">Kupon Ekle</Button>
+          <Button type="submit">{t('addCoupon')}</Button>
         </form>
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       </Card>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {coupons.map((c) => (
-          <Card key={c.id}>
+        {coupons.map((cp) => (
+          <Card key={cp.id}>
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-ink">{c.code}</span>
-              <button onClick={async () => { await api.deleteCoupon(c.id); load(); }} className="text-xs text-red-600">
-                Sil
+              <span className="font-mono font-bold text-ink">{cp.code}</span>
+              <button onClick={async () => { await api.deleteCoupon(cp.id); load(); }} className="text-xs text-red-600">
+                {c('delete')}
               </button>
             </div>
             <p className="mt-1 text-sm text-muted">
-              {c.type === 'percent' ? `%${c.value} indirim` : `₺${c.value} indirim`} · kullanım: {c.used_count}
+              {cp.type === 'percent' ? t('discountPercent', { value: cp.value }) : t('discountAmount', { value: cp.value })} · {t('usageCount', { count: cp.used_count })}
             </p>
           </Card>
         ))}
