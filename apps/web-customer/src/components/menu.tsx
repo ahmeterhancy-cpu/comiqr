@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
 import type { AllergenRef, Menu, MenuCategory, MenuModifier, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
-import { lineKey, useCart, type CartLine } from './cart';
+import { CartSheet, lineKey, useCart, type CartLine } from './cart';
 
 /** True when the owner hid all prices on the guest menu (menu display toggle). */
 const HidePricesCtx = createContext(false);
@@ -20,6 +20,16 @@ export interface MenuLabels {
   glutenFree: string;
   estimated: string;
   empty: string;
+  /* Classic (ordering-first) theme chrome. */
+  back: string;
+  table: string;
+  searchPlaceholder: string;
+  allMenu: string;
+  noResults: string;
+  viewOrder: string;
+  add: string;
+  decrease: string;
+  increase: string;
 }
 
 type ThemeProps = {
@@ -1083,76 +1093,293 @@ function fmtAmount(q: number): string {
 /* ----------------------------------------------------------------- Classic */
 /* Image-forward: cover hero + logo + about, product photos in each card. */
 
-function ClassicMenu({ menu, labels, format, categories }: ThemeProps) {
-  const v = menu.venue;
-  return (
-    <div className="mx-auto max-w-2xl pb-16">
-      <header className="relative overflow-hidden">
-        <div className="relative h-52 bg-brand-600">
-          {v.cover && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={v.cover} alt="" className="h-full w-full object-cover" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/10" />
-        </div>
-        <div className="relative -mt-12 px-5">
-          <div className="flex items-end gap-3">
-            {v.logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={v.logo} alt={v.name} className="h-20 w-20 rounded-2xl border-4 border-canvas object-cover shadow-lg" />
-            ) : (
-              <div className="grid h-20 w-20 place-items-center rounded-2xl border-4 border-canvas bg-brand-500 text-2xl font-bold text-white shadow-lg">
-                {v.name.charAt(0)}
-              </div>
-            )}
-            <div className="pb-1">
-              <h1 className="font-display text-2xl font-semibold text-ink">{v.name}</h1>
-              {v.sub_title && <p className="text-sm text-muted">{v.sub_title}</p>}
-            </div>
-          </div>
-          {(v.timing || v.address) && (
-            <p className="mt-3 text-xs text-muted">
-              {v.timing && <span>🕒 {v.timing}</span>}
-              {v.timing && v.address && <span> · </span>}
-              {v.address && <span>📍 {v.address}</span>}
-            </p>
-          )}
-          {v.description && <p className="mt-3 text-sm leading-relaxed text-ink/80">{v.description}</p>}
-        </div>
-      </header>
+/* Ordering-first app look: soft blush canvas, search + category pills, a two-up
+   photo grid and a full-width "view order" bar. Like Flipbook, this theme owns
+   its palette (the shared brand token is green, which would fight the look). */
+const CL = {
+  bg: '#FCEFEA',
+  card: '#FFFFFF',
+  ink: '#1F1B19',
+  muted: '#8C807A',
+  accent: '#F4522E',
+  accentSoft: '#FDE7E0',
+  line: '#F0DED7',
+};
 
-      {categories.length === 0 ? (
-        <p className="px-5 py-16 text-center text-sm text-muted">{labels.empty}</p>
-      ) : (
-        categories.map((c) => (
-          <section key={c.id} className="px-5 pt-8">
-            <h2 className="mb-4 font-display text-xl font-semibold text-brand-700">{c.name}</h2>
-            <div className="space-y-3.5">
-              {c.products.map((p) => (
-                <article key={p.id} className="flex gap-4 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
-                  {p.images?.[0] && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.images[0]} alt={p.name} className="h-28 w-28 shrink-0 object-cover" />
-                  )}
-                  <div className="min-w-0 flex-1 py-3 pr-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-display text-lg font-semibold text-ink">{p.name}</h3>
-                      {menu.venue.show_prices !== false && <span className="shrink-0 font-display font-semibold text-brand-600">{format.format(Number(p.price))}</span>}
-                    </div>
-                    {p.description && <p className="mt-1 text-sm leading-relaxed text-muted">{p.description}</p>}
-                    {p.nutrition && (
-                      <span className="mt-2 inline-block rounded-full bg-amber-bg px-2.5 py-0.5 text-xs font-semibold text-[color:var(--color-amber)]">
-                        {Math.round(p.nutrition.kcal)} {labels.kcal}
-                      </span>
-                    )}
-                  </div>
-                </article>
+function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories }: ThemeProps) {
+  const v = menu.venue;
+  const loc = v.locale_default ?? 'tr';
+  const cart = useCart(v.slug ?? '');
+  const canOrder = !!v.can_order && v.show_cart !== false;
+  const [search, setSearch] = useState('');
+  const [activeCat, setActiveCat] = useState<number | null>(null); // null = all
+  const [optionsProduct, setOptionsProduct] = useState<MenuProduct | null>(null);
+  const [detailProduct, setDetailProduct] = useState<MenuProduct | null>(null);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLocaleLowerCase(loc);
+    return categories
+      .filter((c) => activeCat == null || c.id === activeCat)
+      .map((c) => ({
+        ...c,
+        products: q
+          ? c.products.filter(
+              (p) =>
+                p.name.toLocaleLowerCase(loc).includes(q) || (p.description ?? '').toLocaleLowerCase(loc).includes(q),
+            )
+          : c.products,
+      }))
+      .filter((c) => c.products.length > 0);
+  }, [categories, activeCat, search, loc]);
+
+  const shown = visible.flatMap((c) => c.products);
+
+  return (
+    <div className="min-h-screen" style={{ background: CL.bg, color: CL.ink }}>
+      <div className={`mx-auto max-w-2xl ${canOrder ? 'pb-28' : 'pb-10'}`}>
+        {/* Header — table code when scanned at a table, otherwise the venue name. */}
+        <header className="sticky top-0 z-20 px-4 pb-2 pt-4" style={{ background: CL.bg }}>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              aria-label={labels.back}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition active:scale-95"
+              style={{ color: CL.ink }}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <h1 className="flex-1 truncate text-center text-lg font-bold" style={{ color: CL.ink }}>
+              {tableCode ? `${labels.table} ${tableCode}` : v.name}
+            </h1>
+            <span className="h-9 w-9 shrink-0" />
+          </div>
+
+          {/* Search */}
+          {v.show_search !== false && (
+            <div className="relative mt-3">
+              <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2" fill="none" stroke={CL.muted} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={labels.searchPlaceholder}
+                className="w-full rounded-full py-3 pl-11 pr-4 text-sm outline-none"
+                style={{ background: CL.card, color: CL.ink, border: `1px solid ${CL.line}` }}
+              />
+            </div>
+          )}
+
+          {/* Category pills — "all" plus one per category. */}
+          {categories.length > 0 && (
+            <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]{display:none}">
+              <CatPill active={activeCat == null} onClick={() => setActiveCat(null)}>
+                {labels.allMenu}
+              </CatPill>
+              {categories.map((c) => (
+                <CatPill key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
+                  {c.name}
+                </CatPill>
               ))}
             </div>
-          </section>
-        ))
+          )}
+        </header>
+
+        {/* Product grid */}
+        {shown.length === 0 ? (
+          <p className="px-5 py-20 text-center text-sm" style={{ color: CL.muted }}>
+            {search ? labels.noResults : labels.empty}
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 px-4 pt-3">
+            {shown.map((p) => (
+              <ClassicCard
+                key={p.id}
+                product={p}
+                format={format}
+                labels={labels}
+                showPrice={v.show_prices !== false}
+                canOrder={canOrder}
+                qty={cart.qtyOfProduct(p.id)}
+                onAdd={() => {
+                  const hasOptions = (p.variants?.length ?? 0) > 0 || (p.modifier_groups?.length ?? 0) > 0;
+                  if (hasOptions) return setOptionsProduct(p);
+                  const key = lineKey(p.id, undefined, []);
+                  cart.setQty(
+                    { key, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
+                    cart.qtyOfKey(key) + 1,
+                  );
+                }}
+                onStep={(next) => {
+                  const key = lineKey(p.id, undefined, []);
+                  cart.setQty(
+                    { key, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
+                    next,
+                  );
+                }}
+                onDetail={() => setDetailProduct(p)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Full-width order bar (replaces the floating cart button for this theme). */}
+      {canOrder && (
+        <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-5 pt-3" style={{ background: `linear-gradient(to top, ${CL.bg} 65%, transparent)` }}>
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl py-4 text-[15px] font-bold shadow-lg transition active:scale-[0.99]"
+            style={{ background: CL.accent, color: '#ffffff' }}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3l-2 1-2-1-2 1-2-1-2 1z" /><path d="M9 8h6M9 12h6" strokeLinecap="round" /></svg>
+            <span>{labels.viewOrder}</span>
+            {cart.count > 0 && (
+              <span className="ml-1 grid h-6 min-w-6 place-items-center rounded-full bg-white/25 px-1.5 text-xs font-extrabold">{cart.count}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      <CartSheet slug={v.slug ?? ''} currency={v.currency} locale={v.locale_default} open={cartOpen} onClose={() => setCartOpen(false)} />
+
+      {detailProduct && (
+        <ProductDetailSheet
+          product={detailProduct}
+          format={format}
+          allergenMap={allergenMap}
+          labels={labels}
+          canOrder={canOrder}
+          baseQty={cart.qtyOfKey(lineKey(detailProduct.id, undefined, []))}
+          productQty={cart.qtyOfProduct(detailProduct.id)}
+          onQuick={(q) =>
+            cart.setQty(
+              {
+                key: lineKey(detailProduct.id, undefined, []),
+                id: detailProduct.id,
+                name: detailProduct.name,
+                price: Number(detailProduct.price),
+                variantId: undefined,
+                variantName: undefined,
+                modifierIds: [],
+                modifierNames: [],
+              },
+              q,
+            )
+          }
+          onOptions={() => {
+            setOptionsProduct(detailProduct);
+            setDetailProduct(null);
+          }}
+          onClose={() => setDetailProduct(null)}
+        />
+      )}
+
+      {optionsProduct && (
+        <ProductOptionsSheet
+          product={optionsProduct}
+          format={format}
+          currentQty={(key) => cart.qtyOfKey(key)}
+          onClose={() => setOptionsProduct(null)}
+          onAdd={(line) => {
+            cart.setQty(line, cart.qtyOfKey(line.key) + 1);
+            setOptionsProduct(null);
+          }}
+        />
       )}
     </div>
+  );
+}
+
+function CatPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition active:scale-95"
+      style={
+        active
+          ? { background: CL.accentSoft, color: CL.accent, border: `1.5px solid ${CL.accent}` }
+          : { background: CL.card, color: CL.ink, border: `1px solid ${CL.line}` }
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function ClassicCard({
+  product,
+  format,
+  labels,
+  showPrice,
+  canOrder,
+  qty,
+  onAdd,
+  onStep,
+  onDetail,
+}: {
+  product: MenuProduct;
+  format: Intl.NumberFormat;
+  labels: MenuLabels;
+  showPrice: boolean;
+  canOrder: boolean;
+  qty: number;
+  onAdd: () => void;
+  onStep: (next: number) => void;
+  onDetail: () => void;
+}) {
+  const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
+  const img = product.images?.[0];
+
+  return (
+    <article className="flex flex-col overflow-hidden rounded-2xl" style={{ background: CL.card, border: `1px solid ${CL.line}` }}>
+      <button type="button" onClick={onDetail} className="block text-left">
+        {img ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={img} alt={product.name} className="aspect-[4/3] w-full object-cover" />
+        ) : (
+          <div className="grid aspect-[4/3] w-full place-items-center text-3xl" style={{ background: CL.accentSoft }}>
+            🍽️
+          </div>
+        )}
+      </button>
+      <div className="flex flex-1 flex-col p-3">
+        <button type="button" onClick={onDetail} className="text-left">
+          <h3 className="line-clamp-1 text-[13px] font-bold" style={{ color: CL.ink }}>{product.name}</h3>
+          {product.description && (
+            <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug" style={{ color: CL.muted }}>{product.description}</p>
+          )}
+        </button>
+        <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
+          {showPrice ? (
+            <span className="text-sm font-extrabold" style={{ color: CL.ink }}>{format.format(Number(product.price))}</span>
+          ) : (
+            <span />
+          )}
+          {canOrder &&
+            (qty > 0 && !hasOptions ? (
+              <div className="flex items-center gap-1 rounded-full px-1 py-1" style={{ background: CL.accent, color: '#ffffff' }}>
+                <button type="button" onClick={() => onStep(qty - 1)} aria-label={labels.decrease} className="grid h-6 w-6 place-items-center rounded-full bg-white/25 text-sm font-bold">−</button>
+                <span className="min-w-4 text-center text-xs font-extrabold">{qty}</span>
+                <button type="button" onClick={() => onStep(qty + 1)} aria-label={labels.increase} className="grid h-6 w-6 place-items-center rounded-full bg-white/25 text-sm font-bold">+</button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onAdd}
+                className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold transition active:scale-95"
+                style={{ background: CL.accent, color: '#ffffff' }}
+              >
+                <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                {labels.add}
+                {qty > 0 && <span className="ml-0.5 rounded-full bg-white/25 px-1.5">{qty}</span>}
+              </button>
+            ))}
+        </div>
+      </div>
+    </article>
   );
 }
 

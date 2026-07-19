@@ -54,14 +54,24 @@ export default async function VenueMenuPage({
     glutenFree: t('glutenFree'),
     estimated: t('estimated'),
     empty: t('empty'),
+    back: t('back'),
+    table: t('table'),
+    searchPlaceholder: t('searchPlaceholder'),
+    allMenu: t('allMenu'),
+    noResults: t('noResults'),
+    viewOrder: t('viewOrder'),
+    add: t('add'),
+    decrease: t('decrease'),
+    increase: t('increase'),
   };
 
   return (
     <>
       <MenuView menu={menu} labels={labels} />
       {menu.venue?.ai_chat && <MenuChat slug={slug} />}
-      {/* Cart shortcut — only when the "add to cart" ordering module is enabled. */}
-      {menu.venue?.can_order && menu.venue?.show_cart !== false && (
+      {/* Cart shortcut — only when the "add to cart" ordering module is enabled.
+          Classic renders its own full-width "view order" bar, so the FAB would double up. */}
+      {menu.venue?.can_order && menu.venue?.show_cart !== false && menu.venue?.theme !== 'classic' && (
         <CartFab slug={slug} currency={menu.venue.currency} locale={menu.venue.locale_default} />
       )}
     </>

@@ -90,12 +90,8 @@ export function useCart(slug: string) {
 
 /** Floating cart button + bottom-sheet listing what the guest added. */
 export function CartFab({ slug, currency, locale }: { slug: string; currency?: string | null; locale?: string | null }) {
-  const { lines, count, total, setQty } = useCart(slug);
+  const { count } = useCart(slug);
   const [open, setOpen] = useState(false);
-  const fmt = useMemo(
-    () => new Intl.NumberFormat(locale || 'tr', { style: 'currency', currency: currency || 'TRY', maximumFractionDigits: 0 }),
-    [currency, locale],
-  );
 
   return (
     <>
@@ -121,15 +117,44 @@ export function CartFab({ slug, currency, locale }: { slug: string; currency?: s
         )}
       </button>
 
+      <CartSheet slug={slug} currency={currency} locale={locale} open={open} onClose={() => setOpen(false)} />
+    </>
+  );
+}
+
+/** The cart bottom-sheet itself — shared by the FAB and by the Classic theme's bottom bar. */
+export function CartSheet({
+  slug,
+  currency,
+  locale,
+  open,
+  onClose,
+}: {
+  slug: string;
+  currency?: string | null;
+  locale?: string | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { lines, total, setQty } = useCart(slug);
+  const fmt = useMemo(
+    () => new Intl.NumberFormat(locale || 'tr', { style: 'currency', currency: currency || 'TRY', maximumFractionDigits: 0 }),
+    [currency, locale],
+  );
+
+  if (!open) return null;
+
+  return (
+    <>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
           <div
             className="max-h-[85vh] w-full max-w-md overflow-hidden rounded-t-3xl bg-canvas sm:rounded-3xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-line px-5 py-4">
               <h3 className="text-base font-bold text-ink">Sepetim</h3>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Kapat" className="text-muted hover:text-ink">
+              <button type="button" onClick={onClose} aria-label="Kapat" className="text-muted hover:text-ink">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
               </button>
             </div>

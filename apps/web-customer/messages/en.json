@@ -1,5 +1,8 @@
 {
-  "app": { "name": "ComiQR", "tagline": "Scan the QR code on your table to see the menu" },
+  "app": {
+    "name": "ComiQR",
+    "tagline": "Scan the QR code on your table to see the menu"
+  },
   "landing": {
     "title": "Welcome",
     "body": "This is the ComiQR customer app. Scan the QR code on the venue's table with your phone to open the menu.",
@@ -21,7 +24,16 @@
     "vegetarian": "Vegetarian",
     "glutenFree": "Gluten-free",
     "estimated": "Nutrition values are estimates",
-    "empty": "This menu has no items yet."
+    "empty": "This menu has no items yet.",
+    "back": "Back",
+    "table": "Table",
+    "searchPlaceholder": "Search menu items…",
+    "allMenu": "All Menu",
+    "noResults": "No results found.",
+    "viewOrder": "View Order",
+    "add": "Add",
+    "decrease": "Decrease",
+    "increase": "Increase"
   },
   "order": {
     "add": "Add",

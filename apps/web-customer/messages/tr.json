@@ -1,5 +1,8 @@
 {
-  "app": { "name": "ComiQR", "tagline": "Menüyü görmek için masanızdaki QR kodu okutun" },
+  "app": {
+    "name": "ComiQR",
+    "tagline": "Menüyü görmek için masanızdaki QR kodu okutun"
+  },
   "landing": {
     "title": "Hoş geldiniz",
     "body": "Bu, ComiQR müşteri uygulamasıdır. Menüye erişmek için işletmenin masasındaki QR kodu telefonunuzla okutun.",
@@ -21,7 +24,16 @@
     "vegetarian": "Vejetaryen",
     "glutenFree": "Glutensiz",
     "estimated": "Besin değerleri tahminidir",
-    "empty": "Bu menüde henüz ürün yok."
+    "empty": "Bu menüde henüz ürün yok.",
+    "back": "Geri",
+    "table": "Masa",
+    "searchPlaceholder": "Menüde ara…",
+    "allMenu": "Tüm Menü",
+    "noResults": "Sonuç bulunamadı.",
+    "viewOrder": "Siparişi Görüntüle",
+    "add": "Ekle",
+    "decrease": "Azalt",
+    "increase": "Artır"
   },
   "order": {
     "add": "Ekle",
