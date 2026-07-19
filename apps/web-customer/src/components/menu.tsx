@@ -163,7 +163,7 @@ function LocaleSwitcher() {
         <ChevronIcon open={open} />
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-1 w-36 overflow-hidden rounded-xl bg-white py-1 shadow-xl">
+        <div className="absolute end-0 z-40 mt-1 w-36 overflow-hidden rounded-xl bg-white py-1 shadow-xl">
           {LOCALES.map((l) => (
             <button
               key={l.code}
@@ -198,7 +198,7 @@ function ContactMenu({ v }: { v: Menu['venue'] }) {
         <ChevronIcon open={open} />
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-1 w-[min(20rem,calc(100vw-2rem))] space-y-2 rounded-2xl bg-white p-3 shadow-xl">
+        <div className="absolute end-0 z-40 mt-1 w-[min(20rem,calc(100vw-2rem))] space-y-2 rounded-2xl bg-white p-3 shadow-xl">
           {info.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               {info.map((l) => (
@@ -1391,8 +1391,10 @@ function ClassicLocaleSwitcher() {
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          {/* Logical `end-0` so the panel opens inward in both directions — a physical
+              right-0 hangs off-screen in RTL, where the button sits on the left. */}
           <div
-            className="absolute right-0 z-40 mt-1.5 w-36 overflow-hidden rounded-xl py-1 shadow-xl"
+            className="absolute end-0 z-40 mt-1.5 w-36 overflow-hidden rounded-xl py-1 shadow-xl"
             style={{ background: CL.card, border: `1px solid ${CL.line}` }}
           >
             {LOCALES.map((l) => (
