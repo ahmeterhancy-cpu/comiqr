@@ -1215,7 +1215,7 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
             <h1 className="flex-1 truncate text-center text-lg font-bold" style={{ color: CL.ink }}>
               {tableCode ? `${labels.table} ${tableCode}` : v.name}
             </h1>
-            <span className="h-9 w-9 shrink-0" />
+            <ClassicLocaleSwitcher />
           </div>
 
           {/* Search */}
@@ -1362,6 +1362,52 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
             setOptionsProduct(null);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+/** Compact language picker for the Classic header (same cookie contract as the cover one). */
+function ClassicLocaleSwitcher() {
+  const active = useLocale();
+  const [open, setOpen] = useState(false);
+  const current = LOCALES.find((l) => l.code === active) ?? LOCALES[1];
+  const pick = (code: string) => {
+    document.cookie = `locale=${code}; path=/; max-age=31536000; samesite=lax`;
+    window.location.reload();
+  };
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-label={current.label}
+        className="grid h-9 w-9 place-items-center rounded-full transition active:scale-95"
+        style={{ background: CL.card, border: `1px solid ${CL.line}`, color: CL.ink }}
+      >
+        <GlobeIcon />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 z-40 mt-1.5 w-36 overflow-hidden rounded-xl py-1 shadow-xl"
+            style={{ background: CL.card, border: `1px solid ${CL.line}` }}
+          >
+            {LOCALES.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                onClick={() => pick(l.code)}
+                className="block w-full px-3 py-2 text-left text-sm font-medium"
+                style={l.code === active ? { background: CL.accentSoft, color: CL.accent } : { color: CL.ink }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
