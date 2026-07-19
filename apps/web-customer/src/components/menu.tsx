@@ -1112,34 +1112,96 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
   const cart = useCart(v.slug ?? '');
   const canOrder = !!v.can_order && v.show_cart !== false;
   const [search, setSearch] = useState('');
-  const [activeCat, setActiveCat] = useState<number | null>(null); // null = all
+  const [activeCat, setActiveCat] = useState<number | null>(null); // null = at the top ("all")
   const [optionsProduct, setOptionsProduct] = useState<MenuProduct | null>(null);
   const [detailProduct, setDetailProduct] = useState<MenuProduct | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const pillRefs = useRef(new Map<number, HTMLElement>());
 
+  // Search narrows the sections; categories otherwise all stay on the page so the
+  // pill strip can follow the scroll position.
   const visible = useMemo(() => {
     const q = search.trim().toLocaleLowerCase(loc);
+    if (!q) return categories;
     return categories
-      .filter((c) => activeCat == null || c.id === activeCat)
       .map((c) => ({
         ...c,
-        products: q
-          ? c.products.filter(
-              (p) =>
-                p.name.toLocaleLowerCase(loc).includes(q) || (p.description ?? '').toLocaleLowerCase(loc).includes(q),
-            )
-          : c.products,
+        products: c.products.filter(
+          (p) => p.name.toLocaleLowerCase(loc).includes(q) || (p.description ?? '').toLocaleLowerCase(loc).includes(q),
+        ),
       }))
       .filter((c) => c.products.length > 0);
-  }, [categories, activeCat, search, loc]);
+  }, [categories, search, loc]);
 
-  const shown = visible.flatMap((c) => c.products);
+  const shownCount = visible.reduce((s, c) => s + c.products.length, 0);
+
+  // The section list drives the spy, but `visible` is a fresh array every render —
+  // keying the effect on it would tear down and re-add the scroll listener
+  // constantly and drop events. Key on the id set instead and read ids via a ref.
+  const catKey = visible.map((c) => c.id).join(',');
+  const catIdsRef = useRef<number[]>([]);
+  catIdsRef.current = visible.map((c) => c.id);
+
+  // Scroll-spy: whichever section sits under the sticky header owns the pill.
+  // IntersectionObserver rather than a scroll listener — the browser drives it off
+  // the compositor, so it can't miss frames or fall behind during fast scrolls.
+  useEffect(() => {
+    const ids = catIdsRef.current;
+    if (ids.length === 0) return;
+
+    const headerH = headerRef.current?.offsetHeight ?? 150;
+    const pick = () => {
+      // Resting at the top keeps "all" highlighted; scrolling hands over to sections.
+      if (window.scrollY <= 24) return setActiveCat((p) => (p === null ? p : null));
+      const triggerY = headerH + 8;
+      let cur: number | null = null;
+      for (const id of ids) {
+        const el = document.getElementById(`ccat-${id}`);
+        if (el && el.getBoundingClientRect().top <= triggerY) cur = id;
+      }
+      setActiveCat((p) => (p === cur ? p : cur));
+    };
+
+    // A one-pixel band just under the header: any section entering or leaving it
+    // re-evaluates which one is current.
+    const io = new IntersectionObserver(pick, {
+      rootMargin: `-${headerH + 8}px 0px -${Math.max(0, window.innerHeight - headerH - 9)}px 0px`,
+      threshold: 0,
+    });
+    for (const id of ids) {
+      const el = document.getElementById(`ccat-${id}`);
+      if (el) io.observe(el);
+    }
+    pick();
+    window.addEventListener('resize', pick);
+    return () => {
+      io.disconnect();
+      window.removeEventListener('resize', pick);
+    };
+  }, [catKey]);
+
+  // Keep the active pill centred as the strip follows along.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const el = activeCat == null ? (nav.firstElementChild as HTMLElement | null) : pillRefs.current.get(activeCat);
+    if (!el) return;
+    const delta = el.getBoundingClientRect().left - nav.getBoundingClientRect().left - (nav.clientWidth - el.clientWidth) / 2;
+    if (Math.abs(delta) > 4) nav.scrollTo({ left: nav.scrollLeft + delta, behavior: 'smooth' });
+  }, [activeCat]);
+
+  function jumpTo(id: number | null) {
+    if (id == null) return window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById(`ccat-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   return (
     <div className="min-h-screen" style={{ background: CL.bg, color: CL.ink }}>
       <div className={`mx-auto max-w-2xl ${canOrder ? 'pb-28' : 'pb-10'}`}>
         {/* Header — table code when scanned at a table, otherwise the venue name. */}
-        <header className="sticky top-0 z-20 px-4 pb-2 pt-4" style={{ background: CL.bg }}>
+        <header ref={headerRef} className="sticky top-0 z-20 px-4 pb-2 pt-4" style={{ background: CL.bg }}>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -1172,12 +1234,20 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
 
           {/* Category pills — "all" plus one per category. */}
           {categories.length > 0 && (
-            <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]{display:none}">
-              <CatPill active={activeCat == null} onClick={() => setActiveCat(null)}>
+            <div ref={navRef} className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <CatPill active={activeCat == null} onClick={() => jumpTo(null)}>
                 {labels.allMenu}
               </CatPill>
               {categories.map((c) => (
-                <CatPill key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
+                <CatPill
+                  key={c.id}
+                  active={activeCat === c.id}
+                  onClick={() => jumpTo(c.id)}
+                  refCb={(el) => {
+                    if (el) pillRefs.current.set(c.id, el);
+                    else pillRefs.current.delete(c.id);
+                  }}
+                >
                   {c.name}
                 </CatPill>
               ))}
@@ -1186,41 +1256,46 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
         </header>
 
         {/* Product grid */}
-        {shown.length === 0 ? (
+        {shownCount === 0 ? (
           <p className="px-5 py-20 text-center text-sm" style={{ color: CL.muted }}>
             {search ? labels.noResults : labels.empty}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 px-4 pt-3">
-            {shown.map((p) => (
-              <ClassicCard
-                key={p.id}
-                product={p}
-                format={format}
-                labels={labels}
-                showPrice={v.show_prices !== false}
-                canOrder={canOrder}
-                qty={cart.qtyOfProduct(p.id)}
-                onAdd={() => {
-                  const hasOptions = (p.variants?.length ?? 0) > 0 || (p.modifier_groups?.length ?? 0) > 0;
-                  if (hasOptions) return setOptionsProduct(p);
-                  const key = lineKey(p.id, undefined, []);
-                  cart.setQty(
-                    { key, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
-                    cart.qtyOfKey(key) + 1,
-                  );
-                }}
-                onStep={(next) => {
-                  const key = lineKey(p.id, undefined, []);
-                  cart.setQty(
-                    { key, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
-                    next,
-                  );
-                }}
-                onDetail={() => setDetailProduct(p)}
-              />
-            ))}
-          </div>
+          visible.map((c) => (
+            <section key={c.id} id={`ccat-${c.id}`} className="scroll-mt-[186px] px-4 pt-5">
+              <h2 className="mb-2.5 text-[13px] font-bold uppercase tracking-wider" style={{ color: CL.muted }}>{c.name}</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {c.products.map((p) => (
+                  <ClassicCard
+                    key={p.id}
+                    product={p}
+                    format={format}
+                    labels={labels}
+                    showPrice={v.show_prices !== false}
+                    canOrder={canOrder}
+                    qty={cart.qtyOfProduct(p.id)}
+                    onAdd={() => {
+                      const hasOptions = (p.variants?.length ?? 0) > 0 || (p.modifier_groups?.length ?? 0) > 0;
+                      if (hasOptions) return setOptionsProduct(p);
+                      const key = lineKey(p.id, undefined, []);
+                      cart.setQty(
+                        { key, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
+                        cart.qtyOfKey(key) + 1,
+                      );
+                    }}
+                    onStep={(next) => {
+                      const key = lineKey(p.id, undefined, []);
+                      cart.setQty(
+                        { key, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
+                        next,
+                      );
+                    }}
+                    onDetail={() => setDetailProduct(p)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))
         )}
       </div>
 
@@ -1292,9 +1367,20 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
   );
 }
 
-function CatPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+function CatPill({
+  active,
+  onClick,
+  refCb,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  refCb?: (el: HTMLElement | null) => void;
+  children: ReactNode;
+}) {
   return (
     <button
+      ref={refCb}
       type="button"
       onClick={onClick}
       className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition active:scale-95"
