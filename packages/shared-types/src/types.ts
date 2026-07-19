@@ -215,9 +215,11 @@ export interface MenuVenue {
   happy_hour?: { active: boolean; percent: number };
   /** Menu display toggle — when false, the guest menu hides all prices. */
   show_prices?: boolean;
-  /** Owner-picked menu colours (Menu Builder) — override the theme's text/background. */
+  /** Owner-picked menu colours (Menu Builder) — override the theme's text/background/accent. */
   menu_text_color?: string | null;
   menu_page_color?: string | null;
+  /** Accent for buttons, active pills and the order bar. */
+  menu_button_color?: string | null;
   /** Menu Builder element toggles (default on). */
   show_hours?: boolean;
   show_search?: boolean;

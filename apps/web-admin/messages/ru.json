@@ -160,7 +160,8 @@
     "refresh": "Обновить",
     "discountBadge": "Скидка {percent}%",
     "ingredientsLabel": "Состав",
-    "preparedWith": "Подготовлено с помощью ComiQR"
+    "preparedWith": "Подготовлено с помощью ComiQR",
+    "buttonColor": "Цвет кнопок"
   },
   "menu": {
     "imageTooLarge": "Изображение слишком большое (более 4 МБ). Пожалуйста, выберите изображение поменьше.",

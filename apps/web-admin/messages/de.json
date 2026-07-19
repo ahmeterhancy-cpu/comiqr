@@ -160,7 +160,8 @@
     "refresh": "Aktualisieren",
     "discountBadge": "{percent}% Rabatt",
     "ingredientsLabel": "Zutaten",
-    "preparedWith": "Erstellt mit ComiQR"
+    "preparedWith": "Erstellt mit ComiQR",
+    "buttonColor": "Schaltflächenfarbe"
   },
   "menu": {
     "imageTooLarge": "Bild zu groß (über 4 MB). Bitte wählen Sie ein kleineres Bild.",

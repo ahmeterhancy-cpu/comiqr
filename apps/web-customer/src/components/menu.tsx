@@ -1094,9 +1094,10 @@ function fmtAmount(q: number): string {
 /* Image-forward: cover hero + logo + about, product photos in each card. */
 
 /* Ordering-first app look: soft blush canvas, search + category pills, a two-up
-   photo grid and a full-width "view order" bar. Like Flipbook, this theme owns
-   its palette (the shared brand token is green, which would fight the look). */
-const CL = {
+   photo grid and a full-width "view order" bar. The defaults below are the
+   theme's own palette (the shared brand token is green, which would fight the
+   look); the Menu Builder's page/text/button colours override them. */
+const CL_DEFAULT = {
   bg: '#FCEFEA',
   card: '#FFFFFF',
   ink: '#1F1B19',
@@ -1106,8 +1107,40 @@ const CL = {
   line: '#F0DED7',
 };
 
+type ClassicPalette = typeof CL_DEFAULT;
+const ClassicPaletteCtx = createContext<ClassicPalette>(CL_DEFAULT);
+const useCL = () => useContext(ClassicPaletteCtx);
+
+/** #rrggbb → rgba(), for tints derived from an owner-picked colour. */
+function hexA(hex: string, alpha: number): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+/** Build the Classic palette from the owner's Menu Builder colours. */
+function classicPalette(v: Menu['venue']): ClassicPalette {
+  const accent = v.menu_button_color || CL_DEFAULT.accent;
+  const ink = v.menu_text_color || CL_DEFAULT.ink;
+  const bg = v.menu_page_color || CL_DEFAULT.bg;
+  const custom = !!(v.menu_button_color || v.menu_text_color || v.menu_page_color);
+  return {
+    bg,
+    card: '#FFFFFF',
+    ink,
+    // Tints follow the chosen colours so a custom palette stays coherent; the
+    // defaults keep the hand-tuned blush values.
+    muted: custom ? hexA(ink, 0.55) : CL_DEFAULT.muted,
+    accent,
+    accentSoft: custom ? hexA(accent, 0.12) : CL_DEFAULT.accentSoft,
+    line: custom ? hexA(ink, 0.12) : CL_DEFAULT.line,
+  };
+}
+
 function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories }: ThemeProps) {
   const v = menu.venue;
+  const CL = useMemo(() => classicPalette(v), [v]);
   const loc = v.locale_default ?? 'tr';
   const cart = useCart(v.slug ?? '');
   const canOrder = !!v.can_order && v.show_cart !== false;
@@ -1198,6 +1231,7 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
   }
 
   return (
+    <ClassicPaletteCtx.Provider value={CL}>
     <div className="min-h-screen" style={{ background: CL.bg, color: CL.ink }}>
       <div className={`mx-auto max-w-2xl ${canOrder ? 'pb-28' : 'pb-10'}`}>
         {/* Header — table code when scanned at a table, otherwise the venue name. */}
@@ -1364,11 +1398,13 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
         />
       )}
     </div>
+    </ClassicPaletteCtx.Provider>
   );
 }
 
 /** Compact language picker for the Classic header (same cookie contract as the cover one). */
 function ClassicLocaleSwitcher() {
+  const CL = useCL();
   const active = useLocale();
   const [open, setOpen] = useState(false);
   const current = LOCALES.find((l) => l.code === active) ?? LOCALES[1];
@@ -1426,6 +1462,7 @@ function CatPill({
   refCb?: (el: HTMLElement | null) => void;
   children: ReactNode;
 }) {
+  const CL = useCL();
   return (
     <button
       ref={refCb}
@@ -1464,6 +1501,7 @@ function ClassicCard({
   onStep: (next: number) => void;
   onDetail: () => void;
 }) {
+  const CL = useCL();
   const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
   const img = product.images?.[0];
 

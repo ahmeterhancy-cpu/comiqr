@@ -279,6 +279,7 @@ class MenuController extends Controller
                 // Custom menu colours (owner set in the Menu Builder).
                 'menu_text_color' => $settings['menu_text_color'] ?? null,
                 'menu_page_color' => $settings['menu_page_color'] ?? null,
+                'menu_button_color' => $settings['menu_button_color'] ?? null,
                 // Menu Builder element toggles (default on; call-waiter/bill fall back to allow_call_waiter).
                 'show_hours' => (bool) ($settings['show_hours'] ?? true),
                 'show_search' => (bool) ($settings['show_search'] ?? true),

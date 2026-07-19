@@ -71,9 +71,10 @@ class RestaurantSettings
             'settings_json.show_allergens' => ['sometimes', 'boolean'],
             'settings_json.hidden_contacts' => ['sometimes', 'nullable', 'array'],
             'settings_json.hidden_contacts.*' => ['string', 'max:20'],
-            // Custom menu colours (text + page background) — applied on the guest menu.
+            // Custom menu colours (text + page background + button/accent) — applied on the guest menu.
             'settings_json.menu_text_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'settings_json.menu_page_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'settings_json.menu_button_color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'settings_json.theme' => ['sometimes', Rule::in(self::THEMES)],
             'settings_json.logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'settings_json.cover' => ['sometimes', 'nullable', 'string', 'max:2048'],

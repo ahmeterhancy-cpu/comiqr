@@ -160,7 +160,8 @@
     "refresh": "تحديث",
     "discountBadge": "خصم {percent}%",
     "ingredientsLabel": "المكونات",
-    "preparedWith": "أُعد باستخدام ComiQR"
+    "preparedWith": "أُعد باستخدام ComiQR",
+    "buttonColor": "لون الأزرار"
   },
   "menu": {
     "imageTooLarge": "الصورة كبيرة جدًا (أكثر من 4 ميغابايت). يُرجى اختيار صورة أصغر.",

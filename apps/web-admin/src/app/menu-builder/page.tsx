@@ -21,7 +21,9 @@ const LANGS: [string, string][] = [
   ['ar', 'العربية'],
 ];
 const TEXT_COLORS = ['#111827', '#ffffff', '#4b5563', '#15803d', '#2563eb', '#7c3aed', '#ea580c', '#dc2626'];
-const PAGE_COLORS = ['#ffffff', '#f9fafb', '#f3f4f6', '#faf7f2', '#f7f7f4', '#fdf6e3', '#f0f7f0', '#fdf2f2'];
+const PAGE_COLORS = ['#ffffff', '#f9fafb', '#f3f4f6', '#faf7f2', '#f7f7f4', '#fdf6e3', '#f0f7f0', '#fcefea'];
+// Accent for buttons / active pills / the order bar.
+const BUTTON_COLORS = ['#f4522e', '#e11d48', '#ea580c', '#d97706', '#16a34a', '#0d9488', '#2563eb', '#7c3aed'];
 const CUSTOMER_URL = process.env.NEXT_PUBLIC_CUSTOMER_URL ?? 'http://localhost:3010';
 const DEVICES: { key: 'phone' | 'tablet' | 'desktop'; labelKey: string; w: number; h: number }[] = [
   { key: 'phone', labelKey: 'devicePhone', w: 390, h: 720 },
@@ -54,6 +56,7 @@ export default function MenuBuilderPage() {
   const priceRow: boolean = false; // false = inline price, true = price on its own row
   const [textColor, setTextColor] = useState('#111827');
   const [pageColor, setPageColor] = useState('#ffffff');
+  const [buttonColor, setButtonColor] = useState('#f4522e');
   const [decoration, setDecoration] = useState<'none' | 'border' | 'double' | 'dotted'>('none');
   const [contacts, setContacts] = useState<Record<string, boolean>>({});
   const [device, setDevice] = useState<'phone' | 'tablet' | 'desktop'>('phone');
@@ -86,6 +89,7 @@ export default function MenuBuilderPage() {
       if (s.theme) setTheme(s.theme);
       if (s.menu_text_color) setTextColor(s.menu_text_color);
       if (s.menu_page_color) setPageColor(s.menu_page_color);
+      if (s.menu_button_color) setButtonColor(s.menu_button_color);
       const hidden: string[] = Array.isArray(s.hidden_contacts) ? s.hidden_contacts : [];
       const keys = ['phone', 'whatsapp', 'email', 'website'].filter((k) => s[k]);
       setContacts(Object.fromEntries(keys.map((k) => [k, !hidden.includes(k)])));
@@ -102,7 +106,7 @@ export default function MenuBuilderPage() {
     const id = setTimeout(() => saveToQr(), 600);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showDesc, showIng, showPrices, showWifi, showHours, showCart, showCallWaiter, showBill, showSearch, showAllergens, theme, contacts, lang, textColor, pageColor]);
+  }, [showDesc, showIng, showPrices, showWifi, showHours, showCart, showCallWaiter, showBill, showSearch, showAllergens, theme, contacts, lang, textColor, pageColor, buttonColor]);
 
   /** Persist the display toggles + contacts + language to the live QR menu. */
   async function saveToQr() {
@@ -127,6 +131,7 @@ export default function MenuBuilderPage() {
           hidden_contacts: hidden,
           menu_text_color: textColor,
           menu_page_color: pageColor,
+          menu_button_color: buttonColor,
         },
       } as any);
       setSaved(true);
@@ -330,6 +335,8 @@ export default function MenuBuilderPage() {
             <Swatches colors={TEXT_COLORS} value={textColor} onChange={setTextColor} />
             <div className="mb-1.5 mt-3 text-xs font-medium text-muted">{t('pageColor')}</div>
             <Swatches colors={PAGE_COLORS} value={pageColor} onChange={setPageColor} />
+            <div className="mb-1.5 mt-3 text-xs font-medium text-muted">{t('buttonColor')}</div>
+            <Swatches colors={BUTTON_COLORS} value={buttonColor} onChange={setButtonColor} />
             <div className="mb-1.5 mt-3 text-xs font-medium text-muted">{t('pageDecoration')}</div>
             <Select
               value={decoration}
