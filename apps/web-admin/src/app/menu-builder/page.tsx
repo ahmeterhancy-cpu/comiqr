@@ -50,6 +50,7 @@ export default function MenuBuilderPage() {
   const [showBill, setShowBill] = useState(true);
   const [showSearch, setShowSearch] = useState(true);
   const [showAllergens, setShowAllergens] = useState(true);
+  const [showDetails, setShowDetails] = useState(true);
   const [theme, setTheme] = useState<'modern' | 'classic' | 'flipbook'>('modern');
   // PDF-only layout defaults (the "Tasarım" controls were removed; the PDF uses these).
   const columns: 1 | 2 = 2;
@@ -86,6 +87,7 @@ export default function MenuBuilderPage() {
       setShowBill(s.show_bill ?? s.allow_call_waiter ?? true);
       setShowSearch(s.show_search ?? true);
       setShowAllergens(s.show_allergens ?? true);
+      setShowDetails(s.show_details ?? true);
       if (s.theme) setTheme(s.theme);
       if (s.menu_text_color) setTextColor(s.menu_text_color);
       if (s.menu_page_color) setPageColor(s.menu_page_color);
@@ -106,7 +108,7 @@ export default function MenuBuilderPage() {
     const id = setTimeout(() => saveToQr(), 600);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showDesc, showIng, showPrices, showWifi, showHours, showCart, showCallWaiter, showBill, showSearch, showAllergens, theme, contacts, lang, textColor, pageColor, buttonColor]);
+  }, [showDesc, showIng, showPrices, showWifi, showHours, showCart, showCallWaiter, showBill, showSearch, showAllergens, showDetails, theme, contacts, lang, textColor, pageColor, buttonColor]);
 
   /** Persist the display toggles + contacts + language to the live QR menu. */
   async function saveToQr() {
@@ -127,6 +129,7 @@ export default function MenuBuilderPage() {
           show_bill: showBill,
           show_search: showSearch,
           show_allergens: showAllergens,
+          show_details: showDetails,
           theme,
           hidden_contacts: hidden,
           menu_text_color: textColor,
@@ -271,6 +274,7 @@ export default function MenuBuilderPage() {
             <Toggle label={t('showBill')} value={showBill} onChange={setShowBill} />
             <Toggle label={t('showSearch')} value={showSearch} onChange={setShowSearch} />
             <Toggle label={t('showAllergens')} value={showAllergens} onChange={setShowAllergens} />
+            <Toggle label={t('showDetails')} value={showDetails} onChange={setShowDetails} />
           </Section>
 
           {/* Menu theme */}

@@ -161,7 +161,8 @@
     "discountBadge": "%{percent} indirim",
     "ingredientsLabel": "İçindekiler",
     "preparedWith": "ComiQR ile hazırlandı",
-    "buttonColor": "Buton rengi"
+    "buttonColor": "Buton rengi",
+    "showDetails": "İçindekiler butonu"
   },
   "menu": {
     "imageTooLarge": "Görsel çok büyük (4 MB üstü). Lütfen daha küçük bir görsel seçin.",

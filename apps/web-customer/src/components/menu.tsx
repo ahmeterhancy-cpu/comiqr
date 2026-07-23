@@ -30,6 +30,7 @@ export interface MenuLabels {
   add: string;
   decrease: string;
   increase: string;
+  details: string;
 }
 
 type ThemeProps = {
@@ -631,6 +632,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
                     canOrder={!!v.can_order && v.show_cart !== false}
                     baseQty={cart.qtyOfKey(baseKey)}
                     productQty={cart.qtyOfProduct(p.id)}
+                    showDetails={v.show_details !== false}
                     onQuick={(q) =>
                       cart.setQty(
                         { key: baseKey, id: p.id, name: p.name, price: Number(p.price), variantId: undefined, variantName: undefined, modifierIds: [], modifierNames: [] },
@@ -701,6 +703,7 @@ function ModernProduct({
   canOrder,
   baseQty,
   productQty,
+  showDetails = true,
   onQuick,
   onOptions,
   onDetail,
@@ -712,6 +715,7 @@ function ModernProduct({
   canOrder?: boolean;
   baseQty?: number;
   productQty?: number;
+  showDetails?: boolean;
   onQuick?: (qty: number) => void;
   onOptions?: () => void;
   onDetail?: () => void;
@@ -723,8 +727,9 @@ function ModernProduct({
   const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
   const base = baseQty ?? 0;
   const total = productQty ?? 0;
-  // Show a details cue when the sheet has more to offer (ingredients, nutrition…).
-  const hasDetail = !!product.description || (product.recipe?.length ?? 0) > 0 || !!n || hasOptions;
+  // Show a details cue when enabled and the sheet has more to offer.
+  const hasDetail =
+    showDetails && (!!product.description || (product.recipe?.length ?? 0) > 0 || !!n || hasOptions);
 
   return (
     <article
@@ -732,18 +737,8 @@ function ModernProduct({
       className="flex cursor-pointer gap-4 rounded-2xl border border-line bg-surface p-3.5 shadow-[var(--shadow-card)] transition hover:border-brand-300"
     >
       {img && (
-        <div className="relative shrink-0 self-start">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={img} alt={product.name} className="h-20 w-20 rounded-2xl object-cover sm:h-24 sm:w-24" />
-          {hasDetail && (
-            <span
-              aria-hidden
-              className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-ink shadow backdrop-blur"
-            >
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>
-            </span>
-          )}
-        </div>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={img} alt={product.name} className="h-20 w-20 shrink-0 self-start rounded-2xl object-cover sm:h-24 sm:w-24" />
       )}
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
@@ -778,9 +773,22 @@ function ModernProduct({
             </span>
           )}
         </div>
-        {canOrder && (
-          <div className="mt-3 flex items-end justify-end" onClick={(e) => e.stopPropagation()}>
-            {!hasOptions && onQuick ? (
+        {(hasDetail || canOrder) && (
+          <div className="mt-3 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+            {hasDetail ? (
+              <button
+                type="button"
+                onClick={onDetail}
+                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-[13px] font-semibold text-muted transition hover:border-brand-300 hover:text-brand-700"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>
+                {labels.details}
+              </button>
+            ) : (
+              <span />
+            )}
+            {canOrder &&
+              (!hasOptions && onQuick ? (
               base === 0 ? (
                 <button
                   type="button"
@@ -811,7 +819,7 @@ function ModernProduct({
                   </span>
                 )}
               </button>
-            ) : null}
+            ) : null)}
           </div>
         )}
       </div>
@@ -1338,6 +1346,7 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
                     showPrice={v.show_prices !== false}
                     canOrder={canOrder}
                     qty={cart.qtyOfProduct(p.id)}
+                    showDetails={v.show_details !== false}
                     onAdd={() => {
                       const hasOptions = (p.variants?.length ?? 0) > 0 || (p.modifier_groups?.length ?? 0) > 0;
                       if (hasOptions) return setOptionsProduct(p);
@@ -1519,6 +1528,7 @@ function ClassicCard({
   showPrice,
   canOrder,
   qty,
+  showDetails,
   onAdd,
   onStep,
   onDetail,
@@ -1529,6 +1539,7 @@ function ClassicCard({
   showPrice: boolean;
   canOrder: boolean;
   qty: number;
+  showDetails: boolean;
   onAdd: () => void;
   onStep: (next: number) => void;
   onDetail: () => void;
@@ -1536,9 +1547,9 @@ function ClassicCard({
   const CL = useCL();
   const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
   const img = product.images?.[0];
-  // Only surface the details button when the sheet has something to show.
+  // Surface the details button only when enabled and the sheet has something to show.
   const hasDetail =
-    !!product.description || (product.recipe?.length ?? 0) > 0 || !!product.nutrition || hasOptions;
+    showDetails && (!!product.description || (product.recipe?.length ?? 0) > 0 || !!product.nutrition || hasOptions);
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl" style={{ background: CL.card, border: `1px solid ${CL.line}` }}>

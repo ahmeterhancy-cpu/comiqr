@@ -33,7 +33,8 @@
     "viewOrder": "Siparişi Görüntüle",
     "add": "Ekle",
     "decrease": "Azalt",
-    "increase": "Artır"
+    "increase": "Artır",
+    "details": "İçindekiler"
   },
   "order": {
     "add": "Ekle",

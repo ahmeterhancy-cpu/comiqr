@@ -161,7 +161,8 @@
     "discountBadge": "{percent}% off",
     "ingredientsLabel": "Ingredients",
     "preparedWith": "Prepared with ComiQR",
-    "buttonColor": "Button colour"
+    "buttonColor": "Button colour",
+    "showDetails": "Details button"
   },
   "menu": {
     "imageTooLarge": "Image too large (over 4 MB). Please choose a smaller image.",

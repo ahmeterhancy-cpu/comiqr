@@ -161,7 +161,8 @@
     "discountBadge": "Скидка {percent}%",
     "ingredientsLabel": "Состав",
     "preparedWith": "Подготовлено с помощью ComiQR",
-    "buttonColor": "Цвет кнопок"
+    "buttonColor": "Цвет кнопок",
+    "showDetails": "Кнопка «Подробнее»"
   },
   "menu": {
     "imageTooLarge": "Изображение слишком большое (более 4 МБ). Пожалуйста, выберите изображение поменьше.",

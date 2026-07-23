@@ -284,6 +284,7 @@ class MenuController extends Controller
                 'show_hours' => (bool) ($settings['show_hours'] ?? true),
                 'show_search' => (bool) ($settings['show_search'] ?? true),
                 'show_allergens' => (bool) ($settings['show_allergens'] ?? true),
+                'show_details' => (bool) ($settings['show_details'] ?? true),
                 'show_cart' => (bool) ($settings['show_cart'] ?? true),
                 'show_call_waiter' => (bool) ($settings['show_call_waiter'] ?? $settings['allow_call_waiter'] ?? true),
                 'show_bill' => (bool) ($settings['show_bill'] ?? $settings['allow_call_waiter'] ?? true),

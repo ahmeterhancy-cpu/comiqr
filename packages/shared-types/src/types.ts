@@ -227,6 +227,8 @@ export interface MenuVenue {
   show_cart?: boolean;
   show_call_waiter?: boolean;
   show_bill?: boolean;
+  /** Show the per-product "details/ingredients" button on menu cards. */
+  show_details?: boolean;
   rating?: number;
   reviews_count?: number;
   brand_color?: string | null;

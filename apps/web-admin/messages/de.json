@@ -161,7 +161,8 @@
     "discountBadge": "{percent}% Rabatt",
     "ingredientsLabel": "Zutaten",
     "preparedWith": "Erstellt mit ComiQR",
-    "buttonColor": "Schaltflächenfarbe"
+    "buttonColor": "Schaltflächenfarbe",
+    "showDetails": "Detail-Schaltfläche"
   },
   "menu": {
     "imageTooLarge": "Bild zu groß (über 4 MB). Bitte wählen Sie ein kleineres Bild.",

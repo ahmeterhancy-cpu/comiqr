@@ -63,6 +63,7 @@ export default async function VenueMenuPage({
     add: t('add'),
     decrease: t('decrease'),
     increase: t('increase'),
+    details: t('details'),
   };
 
   return (

@@ -33,7 +33,8 @@
     "viewOrder": "View Order",
     "add": "Add",
     "decrease": "Decrease",
-    "increase": "Increase"
+    "increase": "Increase",
+    "details": "Details"
   },
   "order": {
     "add": "Add",

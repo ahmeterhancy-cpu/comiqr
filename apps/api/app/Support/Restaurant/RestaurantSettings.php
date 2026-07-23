@@ -69,6 +69,7 @@ class RestaurantSettings
             'settings_json.show_cart' => ['sometimes', 'boolean'],
             'settings_json.show_search' => ['sometimes', 'boolean'],
             'settings_json.show_allergens' => ['sometimes', 'boolean'],
+            'settings_json.show_details' => ['sometimes', 'boolean'],
             'settings_json.hidden_contacts' => ['sometimes', 'nullable', 'array'],
             'settings_json.hidden_contacts.*' => ['string', 'max:20'],
             // Custom menu colours (text + page background + button/accent) — applied on the guest menu.
