@@ -26,6 +26,7 @@ export default function SettingsPage() {
           slug={tenant.slug}
           allowedVerticals={tenant.plan?.features?.verticals}
           whiteLabel={!!tenant.plan?.features?.white_label}
+          happyHour={!!tenant.plan?.features?.happy_hour}
           onSave={(payload) => api.updateTenant(payload as any)}
           onUpload={(type, file) => api.uploadRestaurantMedia(type, file)}
         />

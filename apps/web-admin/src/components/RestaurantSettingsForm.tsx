@@ -38,6 +38,7 @@ export function RestaurantSettingsForm({
   slug,
   allowedVerticals,
   whiteLabel,
+  happyHour = true,
   onSave,
   onUpload,
 }: {
@@ -49,6 +50,8 @@ export function RestaurantSettingsForm({
   allowedVerticals?: string[];
   /** Plan unlocks white-label (brand color + hide "Powered by"). */
   whiteLabel?: boolean;
+  /** Plan unlocks the bar Happy Hour scheduler. */
+  happyHour?: boolean;
   onSave: (payload: Record<string, unknown>) => Promise<unknown>;
   onUpload?: (type: 'logo' | 'cover', file: File) => Promise<{ url: string }>;
 }) {
@@ -372,7 +375,7 @@ export function RestaurantSettingsForm({
         </div>
       </Card>
 
-      {vertical === 'bar' && (
+      {vertical === 'bar' && happyHour && (
         <Card>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-ink">Happy Hour</h3>

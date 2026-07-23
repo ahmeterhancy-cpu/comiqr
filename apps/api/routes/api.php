@@ -246,9 +246,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::apiResource('admin/tables', TableController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
 
-            // Hotel vertical (Faz 3) — room folio + check-out settle.
-            Route::get('admin/hotel/folio', [HotelController::class, 'folio']);
-            Route::post('admin/hotel/rooms/{table}/settle', [HotelController::class, 'settle']);
+            // Hotel/beach vertical (Faz 3) — room/sunbed folio + check-out settle. Plan-gated.
+            Route::middleware('plan:folio')->group(function () {
+                Route::get('admin/hotel/folio', [HotelController::class, 'folio']);
+                Route::post('admin/hotel/rooms/{table}/settle', [HotelController::class, 'settle']);
+            });
 
             // Reviews (Faz 3) — list + reputation, reply, moderate.
             Route::get('admin/reviews', [ReviewController::class, 'index']);
@@ -313,32 +315,37 @@ Route::middleware('auth:sanctum')->group(function () {
         // --- CRM / loyalty / coupons (M8) — manager+ ---
         Route::middleware('role:manager')->group(function () {
             Route::get('admin/customers', [CustomerController::class, 'index']);
-            Route::apiResource('admin/coupons', CouponController::class)
-                ->only(['index', 'store', 'update', 'destroy']);
 
-            // Campaigns (M8) — draft + send over the abstract channel.
-            Route::apiResource('admin/campaigns', CampaignController::class)
-                ->only(['index', 'store', 'destroy']);
-            Route::post('admin/campaigns/{campaign}/send', [CampaignController::class, 'send'])
-                ->middleware('throttle:10,1');
+            // Coupons + campaigns are the loyalty/CRM module — plan:loyalty.
+            Route::middleware('plan:loyalty')->group(function () {
+                Route::apiResource('admin/coupons', CouponController::class)
+                    ->only(['index', 'store', 'update', 'destroy']);
 
-            // External integrations (POS/ÖKC/ERP/delivery) — connectors + ping.
-            Route::apiResource('admin/integrations', IntegrationController::class)
-                ->only(['index', 'store', 'update', 'destroy']);
-            Route::post('admin/integrations/{integration}/test', [IntegrationController::class, 'test'])
-                ->middleware('throttle:20,1');
+                Route::apiResource('admin/campaigns', CampaignController::class)
+                    ->only(['index', 'store', 'destroy']);
+                Route::post('admin/campaigns/{campaign}/send', [CampaignController::class, 'send'])
+                    ->middleware('throttle:10,1');
+            });
+
+            // External integrations (POS/ÖKC/ERP/delivery) — plan:pos_integration.
+            Route::middleware('plan:pos_integration')->group(function () {
+                Route::apiResource('admin/integrations', IntegrationController::class)
+                    ->only(['index', 'store', 'update', 'destroy']);
+                Route::post('admin/integrations/{integration}/test', [IntegrationController::class, 'test'])
+                    ->middleware('throttle:20,1');
+            });
         });
 
-        // --- Waiter (M10, docs/06 §6.8) — waiter+ ---
-        Route::middleware('role:waiter')->group(function () {
+        // --- Waiter (M10, docs/06 §6.8) — waiter+, plan-gated ---
+        Route::middleware(['role:waiter', 'plan:waiter_app'])->group(function () {
             Route::get('waiter/tables', [WaiterController::class, 'tables']);
             Route::get('waiter/notifications', [WaiterController::class, 'notifications']);
             Route::post('waiter/order-items/{item}/served', [WaiterController::class, 'served']);
             Route::post('waiter/sessions/{session}/ack', [WaiterController::class, 'acknowledge']);
         });
 
-        // --- KDS (M6, docs/06 §6.7) — kitchen+ ---
-        Route::middleware('role:kitchen')->group(function () {
+        // --- KDS (M6, docs/06 §6.7) — kitchen+, plan-gated ---
+        Route::middleware(['role:kitchen', 'plan:kds'])->group(function () {
             Route::get('kds/{branch}/orders', [KdsController::class, 'orders']);
             Route::post('kds/order-items/{item}/status', [KdsController::class, 'status']);
             Route::post('kds/order-items/{item}/bump', [KdsController::class, 'bump']);

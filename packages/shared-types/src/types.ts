@@ -251,6 +251,8 @@ export interface MenuVenue {
   allow_call_waiter?: boolean;
   /** "Add to cart" ordering available (plan + at least one order channel enabled). */
   can_order?: boolean;
+  /** Online payment at checkout (plan:payments + owner enabled). */
+  allow_online_payment?: boolean;
 }
 
 export interface MenuTable {

@@ -196,6 +196,11 @@ class MenuController extends Controller
         $rep = $this->reviews->reputation($tenant->id);
         // White-label branding only takes effect on plans that unlock it (Faz 3).
         $whiteLabel = \App\Support\Plans\PlanGate::allows($tenant, 'white_label');
+        // Per-plan module gates that shape the guest menu.
+        $hasWaiter = \App\Support\Plans\PlanGate::allows($tenant, 'waiter_app');
+        $hasPayments = \App\Support\Plans\PlanGate::allows($tenant, 'payments');
+        $hasNutrition = \App\Support\Plans\PlanGate::allows($tenant, 'nutrition_display');
+        $hasNutritionFull = \App\Support\Plans\PlanGate::allows($tenant, 'nutrition_full');
 
         // Apply each category's promotion to its products' displayed prices (base
         // price + variant deltas), keeping the original for a struck-through display.
@@ -227,7 +232,7 @@ class MenuController extends Controller
         $showIng = (bool) ($settings['show_ingredients'] ?? true);
         $showWifi = (bool) ($settings['show_wifi'] ?? true);
         $hiddenContacts = array_flip((array) ($settings['hidden_contacts'] ?? []));
-        if (! $showDesc || ! $showIng) {
+        if (! $showDesc || ! $showIng || ! $hasNutrition || ! $hasNutritionFull) {
             foreach ($categoriesPayload as &$catD) {
                 foreach ($catD['products'] as &$pD) {
                     if (! $showDesc) {
@@ -235,6 +240,13 @@ class MenuController extends Controller
                     }
                     if (! $showIng) {
                         $pD['recipe'] = [];
+                    }
+                    // Plan gate: no nutrition_display → hide calories/nutrition entirely;
+                    // has display but no nutrition_full → keep kcal + diet, drop macros.
+                    if (! $hasNutrition) {
+                        $pD['nutrition'] = null;
+                    } elseif (! $hasNutritionFull && ! empty($pD['nutrition'])) {
+                        unset($pD['nutrition']['macros']);
                     }
                 }
                 unset($pD);
@@ -286,10 +298,12 @@ class MenuController extends Controller
                 'show_allergens' => (bool) ($settings['show_allergens'] ?? true),
                 'show_details' => (bool) ($settings['show_details'] ?? true),
                 'show_cart' => (bool) ($settings['show_cart'] ?? true),
-                'show_call_waiter' => (bool) ($settings['show_call_waiter'] ?? $settings['allow_call_waiter'] ?? true),
-                'show_bill' => (bool) ($settings['show_bill'] ?? $settings['allow_call_waiter'] ?? true),
-                // Table service (call waiter / request bill) — owner can disable.
-                'allow_call_waiter' => \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_call_waiter'),
+                // Table service (call waiter / request bill) — plan:waiter_app unlocks it, then owner can disable.
+                'show_call_waiter' => $hasWaiter && (bool) ($settings['show_call_waiter'] ?? $settings['allow_call_waiter'] ?? true),
+                'show_bill' => $hasWaiter && (bool) ($settings['show_bill'] ?? $settings['allow_call_waiter'] ?? true),
+                'allow_call_waiter' => $hasWaiter && \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_call_waiter'),
+                // Online payment at checkout — plan:payments unlocks it, then owner can disable.
+                'allow_online_payment' => $hasPayments && \App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_online_payment'),
                 // "Add to cart" ordering available (plan unlocks it + at least one order channel on).
                 'can_order' => \App\Support\Plans\PlanGate::allows($tenant, 'ordering')
                     && (\App\Support\Restaurant\RestaurantSettings::allows($settings, 'allow_on_table_order')

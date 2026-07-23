@@ -14,6 +14,17 @@ import { getActiveBranchId, setActiveBranchId } from '@/lib/branch';
 type NavLeaf = { key: string; href: string };
 type NavNode = NavLeaf | { key: string; children: NavLeaf[] };
 
+/** Nav key → plan feature that must be enabled for it to appear. Unlisted = always shown. */
+const NAV_FEATURE: Record<string, string> = {
+  orders: 'ordering',
+  pos: 'ordering',
+  branches: 'multi_branch',
+  coupons: 'loyalty',
+  campaigns: 'loyalty',
+  integrations: 'pos_integration',
+  hotel: 'folio',
+};
+
 const NAV: NavNode[] = [
   { key: 'dashboard', href: '/dashboard' },
   { key: 'menu', href: '/menu' },
@@ -173,6 +184,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
   const [impersonating, setImpersonating] = useState(false);
   const [currentName, setCurrentName] = useState<string>('');
   const [vertical, setVertical] = useState<string>('restaurant');
+  const [features, setFeatures] = useState<Record<string, boolean> | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -214,7 +226,10 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
   useEffect(() => {
     createApi(getToken())
       .getTenant()
-      .then((t: any) => setVertical(t?.settings?.vertical ?? 'restaurant'))
+      .then((t: any) => {
+        setVertical(t?.settings?.vertical ?? 'restaurant');
+        setFeatures(t?.plan?.features ?? {});
+      })
       .catch(() => undefined);
   }, []);
 
@@ -229,6 +244,14 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
     const at = navItems.findIndex((i) => i.key === 'settingsGroup');
     navItems.splice(at < 0 ? navItems.length : at, 0, { key: 'hotel', href: '/hotel' });
   }
+  // Hide nav entries the current plan doesn't unlock (features null until loaded → show all).
+  const allowed = (key: string) => {
+    const f = NAV_FEATURE[key];
+    return !f || !features || features[f] === true;
+  };
+  const gatedNav: NavNode[] = navItems
+    .map((n) => ('children' in n ? { ...n, children: n.children.filter((c) => allowed(c.key)) } : n))
+    .filter((n) => (allowed(n.key)) && (!('children' in n) || n.children.length > 0));
 
   function logout() {
     createApi(getToken()).logout().catch(() => undefined);
@@ -255,7 +278,7 @@ export function AdminShell({ title, children }: { title?: string; children: Reac
       )}
 
       <nav className="no-scrollbar mt-5 flex-1 space-y-1 overflow-y-auto">
-        {navItems.map((it) => {
+        {gatedNav.map((it) => {
           if ('children' in it) {
             return <NavGroup key={it.key} node={it} pathname={pathname} onNavigate={() => setOpen(false)} />;
           }
