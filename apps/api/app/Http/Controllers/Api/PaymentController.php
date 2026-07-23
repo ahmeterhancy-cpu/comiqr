@@ -41,6 +41,14 @@ class PaymentController extends Controller
         abort_unless($this->gateways->isEnabled($gateway), 422, 'Payment method not available.');
 
         $model = $this->orderForToken($qrToken, $order);
+
+        // Online payment gateways (card/Tiko/PayTR) require the plan's payments feature.
+        // Cash is a base method and stays available on every plan.
+        if ($gateway !== 'cash') {
+            $tenant = \App\Models\Tenant::find($model->tenant_id);
+            abort_unless($tenant && \App\Support\Plans\PlanGate::allows($tenant, 'payments'), 402, 'Online ödeme bu planda kapalı.');
+        }
+
         abort_if($model->payment_status === 'paid', 422, 'Order already paid.');
         // Charged to the room folio → settled at check-out, not by the guest here.
         abort_if((bool) $model->charged_to_room, 422, 'Bu sipariş odaya yansıtıldı; çıkışta tahsil edilecek.');
