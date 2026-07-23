@@ -46,6 +46,13 @@ const LIMITS: [string, string][] = [
 const nf = (n: number) => new Intl.NumberFormat('tr-TR').format(n);
 const lim = (v: number) => (v === -1 || v == null ? 'Sınırsız' : nf(v));
 
+/** Boolean feature flags for this plan, keyed by every known feature (missing = off). */
+const featureState = (p: any): Record<string, boolean> =>
+  Object.fromEntries(FEATURES.map(([k]) => [k, !!p.features?.[k]]));
+/** Limit values as editable strings; empty string = unlimited (-1). */
+const limitState = (p: any): Record<string, string> =>
+  Object.fromEntries(LIMITS.map(([k]) => [k, p.limits?.[k] === -1 || p.limits?.[k] == null ? '' : String(p.limits[k])]));
+
 export default function MembershipPage() {
   const { api, ready } = useApi();
   const [plans, setPlans] = useState<any[]>([]);
@@ -70,6 +77,9 @@ function PlanCard({ p, api, onChanged }: { p: any; api: any; onChanged: () => vo
   const [m, setM] = useState(String(p.price_monthly));
   const [y, setY] = useState(String(p.price_yearly));
   const [cur, setCur] = useState(p.currency);
+  const [feats, setFeats] = useState<Record<string, boolean>>(() => featureState(p));
+  const [verts, setVerts] = useState<string[]>(() => p.features?.verticals ?? ['restaurant']);
+  const [limits, setLimits] = useState<Record<string, string>>(() => limitState(p));
   const [busy, setBusy] = useState(false);
 
   const sym = CUR[p.currency] ?? `${p.currency} `;
@@ -81,12 +91,26 @@ function PlanCard({ p, api, onChanged }: { p: any; api: any; onChanged: () => vo
     setM(String(p.price_monthly));
     setY(String(p.price_yearly));
     setCur(p.currency);
+    setFeats(featureState(p));
+    setVerts(p.features?.verticals ?? ['restaurant']);
+    setLimits(limitState(p));
     setEdit(false);
   }
   async function save() {
     setBusy(true);
     try {
-      await api.superUpdatePlan(p.id, { price_monthly: Number(m), price_yearly: Number(y), currency: cur });
+      // Keep any feature keys we don't surface (e.g. future flags) intact.
+      const features_json = { ...(p.features ?? {}), ...feats, verticals: verts };
+      const limits_json = Object.fromEntries(
+        LIMITS.map(([k]) => [k, limits[k]?.trim() === '' ? -1 : Number(limits[k])]),
+      );
+      await api.superUpdatePlan(p.id, {
+        price_monthly: Number(m),
+        price_yearly: Number(y),
+        currency: cur,
+        features_json,
+        limits_json,
+      });
       setEdit(false);
       onChanged();
     } finally {
@@ -149,6 +173,64 @@ function PlanCard({ p, api, onChanged }: { p: any; api: any; onChanged: () => vo
               ))}
             </select>
           </label>
+
+          {/* Feature gating — toggle which modules this plan unlocks. */}
+          <div className="mt-3 border-t border-line pt-3">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted">Özellikler</span>
+            <div className="mt-1.5 space-y-1">
+              {FEATURES.map(([k, label]) => (
+                <label key={k} className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={!!feats[k]}
+                    onChange={(e) => setFeats((f) => ({ ...f, [k]: e.target.checked }))}
+                    className="h-4 w-4 shrink-0 accent-brand-500"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Which venue types (verticals) can use this plan. */}
+          <div className="mt-3 border-t border-line pt-3">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted">İşletme türleri</span>
+            <div className="mt-1.5 space-y-1">
+              {Object.entries(VERTICAL_LABELS).map(([k, label]) => (
+                <label key={k} className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={verts.includes(k)}
+                    onChange={(e) =>
+                      setVerts((vs) => (e.target.checked ? [...new Set([...vs, k])] : vs.filter((v) => v !== k)))
+                    }
+                    className="h-4 w-4 shrink-0 accent-brand-500"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Numeric limits — leave blank for unlimited. */}
+          <div className="mt-3 border-t border-line pt-3">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted">Limitler</span>
+            <p className="mt-0.5 text-[10px] text-muted">Boş bırak = sınırsız</p>
+            <div className="mt-1.5 space-y-1.5">
+              {LIMITS.map(([k, label]) => (
+                <label key={k} className="flex items-center justify-between gap-2 text-xs text-muted">
+                  {label}
+                  <Input
+                    type="number"
+                    value={limits[k] ?? ''}
+                    placeholder="∞"
+                    onChange={(e) => setLimits((l) => ({ ...l, [k]: e.target.value }))}
+                    className="w-24 text-right"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="mt-4">
@@ -217,7 +299,7 @@ function PlanCard({ p, api, onChanged }: { p: any; api: any; onChanged: () => vo
           </>
         ) : (
           <Button variant="ghost" onClick={() => setEdit(true)} className="flex-1">
-            Fiyatı düzenle
+            Düzenle
           </Button>
         )}
       </div>
