@@ -17,7 +17,6 @@ class PaymentManager
         return match ($name) {
             'cash' => new CashGateway,
             'card' => new CardGateway,
-            'paytr' => new PayTRGateway((array) config('payments.gateways.paytr', [])),
             'tiko' => new TikoGateway((array) config('payments.gateways.tiko', [])),
             default => throw new InvalidArgumentException("Unknown payment gateway: {$name}"),
         };

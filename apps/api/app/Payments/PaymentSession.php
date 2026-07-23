@@ -5,7 +5,7 @@ namespace App\Payments;
 /**
  * The result of initiating a payment (docs/04 §4.6). Either the payment is
  * already complete (cash at counter) or the customer must be sent to a
- * redirect/iframe hosted by the gateway (PayTR/Tiko) — we never handle card data.
+ * redirect/iframe hosted by the gateway (Tiko) — we never handle card data.
  */
 final class PaymentSession
 {

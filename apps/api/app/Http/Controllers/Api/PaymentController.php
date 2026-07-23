@@ -42,7 +42,7 @@ class PaymentController extends Controller
 
         $model = $this->orderForToken($qrToken, $order);
 
-        // Online payment gateways (card/Tiko/PayTR) require the plan's payments feature.
+        // Online payment gateways (card/Tiko) require the plan's payments feature.
         // Cash is a base method and stays available on every plan.
         if ($gateway !== 'cash') {
             $tenant = \App\Models\Tenant::find($model->tenant_id);

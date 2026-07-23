@@ -4,8 +4,8 @@ return [
     // Default gateway when the client doesn't specify one.
     'default' => env('PAYMENT_DEFAULT_GATEWAY', 'cash'),
 
-    // Gateways offered to customers (docs/04 §4.6).
-    'enabled' => array_filter(explode(',', (string) env('PAYMENT_ENABLED', 'cash,paytr,tiko'))),
+    // Gateways offered to customers (docs/04 §4.6). Online card = Tiko; cash is base.
+    'enabled' => array_filter(explode(',', (string) env('PAYMENT_ENABLED', 'cash,tiko'))),
 
     // Customer result page the 3DS browser-return redirects to (web-customer).
     'result_url' => env('PAYMENT_RESULT_URL', 'http://localhost:3010/order-result'),
@@ -14,12 +14,6 @@ return [
     'admin_billing_url' => env('PAYMENT_ADMIN_BILLING_URL', 'http://localhost:3001/billing'),
 
     'gateways' => [
-        'paytr' => [
-            'merchant_id' => env('PAYTR_MERCHANT_ID'),
-            'merchant_key' => env('PAYTR_MERCHANT_KEY'),
-            'merchant_salt' => env('PAYTR_MERCHANT_SALT'),
-            'iframe_base' => env('PAYTR_IFRAME_BASE', 'https://www.paytr.com/odeme/guvenli'),
-        ],
         // Tiko (tikokart.com) Virtual POS. Hash = base64(hmac_sha256(hashStr +
         // password, secret)); card data goes browser→Tiko via HTML form POST.
         'tiko' => [
