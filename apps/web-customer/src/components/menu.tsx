@@ -816,12 +816,15 @@ function ProductOptionsSheet({
   currentQty,
   onClose,
   onAdd,
+  accent = 'var(--color-brand-500)',
 }: {
   product: MenuProduct;
   format: Intl.NumberFormat;
   currentQty: (key: string) => number;
   onClose: () => void;
   onAdd: (line: Omit<CartLine, 'qty'>) => void;
+  /** CTA colour — the theme's accent; defaults to the app's brand green. */
+  accent?: string;
 }) {
   const variants = product.variants ?? [];
   const groups: MenuModifierGroup[] = product.modifier_groups ?? [];
@@ -927,8 +930,8 @@ function ProductOptionsSheet({
                 price: unitPrice,
               })
             }
-            className="flex w-full items-center justify-between rounded-xl bg-brand-500 px-5 py-3 text-sm font-bold disabled:opacity-40"
-            style={{ color: '#ffffff' }}
+            className="flex w-full items-center justify-between rounded-xl px-5 py-3 text-sm font-bold disabled:opacity-40"
+            style={{ background: accent, color: '#ffffff' }}
           >
             <span>Sepete Ekle{inCart > 0 ? ` · sepette ${inCart}` : ''}</span>
             <span>{format.format(unitPrice)}</span>
@@ -951,6 +954,7 @@ function ProductDetailSheet({
   onQuick,
   onOptions,
   onClose,
+  accent = 'var(--color-brand-500)',
 }: {
   product: MenuProduct;
   format: Intl.NumberFormat;
@@ -962,6 +966,8 @@ function ProductDetailSheet({
   onQuick?: (qty: number) => void;
   onOptions?: () => void;
   onClose: () => void;
+  /** CTA colour — the theme's accent; defaults to the app's brand green. */
+  accent?: string;
 }) {
   const hidePrices = useContext(HidePricesCtx);
   const n = product.nutrition;
@@ -1054,16 +1060,16 @@ function ProductDetailSheet({
               {!hidePrices && <span className="text-lg font-extrabold text-ink">{format.format(Number(product.price))}</span>}
             </div>
             {hasOptions && onOptions ? (
-              <button type="button" onClick={onOptions} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-3 text-sm font-bold" style={{ color: '#ffffff' }}>
+              <button type="button" onClick={onOptions} className="flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-bold" style={{ background: accent, color: '#ffffff' }}>
                 <PlusIcon /> Seçenekleri Seç{total > 0 ? ` · sepette ${total}` : ''}
               </button>
             ) : onQuick ? (
               base === 0 ? (
-                <button type="button" onClick={() => onQuick(1)} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-3 text-sm font-bold" style={{ color: '#ffffff' }}>
+                <button type="button" onClick={() => onQuick(1)} className="flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-bold" style={{ background: accent, color: '#ffffff' }}>
                   <PlusIcon /> Sepete Ekle
                 </button>
               ) : (
-                <div className="flex items-center justify-between rounded-xl bg-brand-500 px-2 py-2" style={{ color: '#ffffff' }}>
+                <div className="flex items-center justify-between rounded-xl px-2 py-2" style={{ background: accent, color: '#ffffff' }}>
                   <button type="button" onClick={() => onQuick(base - 1)} aria-label="Azalt" className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">−</button>
                   <span className="text-base font-bold">{base}</span>
                   <button type="button" onClick={() => onQuick(base + 1)} aria-label="Artır" className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">+</button>
@@ -1367,6 +1373,7 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
 
       {detailProduct && (
         <ProductDetailSheet
+          accent={CL.accent}
           product={detailProduct}
           format={format}
           allergenMap={allergenMap}
@@ -1399,6 +1406,7 @@ function ClassicMenu({ menu, labels, tableCode, allergenMap, format, categories 
 
       {optionsProduct && (
         <ProductOptionsSheet
+          accent={CL.accent}
           product={optionsProduct}
           format={format}
           currentQty={(key) => cart.qtyOfKey(key)}
@@ -1516,10 +1524,13 @@ function ClassicCard({
   const CL = useCL();
   const hasOptions = (product.variants?.length ?? 0) > 0 || (product.modifier_groups?.length ?? 0) > 0;
   const img = product.images?.[0];
+  // Only surface the details button when the sheet has something to show.
+  const hasDetail =
+    !!product.description || (product.recipe?.length ?? 0) > 0 || !!product.nutrition || hasOptions;
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl" style={{ background: CL.card, border: `1px solid ${CL.line}` }}>
-      <button type="button" onClick={onDetail} className="block text-left">
+      <button type="button" onClick={onDetail} className="relative block text-left">
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={img} alt={product.name} className="aspect-[4/3] w-full object-cover" />
@@ -1527,6 +1538,15 @@ function ClassicCard({
           <div className="grid aspect-[4/3] w-full place-items-center text-3xl" style={{ background: CL.accentSoft }}>
             🍽️
           </div>
+        )}
+        {hasDetail && (
+          <span
+            aria-hidden
+            className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full shadow-sm backdrop-blur"
+            style={{ background: hexA('#ffffff', 0.9), color: CL.ink }}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>
+          </span>
         )}
       </button>
       <div className="flex flex-1 flex-col p-3">
