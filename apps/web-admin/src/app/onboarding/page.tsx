@@ -21,8 +21,10 @@ export default function OnboardingPage() {
     api
       .getTenant()
       .then((t) => {
-        // Already set up → straight to the dashboard.
-        if (t?.settings?.onboarding?.completed) {
+        // Already set up → straight to the dashboard. settings is an untyped JSON
+        // bag (Record<string, unknown>), so narrow the onboarding entry explicitly.
+        const onboarding = t?.settings?.onboarding as { completed?: boolean } | undefined;
+        if (onboarding?.completed) {
           router.replace('/dashboard');
           return;
         }

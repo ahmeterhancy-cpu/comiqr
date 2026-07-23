@@ -21,7 +21,8 @@ beforeEach(fn () => $this->seed(Database\Seeders\PlanSeeder::class));
 
 function couponVenue(): array
 {
-    $tenant = Tenant::factory()->create(['plan_id' => Plan::firstWhere('code', 'pro')->id]);
+    // Coupons are part of the loyalty/CRM module (plan:loyalty) — business and up.
+    $tenant = Tenant::factory()->create(['plan_id' => Plan::firstWhere('code', 'business')->id]);
 
     return app(TenantManager::class)->runAs($tenant, function () use ($tenant) {
         $branch = Branch::factory()->create();

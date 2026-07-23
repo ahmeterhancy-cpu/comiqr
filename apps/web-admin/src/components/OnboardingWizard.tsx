@@ -75,7 +75,7 @@ export function OnboardingWizard({
   api: Api;
   tenant: any;
   /** Signed-in owner (me.user) — prefills the authorized-contact step. */
-  owner?: { name?: string; email?: string; phone?: string } | null;
+  owner?: { name?: string; email?: string; phone?: string | null } | null;
   onDone: () => void;
   onClose: () => void;
 }) {
