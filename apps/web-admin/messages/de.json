@@ -112,7 +112,8 @@
     "today": "Heute",
     "thisWeek": "Diese Woche",
     "thisMonth": "Dieser Monat",
-    "loadError": "Daten konnten nicht geladen werden."
+    "loadError": "Daten konnten nicht geladen werden.",
+    "email": "E-Mail"
   },
   "menuBuilder": {
     "title": "Menü-Builder",

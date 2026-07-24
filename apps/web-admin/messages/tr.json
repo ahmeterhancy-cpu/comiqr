@@ -112,7 +112,8 @@
     "today": "Bugün",
     "thisWeek": "Bu hafta",
     "thisMonth": "Bu ay",
-    "loadError": "Bilgiler yüklenemedi."
+    "loadError": "Bilgiler yüklenemedi.",
+    "email": "E-posta"
   },
   "menuBuilder": {
     "title": "Menü Builder",
