@@ -583,8 +583,7 @@
     "shiftClosed": "Schicht geschlossen",
     "topProducts": "Meistverkaufte Produkte",
     "noSalesToday": "Heute keine Verkäufe.",
-    "qtyCount": "{n} Stk",
-    "backToWaiter": "Kellner"
+    "qtyCount": "{n} Stk"
   },
   "settings": {
     "title": "Restauranteinstellungen",
@@ -908,6 +907,26 @@
     "planLocked": "Die Kellner-App ist in diesem Tarif nicht enthalten.",
     "noAccess": "Sie haben keinen Zugriff auf diese Seite.",
     "loadError": "Laden fehlgeschlagen, bitte erneut.",
-    "tapToOrder": "Tippen Sie auf einen Tisch, um zu bestellen"
+    "tapToOrder": "Tippen Sie auf einen Tisch, um zu bestellen",
+    "takeOrder": "Bestellung aufnehmen",
+    "currentOrder": "Tischbestellung",
+    "noOrderYet": "Noch keine Bestellung an diesem Tisch.",
+    "addProducts": "Artikel hinzufügen",
+    "searchProduct": "Produkte suchen…",
+    "all": "Alle",
+    "newItems": "Hinzuzufügen",
+    "sendToKitchen": "An Küche senden",
+    "sending": "Wird gesendet…",
+    "sendError": "Bestellung konnte nicht gesendet werden.",
+    "back": "Zurück",
+    "itemsCount": "{count} Artikel",
+    "serve": "Servieren",
+    "sent": "An Küche gesendet",
+    "noProducts": "Keine Produkte",
+    "statusPending": "Ausstehend",
+    "statusPreparing": "In Zubereitung",
+    "statusReady": "Fertig",
+    "statusServed": "Serviert",
+    "statusCancelled": "Storniert"
   }
 }

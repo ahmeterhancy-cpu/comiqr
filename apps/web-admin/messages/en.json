@@ -583,8 +583,7 @@
     "shiftClosed": "shift closed",
     "topProducts": "Top Selling Products",
     "noSalesToday": "No sales today.",
-    "qtyCount": "{n} pcs",
-    "backToWaiter": "Waiter"
+    "qtyCount": "{n} pcs"
   },
   "settings": {
     "title": "Restaurant Settings",
@@ -908,6 +907,26 @@
     "planLocked": "The waiter app is not included in this plan.",
     "noAccess": "You do not have access to this page.",
     "loadError": "Could not load, please retry.",
-    "tapToOrder": "Tap a table to take an order"
+    "tapToOrder": "Tap a table to take an order",
+    "takeOrder": "Take Order",
+    "currentOrder": "Table Order",
+    "noOrderYet": "No order on this table yet.",
+    "addProducts": "Add Items",
+    "searchProduct": "Search products…",
+    "all": "All",
+    "newItems": "To add",
+    "sendToKitchen": "Send to Kitchen",
+    "sending": "Sending…",
+    "sendError": "Could not send order.",
+    "back": "Back",
+    "itemsCount": "{count} items",
+    "serve": "Serve",
+    "sent": "Sent to kitchen",
+    "noProducts": "No products",
+    "statusPending": "Pending",
+    "statusPreparing": "Preparing",
+    "statusReady": "Ready",
+    "statusServed": "Served",
+    "statusCancelled": "Cancelled"
   }
 }

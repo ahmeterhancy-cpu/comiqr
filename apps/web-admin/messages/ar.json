@@ -583,8 +583,7 @@
     "shiftClosed": "الوردية مغلقة",
     "topProducts": "المنتجات الأكثر مبيعًا",
     "noSalesToday": "لا مبيعات اليوم.",
-    "qtyCount": "{n} قطعة",
-    "backToWaiter": "النادل"
+    "qtyCount": "{n} قطعة"
   },
   "settings": {
     "title": "إعدادات المطعم",
@@ -908,6 +907,26 @@
     "planLocked": "تطبيق النادل غير متاح في هذه الباقة.",
     "noAccess": "ليس لديك صلاحية الوصول.",
     "loadError": "تعذّر التحميل، أعد المحاولة.",
-    "tapToOrder": "اضغط على طاولة لأخذ الطلب"
+    "tapToOrder": "اضغط على طاولة لأخذ الطلب",
+    "takeOrder": "أخذ الطلب",
+    "currentOrder": "طلب الطاولة",
+    "noOrderYet": "لا يوجد طلب على هذه الطاولة بعد.",
+    "addProducts": "إضافة أصناف",
+    "searchProduct": "بحث عن المنتجات…",
+    "all": "الكل",
+    "newItems": "للإضافة",
+    "sendToKitchen": "إرسال إلى المطبخ",
+    "sending": "جارٍ الإرسال…",
+    "sendError": "تعذّر إرسال الطلب.",
+    "back": "رجوع",
+    "itemsCount": "{count} صنف",
+    "serve": "تقديم",
+    "sent": "أُرسل إلى المطبخ",
+    "noProducts": "لا توجد منتجات",
+    "statusPending": "قيد الانتظار",
+    "statusPreparing": "قيد التحضير",
+    "statusReady": "جاهز",
+    "statusServed": "تم التقديم",
+    "statusCancelled": "ملغى"
   }
 }

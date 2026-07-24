@@ -583,8 +583,7 @@
     "shiftClosed": "смена закрыта",
     "topProducts": "Самые продаваемые товары",
     "noSalesToday": "Сегодня продаж нет.",
-    "qtyCount": "{n} шт",
-    "backToWaiter": "Официант"
+    "qtyCount": "{n} шт"
   },
   "settings": {
     "title": "Настройки ресторана",
@@ -908,6 +907,26 @@
     "planLocked": "Приложение официанта недоступно в этом тарифе.",
     "noAccess": "У вас нет доступа к этой странице.",
     "loadError": "Не удалось загрузить, повторите.",
-    "tapToOrder": "Нажмите на столик, чтобы принять заказ"
+    "tapToOrder": "Нажмите на столик, чтобы принять заказ",
+    "takeOrder": "Принять заказ",
+    "currentOrder": "Заказ стола",
+    "noOrderYet": "На этом столе пока нет заказа.",
+    "addProducts": "Добавить позиции",
+    "searchProduct": "Поиск блюд…",
+    "all": "Все",
+    "newItems": "К добавлению",
+    "sendToKitchen": "Отправить на кухню",
+    "sending": "Отправка…",
+    "sendError": "Не удалось отправить заказ.",
+    "back": "Назад",
+    "itemsCount": "{count} поз.",
+    "serve": "Подать",
+    "sent": "Отправлено на кухню",
+    "noProducts": "Нет блюд",
+    "statusPending": "Ожидает",
+    "statusPreparing": "Готовится",
+    "statusReady": "Готово",
+    "statusServed": "Подано",
+    "statusCancelled": "Отменено"
   }
 }

@@ -7,6 +7,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { clearSession, getToken } from '@/lib/auth';
 import { createApi } from '@/lib/api';
 import { useApi } from '@/lib/useApi';
+import { WaiterOrder } from '@/components/waiter-order';
 
 type Table = {
   table_id: number;
@@ -29,7 +30,9 @@ export default function WaiterPage() {
   const t = useTranslations('waiter');
   const { api, me, ready } = useApi('/waiter/login');
   const router = useRouter();
+  const currency = (me?.tenant as any)?.currency ?? 'TRY';
 
+  const [activeTable, setActiveTable] = useState<{ id: number; code: string } | null>(null);
   const [tables, setTables] = useState<Table[]>([]);
   const [calls, setCalls] = useState<ServiceCall[]>([]);
   const [readyItems, setReadyItems] = useState<ReadyItem[]>([]);
@@ -88,6 +91,23 @@ export default function WaiterPage() {
 
   if (!ready) {
     return <div className="grid min-h-screen place-items-center bg-slate-50 text-sm text-muted">…</div>;
+  }
+
+  // Order-taking screen for a tapped table — take the order, view it, follow the
+  // kitchen status. Returning to the board refreshes occupancy/notifications.
+  if (activeTable) {
+    return (
+      <WaiterOrder
+        api={api}
+        table={activeTable}
+        currency={currency}
+        onBack={() => {
+          setActiveTable(null);
+          load();
+        }}
+        onChanged={load}
+      />
+    );
   }
 
   return (
@@ -199,7 +219,7 @@ export default function WaiterPage() {
                       <button
                         key={tb.table_id}
                         type="button"
-                        onClick={() => router.push(`/pos?table=${tb.table_id}`)}
+                        onClick={() => setActiveTable({ id: tb.table_id, code: tb.code })}
                         className={`relative flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 p-2 text-center transition active:scale-95 ${
                           flagged
                             ? 'border-amber-300 bg-amber-50 text-amber-800'

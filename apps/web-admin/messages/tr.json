@@ -583,8 +583,7 @@
     "shiftClosed": "vardiya kapalı",
     "topProducts": "En Çok Satan Ürünler",
     "noSalesToday": "Bugün satış yok.",
-    "qtyCount": "{n} adet",
-    "backToWaiter": "Garson"
+    "qtyCount": "{n} adet"
   },
   "settings": {
     "title": "Restoran Ayarları",
@@ -908,6 +907,26 @@
     "planLocked": "Garson uygulaması bu planda kapalı.",
     "noAccess": "Bu sayfaya erişiminiz yok.",
     "loadError": "Yüklenemedi, tekrar deneyin.",
-    "tapToOrder": "Sipariş almak için masaya dokunun"
+    "tapToOrder": "Sipariş almak için masaya dokunun",
+    "takeOrder": "Sipariş Al",
+    "currentOrder": "Masadaki Sipariş",
+    "noOrderYet": "Bu masada henüz sipariş yok.",
+    "addProducts": "Ürün Ekle",
+    "searchProduct": "Ürün ara…",
+    "all": "Tümü",
+    "newItems": "Eklenecekler",
+    "sendToKitchen": "Mutfağa Gönder",
+    "sending": "Gönderiliyor…",
+    "sendError": "Sipariş gönderilemedi.",
+    "back": "Geri",
+    "itemsCount": "{count} ürün",
+    "serve": "Servis Et",
+    "sent": "Mutfağa gönderildi",
+    "noProducts": "Ürün bulunamadı",
+    "statusPending": "Bekliyor",
+    "statusPreparing": "Hazırlanıyor",
+    "statusReady": "Hazır",
+    "statusServed": "Servis edildi",
+    "statusCancelled": "İptal"
   }
 }
