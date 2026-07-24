@@ -96,7 +96,7 @@ export function Customizer({
 
   const variant = variants.find((v: any) => v.id === variantId);
   const chosen = groups
-    .flatMap((g: any) => (selected[g.id] ?? []).map((id: number) => g.modifiers.find((m: any) => m.id === id)))
+    .flatMap((g: any) => (selected[g.id] ?? []).map((id: number) => (g.modifiers ?? []).find((m: any) => m.id === id)))
     .filter(Boolean);
   const missingRequired = groups.some((g: any) => {
     const min = g.is_required ? Math.max(1, g.min_select) : g.min_select;
@@ -142,7 +142,7 @@ export function Customizer({
             {g.name} {g.is_required ? <span className="text-brand-600">• {c('required')}</span> : ''}
           </p>
           <div className="flex flex-wrap gap-2">
-            {g.modifiers.map((m: any) => (
+            {(g.modifiers ?? []).map((m: any) => (
               <button
                 key={m.id}
                 onClick={() => toggle(g, m.id)}
