@@ -197,19 +197,19 @@ export function TablesView({ api, tables, currency, branchId, onPickTable, onRec
         <p className="py-10 text-center text-sm text-muted">{t('noTables')}</p>
       ) : (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          {tables.map((t) => {
-            const occupied = !!t.has_open_session;
-            const order = orderByCode.get(t.code);
+          {tables.map((tbl) => {
+            const occupied = !!tbl.has_open_session;
+            const order = orderByCode.get(tbl.code);
             return (
               <button
-                key={t.id}
-                onClick={() => (occupied && order ? onRecall(order) : onPickTable(t.id, t.code))}
+                key={tbl.id}
+                onClick={() => (occupied && order ? onRecall(order) : onPickTable(tbl.id, tbl.code))}
                 className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 p-2 text-center transition hover:shadow-md ${
                   occupied ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                 }`}
               >
                 <span className="text-2xl">{occupied ? '🍽️' : '🪑'}</span>
-                <b className="text-sm">{t.code}</b>
+                <b className="text-sm">{tbl.code}</b>
                 <span className="text-[10px] font-semibold">
                   {occupied ? (order ? money(order.grand_total, currency) : t('occupiedBadge')) : t('freeBadge')}
                 </span>
