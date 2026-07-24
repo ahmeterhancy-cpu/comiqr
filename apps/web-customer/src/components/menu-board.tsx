@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { Menu } from '@comiqr/shared-types';
 
 const ROTATE_MS = 10_000;
@@ -11,6 +12,7 @@ const ROTATE_MS = 10_000;
  * (warm near-black + terracotta + serif display), not a generic neon board.
  */
 export function MenuBoard({ menu }: { menu: Menu }) {
+  const t = useTranslations('board');
   const categories = useMemo(() => menu.categories.filter((c) => c.products.length > 0), [menu.categories]);
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState<string>('');
@@ -56,7 +58,7 @@ export function MenuBoard({ menu }: { menu: Menu }) {
       {/* Header */}
       <header className="flex items-baseline justify-between border-b border-white/10 pb-[2vh]">
         <div>
-          <p className="text-[1.1vw] font-medium uppercase tracking-[0.35em] text-[#e08a5b]">Menü</p>
+          <p className="text-[1.1vw] font-medium uppercase tracking-[0.35em] text-[#e08a5b]">{t('menu')}</p>
           <h1 className="font-display text-[3.4vw] font-semibold leading-none" style={{ color: '#ffffff' }}>
             {menu.venue.name}
           </h1>

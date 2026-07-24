@@ -2,8 +2,10 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 function Result() {
+  const t = useTranslations('result');
   const params = useSearchParams();
   const status = params.get('status');
   const order = params.get('order');
@@ -19,12 +21,10 @@ function Result() {
         {paid ? '✓' : '✕'}
       </div>
       <h1 className="mt-4 font-display text-2xl font-semibold text-ink">
-        {paid ? 'Ödemeniz alındı' : 'Ödeme tamamlanamadı'}
+        {paid ? t('paidTitle') : t('failedTitle')}
       </h1>
-      {order && <p className="mt-1 text-sm text-muted">Sipariş #{order}</p>}
-      <p className="mt-3 text-sm text-muted">
-        {paid ? 'Siparişiniz hazırlanıyor, teşekkürler.' : 'Ödeme başarısız oldu. Lütfen tekrar deneyin.'}
-      </p>
+      {order && <p className="mt-1 text-sm text-muted">{t('orderNo', { order })}</p>}
+      <p className="mt-3 text-sm text-muted">{paid ? t('paidBody') : t('failedBody')}</p>
     </div>
   );
 }

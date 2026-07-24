@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ApiClient } from '@comiqr/shared-types/client';
 import type { DiscoverVenue } from '@comiqr/shared-types';
 
@@ -12,6 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
  * menu (/v/{slug}). Debounced name search against the public /discover endpoint.
  */
 export default function DiscoverPage() {
+  const t = useTranslations('discover');
   const api = useMemo(() => new ApiClient({ baseUrl: API_URL }), []);
   const [q, setQ] = useState('');
   const [venues, setVenues] = useState<DiscoverVenue[]>([]);
@@ -37,19 +39,19 @@ export default function DiscoverPage() {
     <div className="mx-auto max-w-3xl px-5 pb-16">
       <header className="relative overflow-hidden bg-[color:var(--color-navy)] px-6 pb-8 pt-10 text-white" style={{ marginInline: '-1.25rem' }}>
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
-        <p className="relative text-xs font-medium uppercase tracking-[0.25em] text-white/70">Keşfet</p>
-        <h1 className="relative mt-1 font-display text-3xl font-semibold">Yakındaki lezzetler</h1>
+        <p className="relative text-xs font-medium uppercase tracking-[0.25em] text-white/70">{t('kicker')}</p>
+        <h1 className="relative mt-1 font-display text-3xl font-semibold">{t('title')}</h1>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="İşletme ara…"
+          placeholder={t('searchPlaceholder')}
           className="relative mt-5 w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-sm text-ink outline-none placeholder:text-muted"
         />
       </header>
 
       <div className="mt-6">
-        {loading && <p className="text-sm text-muted">Yükleniyor…</p>}
-        {!loading && venues.length === 0 && <p className="text-sm text-muted">Sonuç bulunamadı.</p>}
+        {loading && <p className="text-sm text-muted">{t('loading')}</p>}
+        {!loading && venues.length === 0 && <p className="text-sm text-muted">{t('noResults')}</p>}
 
         <div className="grid gap-3.5 sm:grid-cols-2">
           {venues.map((v) => (
@@ -64,7 +66,7 @@ export default function DiscoverPage() {
                     {(v.reviews_count ?? 0) > 0 && (
                       <span className="mr-2 font-semibold text-amber-500">★ {v.rating}</span>
                     )}
-                    {v.product_count} ürün
+                    {t('productCount', { count: v.product_count })}
                   </span>
                 </div>
                 {v.samples.length > 0 && (
@@ -74,13 +76,13 @@ export default function DiscoverPage() {
                 )}
                 <div className="mt-3 flex items-center gap-3">
                   <Link href={`/v/${v.slug}`} className="text-xs font-semibold text-brand-600 hover:underline">
-                    Menüyü gör →
+                    {t('viewMenu')} →
                   </Link>
                   <Link
                     href={`/order/${v.slug}`}
                     className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white"
                   >
-                    Paket servis
+                    {t('takeaway')}
                   </Link>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ApiClient, ApiError } from '@comiqr/shared-types/client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
@@ -14,6 +14,7 @@ type Msg = { role: 'user' | 'assistant'; content: string };
  * via POST /menu/chat. Render only when menu.venue.ai_chat is true.
  */
 export function MenuChat({ slug }: { slug?: string }) {
+  const t = useTranslations('chat');
   const locale = useLocale();
   const api = useMemo(() => new ApiClient({ baseUrl: API_URL }), []);
   const [open, setOpen] = useState(false);
@@ -25,7 +26,7 @@ export function MenuChat({ slug }: { slug?: string }) {
   useEffect(() => {
     if (open && messages.length === 0) {
       setMessages([
-        { role: 'assistant', content: 'Merhaba! 👋 Menü hakkında ne merak ediyorsan sor — alerjenler, öneriler, fiyatlar…' },
+        { role: 'assistant', content: t('greeting') },
       ]);
     }
   }, [open, messages.length]);
@@ -47,10 +48,10 @@ export function MenuChat({ slug }: { slug?: string }) {
     } catch (e) {
       const msg =
         e instanceof ApiError && e.status === 402
-          ? 'Menü asistanı bu işletmede etkin değil.'
+          ? t('errNotEnabled')
           : e instanceof ApiError && e.status === 503
-            ? 'Asistan şu an kullanılamıyor, lütfen sonra tekrar dene.'
-            : 'Bir hata oluştu, tekrar dener misin?';
+            ? t('errUnavailable')
+            : t('errGeneric');
       setMessages((m) => [...m, { role: 'assistant', content: msg }]);
     } finally {
       setSending(false);
@@ -62,7 +63,7 @@ export function MenuChat({ slug }: { slug?: string }) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          aria-label="Menü asistanı"
+          aria-label={t('fabLabel')}
           className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-2xl shadow-lg transition hover:bg-brand-600 active:scale-95"
           style={{ color: '#ffffff' }}
         >
@@ -80,11 +81,11 @@ export function MenuChat({ slug }: { slug?: string }) {
               <div className="flex items-center gap-2">
                 <span className="text-lg">💬</span>
                 <div>
-                  <p className="text-sm font-bold leading-tight" style={{ color: '#ffffff' }}>Menü Asistanı</p>
-                  <p className="text-[11px] opacity-80" style={{ color: '#ffffff' }}>Yapay zeka · sadece menüden yanıtlar</p>
+                  <p className="text-sm font-bold leading-tight" style={{ color: '#ffffff' }}>{t('title')}</p>
+                  <p className="text-[11px] opacity-80" style={{ color: '#ffffff' }}>{t('subtitle')}</p>
                 </div>
               </div>
-              <button onClick={() => setOpen(false)} aria-label="Kapat" className="rounded-full px-2 py-1 text-lg leading-none hover:bg-white/20" style={{ color: '#ffffff' }}>
+              <button onClick={() => setOpen(false)} aria-label={t('close')} className="rounded-full px-2 py-1 text-lg leading-none hover:bg-white/20" style={{ color: '#ffffff' }}>
                 ✕
               </button>
             </header>
@@ -104,7 +105,7 @@ export function MenuChat({ slug }: { slug?: string }) {
               ))}
               {sending && (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl rounded-bl-sm border border-line bg-white px-3.5 py-2 text-sm text-muted">yazıyor…</div>
+                  <div className="rounded-2xl rounded-bl-sm border border-line bg-white px-3.5 py-2 text-sm text-muted">{t('typing')}</div>
                 </div>
               )}
             </div>
@@ -114,7 +115,7 @@ export function MenuChat({ slug }: { slug?: string }) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && send()}
-                placeholder="Bir şey sor…"
+                placeholder={t('placeholder')}
                 maxLength={500}
                 className="flex-1 rounded-xl border border-line bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
               />
@@ -124,7 +125,7 @@ export function MenuChat({ slug }: { slug?: string }) {
                 className="rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold transition hover:bg-brand-600 disabled:opacity-50"
                 style={{ color: '#ffffff' }}
               >
-                Gönder
+                {t('send')}
               </button>
             </div>
           </div>

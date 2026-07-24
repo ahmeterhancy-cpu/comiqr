@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 /** A cart line shared (via localStorage) between the slug menu and /order checkout. */
 export type CartLine = {
@@ -90,6 +91,7 @@ export function useCart(slug: string) {
 
 /** Floating cart button + bottom-sheet listing what the guest added. */
 export function CartFab({ slug, currency, locale }: { slug: string; currency?: string | null; locale?: string | null }) {
+  const t = useTranslations('cart');
   const { count } = useCart(slug);
   const [open, setOpen] = useState(false);
 
@@ -98,7 +100,7 @@ export function CartFab({ slug, currency, locale }: { slug: string; currency?: s
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Sepetim"
+        aria-label={t('title')}
         className="fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 shadow-lg transition hover:bg-brand-600 active:scale-95"
         style={{ color: '#ffffff' }}
       >
@@ -136,6 +138,8 @@ export function CartSheet({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations('cart');
+  const tOrder = useTranslations('order');
   const { lines, total, setQty } = useCart(slug);
   const fmt = useMemo(
     () => new Intl.NumberFormat(locale || 'tr', { style: 'currency', currency: currency || 'TRY', maximumFractionDigits: 0 }),
@@ -153,14 +157,14 @@ export function CartSheet({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <h3 className="text-base font-bold text-ink">Sepetim</h3>
-              <button type="button" onClick={onClose} aria-label="Kapat" className="text-muted hover:text-ink">
+              <h3 className="text-base font-bold text-ink">{t('title')}</h3>
+              <button type="button" onClick={onClose} aria-label={t('close')} className="text-muted hover:text-ink">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
               </button>
             </div>
 
             {lines.length === 0 ? (
-              <div className="px-5 py-12 text-center text-sm text-muted">Sepetiniz boş.</div>
+              <div className="px-5 py-12 text-center text-sm text-muted">{t('empty')}</div>
             ) : (
               <div className="max-h-[55vh] divide-y divide-line overflow-y-auto px-5">
                 {lines.map((l) => {
@@ -173,9 +177,9 @@ export function CartSheet({
                         <p className="text-xs text-muted">{fmt.format(l.price)}</p>
                       </div>
                       <div className="flex items-center gap-2 rounded-full bg-brand-500 px-1.5 py-1" style={{ color: '#ffffff' }}>
-                        <button type="button" onClick={() => setQty(l, l.qty - 1)} aria-label="Azalt" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">−</button>
+                        <button type="button" onClick={() => setQty(l, l.qty - 1)} aria-label={t('decrease')} className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">−</button>
                         <span className="min-w-5 text-center text-sm font-bold">{l.qty}</span>
-                        <button type="button" onClick={() => setQty(l, l.qty + 1)} aria-label="Artır" className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">+</button>
+                        <button type="button" onClick={() => setQty(l, l.qty + 1)} aria-label={t('increase')} className="grid h-6 w-6 place-items-center rounded-full bg-white/20 font-bold">+</button>
                       </div>
                       <div className="w-16 shrink-0 text-right text-sm font-bold text-ink">{fmt.format(l.price * l.qty)}</div>
                     </div>
@@ -186,7 +190,7 @@ export function CartSheet({
 
             <div className="border-t border-line px-5 py-4">
               <div className="mb-3 flex items-center justify-between text-sm">
-                <span className="text-muted">Toplam</span>
+                <span className="text-muted">{tOrder('total')}</span>
                 <span className="text-lg font-extrabold text-ink">{fmt.format(total)}</span>
               </div>
               <a
@@ -195,7 +199,7 @@ export function CartSheet({
                 className={`block rounded-xl py-3 text-center text-sm font-semibold ${lines.length === 0 ? 'pointer-events-none bg-line text-muted' : 'bg-brand-500'}`}
                 style={lines.length === 0 ? undefined : { color: '#ffffff' }}
               >
-                Siparişi Tamamla
+                {t('checkout')}
               </a>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 /**
  * Soft state shown when the menu fetch hit a transient failure (rate-limit 429,
@@ -14,6 +15,7 @@ import { useEffect, useState } from 'react';
 const MAX_AUTO = 3;
 
 export function MenuUnavailable({ attempt }: { attempt: number }) {
+  const t = useTranslations('unavailable');
   const [retrying, setRetrying] = useState(attempt < MAX_AUTO);
 
   useEffect(() => {
@@ -59,12 +61,10 @@ export function MenuUnavailable({ attempt }: { attempt: number }) {
         }}
       />
       <div style={{ fontSize: 16, fontWeight: 600 }}>
-        {retrying ? 'Menü yükleniyor…' : 'Menü şu an yüklenemedi'}
+        {retrying ? t('loading') : t('failed')}
       </div>
       <div style={{ fontSize: 14, color: '#64748b', maxWidth: 320 }}>
-        {retrying
-          ? 'Bağlantı yoğun, birkaç saniye içinde tekrar deneniyor.'
-          : 'Geçici bir sorun oluştu. Lütfen tekrar deneyin.'}
+        {retrying ? t('retryingBody') : t('failedBody')}
       </div>
       {!retrying && (
         <button
@@ -82,7 +82,7 @@ export function MenuUnavailable({ attempt }: { attempt: number }) {
             cursor: 'pointer',
           }}
         >
-          Tekrar dene
+          {t('retry')}
         </button>
       )}
       <style>{`@keyframes menu-unavailable-spin { to { transform: rotate(360deg); } }`}</style>

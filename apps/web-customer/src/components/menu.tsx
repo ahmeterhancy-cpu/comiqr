@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { AllergenRef, Menu, MenuCategory, MenuModifier, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
 import { CartSheet, lineKey, useCart, type CartLine } from './cart';
 
@@ -97,6 +97,7 @@ function dayName(i: number, loc: string): string {
 
 /** Per-day working-hours table; highlights today (green when open, red when closed now). */
 function WeekHours({ hours, loc, openNow }: { hours: WeekHour[]; loc: string; openNow?: boolean | null }) {
+  const t = useTranslations('menu');
   const todayColor = openNow ? 'text-emerald-600' : 'text-red-500';
   return (
     <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 rounded-2xl bg-white px-4 py-3 text-sm shadow-[var(--shadow-card)] sm:grid-cols-2">
@@ -104,7 +105,7 @@ function WeekHours({ hours, loc, openNow }: { hours: WeekHour[]; loc: string; op
         <div key={i} className={`flex items-center justify-between gap-3 ${h.today ? 'font-semibold' : ''}`}>
           <span className={h.today ? todayColor : 'text-ink'}>{dayName(i, loc)}</span>
           <span className={h.closed ? 'text-muted' : h.today ? todayColor : 'text-ink'}>
-            {h.closed || !h.open || !h.close ? 'Kapalı' : `${h.open} – ${h.close}`}
+            {h.closed || !h.open || !h.close ? t('closed') : `${h.open} – ${h.close}`}
           </span>
         </div>
       ))}
@@ -115,17 +116,17 @@ function WeekHours({ hours, loc, openNow }: { hours: WeekHour[]; loc: string; op
 type VLink = { key: string; href: string; icon: ReactNode; text?: string; label: string; wide?: boolean };
 
 /** Build the venue's contact + social links (WiFi renders separately). */
-function venueLinks(v: Menu['venue']): { info: VLink[]; socials: VLink[] } {
+function venueLinks(v: Menu['venue'], t: ReturnType<typeof useTranslations>): { info: VLink[]; socials: VLink[] } {
   const igHandle = v.instagram
     ? '@' + v.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@+/, '').replace(/\/+$/, '')
     : '';
   const info: VLink[] = []; // links carrying a label (address, instagram handle, email, …)
   const socials: VLink[] = []; // icon-only social buttons
-  if (v.address) info.push({ key: 'addr', href: `https://maps.google.com/?q=${encodeURIComponent(v.address)}`, icon: <PinIcon />, text: v.address, label: 'Adres', wide: true });
+  if (v.address) info.push({ key: 'addr', href: `https://maps.google.com/?q=${encodeURIComponent(v.address)}`, icon: <PinIcon />, text: v.address, label: t('address'), wide: true });
   if (v.instagram) info.push({ key: 'ig', href: normUrl(v.instagram, 'https://instagram.com/', true), icon: <IgIcon />, text: igHandle, label: 'Instagram' });
-  if (v.email) info.push({ key: 'email', href: `mailto:${v.email}`, icon: <MailIcon />, text: v.email, label: 'E-posta' });
-  if (v.website) info.push({ key: 'web', href: normUrl(v.website, 'https://'), icon: <GlobeIcon />, text: v.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, ''), label: 'Web sitesi' });
-  if (v.phone) info.push({ key: 'phone', href: `tel:${v.phone.replace(/\s+/g, '')}`, icon: <PhoneIcon />, text: v.phone, label: 'Telefon' });
+  if (v.email) info.push({ key: 'email', href: `mailto:${v.email}`, icon: <MailIcon />, text: v.email, label: t('email') });
+  if (v.website) info.push({ key: 'web', href: normUrl(v.website, 'https://'), icon: <GlobeIcon />, text: v.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, ''), label: t('website') });
+  if (v.phone) info.push({ key: 'phone', href: `tel:${v.phone.replace(/\s+/g, '')}`, icon: <PhoneIcon />, text: v.phone, label: t('phone') });
   if (v.whatsapp) socials.push({ key: 'wa', href: `https://wa.me/${v.whatsapp.replace(/[^\d]/g, '')}`, icon: <WaIcon />, label: 'WhatsApp' });
   if (v.facebook) socials.push({ key: 'fb', href: normUrl(v.facebook, 'https://facebook.com/'), icon: <FbIcon />, label: 'Facebook' });
   if (v.x) socials.push({ key: 'x', href: normUrl(v.x, 'https://x.com/', true), icon: <XIcon />, label: 'X' });
@@ -183,8 +184,9 @@ function LocaleSwitcher() {
 
 /** Contact + social links dropdown. Sits in the cover overlay bar. */
 function ContactMenu({ v }: { v: Menu['venue'] }) {
+  const t = useTranslations('menu');
   const [open, setOpen] = useState(false);
-  const { info, socials } = venueLinks(v);
+  const { info, socials } = venueLinks(v, t);
   if (info.length === 0 && socials.length === 0) return null;
   return (
     <div className="relative">
@@ -192,7 +194,7 @@ function ContactMenu({ v }: { v: Menu['venue'] }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-label="İletişim"
+        aria-label={t('contact')}
         className="flex items-center gap-1.5 rounded-xl bg-white/95 px-3 py-2 text-ink shadow-lg backdrop-blur"
       >
         <ContactIcon />
@@ -245,6 +247,7 @@ function ContactMenu({ v }: { v: Menu['venue'] }) {
 
 /** Guest WiFi chip — always visible under the header. */
 function WifiChip({ v }: { v: Menu['venue'] }) {
+  const t = useTranslations('menu');
   const [showPw, setShowPw] = useState(false);
   if (!(v.wifi_ssid && v.wifi_ssid.trim())) return null;
   return (
@@ -258,7 +261,7 @@ function WifiChip({ v }: { v: Menu['venue'] }) {
           <button
             type="button"
             onClick={() => setShowPw((p) => !p)}
-            aria-label={showPw ? 'Şifreyi gizle' : 'Şifreyi göster'}
+            aria-label={showPw ? t('hidePassword') : t('showPassword')}
             className="text-muted transition hover:text-ink"
           >
             {showPw ? <EyeOffIcon /> : <EyeIcon />}
@@ -273,12 +276,14 @@ const SERVICE_API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1
 
 /** Call waiter / request bill from the slug menu — customer picks their table code. */
 function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: { slug: string; tables: string[]; showCallWaiter?: boolean; showBill?: boolean }) {
+  const t = useTranslations('menu');
+  const tOrder = useTranslations('order');
   const [mode, setMode] = useState<null | 'call-waiter' | 'request-bill'>(null);
   const [table, setTable] = useState<string>(tables[0] ?? '');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const title = mode === 'request-bill' ? 'Hesap İste' : 'Garson Çağır';
+  const title = mode === 'request-bill' ? tOrder('requestBill') : tOrder('callWaiter');
 
   const submit = async () => {
     if (!table || !mode) return;
@@ -291,11 +296,11 @@ function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: {
         body: JSON.stringify({ table }),
       });
       if (!res.ok) throw new Error();
-      setDone(`${mode === 'request-bill' ? 'Hesap istendi' : 'Garson çağrıldı'} · Masa ${table}`);
+      setDone(`${mode === 'request-bill' ? tOrder('billRequested') : tOrder('called')} · ${t('table')} ${table}`);
       setMode(null);
       setTimeout(() => setDone(null), 4000);
     } catch {
-      setError('Gönderilemedi, tekrar deneyin.');
+      setError(t('sendError'));
     } finally {
       setBusy(false);
     }
@@ -310,7 +315,7 @@ function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: {
             onClick={() => { setMode('call-waiter'); setError(null); }}
             className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
           >
-            <BellIcon /> Garson Çağır
+            <BellIcon /> {tOrder('callWaiter')}
           </button>
         )}
         {showBill && (
@@ -319,7 +324,7 @@ function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: {
             onClick={() => { setMode('request-bill'); setError(null); }}
             className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[var(--shadow-card)] transition hover:text-brand-700"
           >
-            <ReceiptIcon /> Hesap İste
+            <ReceiptIcon /> {tOrder('requestBill')}
           </button>
         )}
       </div>
@@ -332,9 +337,9 @@ function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: {
         >
           <div className="w-full max-w-sm rounded-2xl bg-canvas p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-bold text-ink">{title}</h3>
-            <p className="mt-0.5 text-sm text-muted">Lütfen masanızı seçin</p>
+            <p className="mt-0.5 text-sm text-muted">{t('selectTable')}</p>
             <label className="mt-3 block">
-              <span className="mb-1 block text-xs font-medium text-muted">Masa</span>
+              <span className="mb-1 block text-xs font-medium text-muted">{t('table')}</span>
               <select
                 value={table}
                 onChange={(e) => setTable(e.target.value)}
@@ -353,7 +358,7 @@ function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: {
                 disabled={busy}
                 className="flex-1 rounded-lg border border-line py-2 text-sm font-semibold text-muted"
               >
-                Vazgeç
+                {t('cancel')}
               </button>
               <button
                 type="button"
@@ -362,7 +367,7 @@ function ServiceCall({ slug, tables, showCallWaiter = true, showBill = true }: {
                 className="flex-1 rounded-lg bg-brand-500 py-2 text-sm font-semibold"
                 style={{ color: '#ffffff' }}
               >
-                {busy ? 'Gönderiliyor…' : title}
+                {busy ? tOrder('placing') : title}
               </button>
             </div>
           </div>
@@ -396,6 +401,7 @@ function EyeOffIcon() { return (<svg viewBox="0 0 24 24" className="h-4 w-4" fil
 /* Card list with full nutrition + a sticky category nav (the default). */
 
 function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }: ThemeProps) {
+  const t = useTranslations('menu');
   const v = menu.venue;
   const loc = v.locale_default ?? 'tr';
   const cart = useCart(v.slug ?? '');
@@ -514,13 +520,13 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
                       className={`inline-flex items-center gap-1.5 text-sm font-semibold ${v.open_now ? 'text-emerald-600' : 'text-red-500'}`}
                     >
                       <span className={`h-2 w-2 rounded-full ${v.open_now ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                      {v.open_now ? 'Açık' : 'Kapalı'}
+                      {v.open_now ? t('open') : t('closed')}
                       <ChevronIcon open={hoursOpen} />
                     </button>
                   ) : (
                     <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${v.open_now ? 'text-emerald-600' : 'text-red-500'}`}>
                       <span className={`h-2 w-2 rounded-full ${v.open_now ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                      {v.open_now ? 'Açık' : 'Kapalı'}
+                      {v.open_now ? t('open') : t('closed')}
                     </span>
                   ))}
                 {tableCode && <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-semibold text-white">{tableCode}</span>}
@@ -595,7 +601,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
                 className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
               />
               {search && (
-                <button onClick={() => setSearch('')} aria-label="Temizle" className="shrink-0 text-muted transition hover:text-ink">
+                <button onClick={() => setSearch('')} aria-label={t('clear')} className="shrink-0 text-muted transition hover:text-ink">
                   ✕
                 </button>
               )}
@@ -613,7 +619,7 @@ function ModernMenu({ menu, labels, tableCode, allergenMap, format, categories }
 
       {visible.length === 0 ? (
         <p className="px-5 py-16 text-center text-sm text-muted">
-          {search ? `“${search}” için sonuç bulunamadı.` : labels.empty}
+          {search ? t('noResultsFor', { query: search }) : labels.empty}
         </p>
       ) : (
         visible.map((c) => (
@@ -796,13 +802,13 @@ function ModernProduct({
                   className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-4 py-1.5 text-sm font-semibold"
                   style={{ color: '#ffffff' }}
                 >
-                  <PlusIcon /> Ekle
+                  <PlusIcon /> {labels.add}
                 </button>
               ) : (
                 <div className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-1.5 py-1" style={{ color: '#ffffff' }}>
-                  <button type="button" onClick={() => onQuick(base - 1)} aria-label="Azalt" className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm font-bold">−</button>
+                  <button type="button" onClick={() => onQuick(base - 1)} aria-label={labels.decrease} className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm font-bold">−</button>
                   <span className="min-w-5 text-center text-sm font-bold">{base}</span>
-                  <button type="button" onClick={() => onQuick(base + 1)} aria-label="Artır" className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm font-bold">+</button>
+                  <button type="button" onClick={() => onQuick(base + 1)} aria-label={labels.increase} className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm font-bold">+</button>
                 </div>
               )
             ) : hasOptions && onOptions ? (
@@ -812,7 +818,7 @@ function ModernProduct({
                 className="relative inline-flex items-center gap-1 rounded-full bg-brand-500 px-4 py-1.5 text-sm font-semibold"
                 style={{ color: '#ffffff' }}
               >
-                <PlusIcon /> Ekle
+                <PlusIcon /> {labels.add}
                 {total > 0 && (
                   <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full border-2 border-surface bg-red-500 px-1 text-[11px] font-bold" style={{ color: '#ffffff' }}>
                     {total}
@@ -846,6 +852,8 @@ function ProductOptionsSheet({
   /** CTA colour — the theme's accent; defaults to the app's brand green. */
   accent?: string;
 }) {
+  const t = useTranslations('menu');
+  const tOrder = useTranslations('order');
   const variants = product.variants ?? [];
   const groups: MenuModifierGroup[] = product.modifier_groups ?? [];
   const [variantId, setVariantId] = useState<number | undefined>(variants.find((v) => v.is_default)?.id ?? variants[0]?.id);
@@ -880,7 +888,7 @@ function ProductOptionsSheet({
             <h3 className="text-base font-bold text-ink">{product.name}</h3>
             {product.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted">{product.description}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Kapat" className="shrink-0 text-muted hover:text-ink">
+          <button type="button" onClick={onClose} aria-label={t('close')} className="shrink-0 text-muted hover:text-ink">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
           </button>
         </div>
@@ -888,7 +896,7 @@ function ProductOptionsSheet({
         <div className="max-h-[55vh] space-y-4 overflow-y-auto px-5 py-4">
           {variants.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Seçenek</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{t('option')}</p>
               <div className="flex flex-wrap gap-2">
                 {variants.map((vr) => (
                   <button
@@ -910,7 +918,7 @@ function ProductOptionsSheet({
             <div key={g.id}>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
                 {g.name} {g.is_required && <span className="text-red-500">*</span>}
-                {g.max_select > 1 && <span className="ml-1 normal-case text-[11px] font-normal">(en fazla {g.max_select})</span>}
+                {g.max_select > 1 && <span className="ml-1 normal-case text-[11px] font-normal">({tOrder('upTo', { count: g.max_select })})</span>}
               </p>
               <div className="flex flex-wrap gap-2">
                 {g.modifiers.map((m) => {
@@ -934,7 +942,7 @@ function ProductOptionsSheet({
         </div>
 
         <div className="border-t border-line px-5 py-4">
-          {missingRequired && <p className="mb-2 text-center text-xs text-red-500">Lütfen zorunlu (*) seçimleri yapın</p>}
+          {missingRequired && <p className="mb-2 text-center text-xs text-red-500">{t('requiredHint')}</p>}
           <button
             type="button"
             disabled={missingRequired}
@@ -953,7 +961,7 @@ function ProductOptionsSheet({
             className="flex w-full items-center justify-between rounded-xl px-5 py-3 text-sm font-bold disabled:opacity-40"
             style={{ background: accent, color: '#ffffff' }}
           >
-            <span>Sepete Ekle{inCart > 0 ? ` · sepette ${inCart}` : ''}</span>
+            <span>{t('addToCart')}{inCart > 0 ? ` ${t('inCart', { count: inCart })}` : ''}</span>
             <span>{format.format(unitPrice)}</span>
           </button>
         </div>
@@ -989,6 +997,7 @@ function ProductDetailSheet({
   /** CTA colour — the theme's accent; defaults to the app's brand green. */
   accent?: string;
 }) {
+  const t = useTranslations('menu');
   const hidePrices = useContext(HidePricesCtx);
   const n = product.nutrition;
   const img = product.images?.[0];
@@ -1011,7 +1020,7 @@ function ProductDetailSheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Kapat"
+            aria-label={t('close')}
             className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-ink shadow-lg backdrop-blur"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
@@ -1047,7 +1056,7 @@ function ProductDetailSheet({
 
           {recipe.length > 0 && (
             <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">İçindekiler</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{labels.details}</p>
               <div className="flex flex-wrap gap-1.5">
                 {recipe.map((r, i) => (
                   <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs text-ink">
@@ -1073,7 +1082,7 @@ function ProductDetailSheet({
         {canOrder && (
           <div className="shrink-0 border-t border-line px-5 py-4">
             <div className="mb-2.5 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted">Fiyat</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">{t('price')}</span>
               {!hidePrices && product.original_price != null && Number(product.original_price) > Number(product.price) && (
                 <span className="mr-1.5 text-sm font-medium text-muted line-through">{format.format(Number(product.original_price))}</span>
               )}
@@ -1081,18 +1090,18 @@ function ProductDetailSheet({
             </div>
             {hasOptions && onOptions ? (
               <button type="button" onClick={onOptions} className="flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-bold" style={{ background: accent, color: '#ffffff' }}>
-                <PlusIcon /> Seçenekleri Seç{total > 0 ? ` · sepette ${total}` : ''}
+                <PlusIcon /> {t('chooseOptions')}{total > 0 ? ` ${t('inCart', { count: total })}` : ''}
               </button>
             ) : onQuick ? (
               base === 0 ? (
                 <button type="button" onClick={() => onQuick(1)} className="flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-bold" style={{ background: accent, color: '#ffffff' }}>
-                  <PlusIcon /> Sepete Ekle
+                  <PlusIcon /> {t('addToCart')}
                 </button>
               ) : (
                 <div className="flex items-center justify-between rounded-xl px-2 py-2" style={{ background: accent, color: '#ffffff' }}>
-                  <button type="button" onClick={() => onQuick(base - 1)} aria-label="Azalt" className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">−</button>
+                  <button type="button" onClick={() => onQuick(base - 1)} aria-label={labels.decrease} className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">−</button>
                   <span className="text-base font-bold">{base}</span>
-                  <button type="button" onClick={() => onQuick(base + 1)} aria-label="Artır" className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">+</button>
+                  <button type="button" onClick={() => onQuick(base + 1)} aria-label={labels.increase} className="grid h-9 w-9 place-items-center rounded-lg bg-white/20 text-lg font-bold">+</button>
                 </div>
               )
             ) : null}

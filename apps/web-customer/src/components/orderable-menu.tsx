@@ -357,7 +357,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
               {menu.venue.sub_title && <p className="truncate text-xs text-muted">{menu.venue.sub_title}</p>}
               {(menu.venue.reviews_count ?? 0) > 0 && (
                 <p className="mt-0.5 text-xs font-medium text-muted">
-                  ⭐ {menu.venue.rating} · {menu.venue.reviews_count} değerlendirme
+                  ⭐ {menu.venue.rating} · {t('reviewCount', { count: menu.venue.reviews_count ?? 0 })}
                 </p>
               )}
             </div>
@@ -380,7 +380,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
             {menu.venue.timing && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-500 ring-2 ring-brand-100" />
-                Açık · {menu.venue.timing}
+                {t('openNow', { timing: menu.venue.timing })}
               </span>
             )}
             {menu.venue.address && (
@@ -462,7 +462,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
             className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
           />
           {search && (
-            <button onClick={() => setSearch('')} aria-label="Temizle" className="shrink-0 text-muted transition hover:text-ink">
+            <button onClick={() => setSearch('')} aria-label={t('clear')} className="shrink-0 text-muted transition hover:text-ink">
               ✕
             </button>
           )}
@@ -503,7 +503,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
       )}
 
       {visible.length === 0 && (
-        <p className="px-5 py-16 text-center text-sm text-muted">“{search}” için sonuç bulunamadı.</p>
+        <p className="px-5 py-16 text-center text-sm text-muted">{t('noResults', { search })}</p>
       )}
 
       {visible.map((c) => (

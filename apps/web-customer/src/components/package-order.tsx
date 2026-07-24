@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ApiClient } from '@comiqr/shared-types/client';
 import type { Menu, MenuModifierGroup, MenuProduct } from '@comiqr/shared-types';
 import { clearCart, readCart } from './cart';
@@ -25,6 +26,7 @@ function lineKey(productId: number, variantId: number | undefined, modifierIds: 
 type TikoForm = { url: string; fields: Record<string, string> };
 
 export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
+  const t = useTranslations('order');
   const api = useMemo(() => new ApiClient({ baseUrl: API_URL }), []);
   const fmt = useMemo(
     () =>
@@ -141,7 +143,7 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
         setDone(res.order);
       }
     } catch {
-      setError('Sipariş oluşturulamadı. Bilgileri kontrol edin (adres/telefon zorunlu).');
+      setError(t('pkgError'));
     } finally {
       setPlacing(false);
     }
@@ -163,7 +165,7 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
             <img src={menu.venue.logo} alt={menu.venue.name} className="h-14 w-14 shrink-0 rounded-xl object-cover ring-2 ring-white/40" />
           )}
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">Paket Servis</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/70">{t('pkgTitle')}</p>
             <h1 className="font-display text-2xl font-semibold leading-tight" style={{ color: '#ffffff' }}>
               {menu.venue.name}
             </h1>
@@ -197,14 +199,14 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-5 pb-4 pt-3 backdrop-blur">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <span className="text-sm text-muted">
-              {count} ürün · <b className="font-display text-base text-ink">{fmt.format(total)}</b>
+              {t('itemCount', { count })} · <b className="font-display text-base text-ink">{fmt.format(total)}</b>
             </span>
             <button
               onClick={() => setStep('checkout')}
               className="rounded-xl bg-brand-500 px-6 py-3 text-sm font-semibold text-white"
               style={{ color: '#ffffff' }}
             >
-              Devam
+              {t('continue')}
             </button>
           </div>
         </div>
@@ -214,6 +216,7 @@ export function PackageOrder({ menu, slug }: { menu: Menu; slug: string }) {
 }
 
 function ProductRow({ product, fmt, qtyFor, onSet }: any) {
+  const t = useTranslations('order');
   const variants = product.variants ?? [];
   const groups: MenuModifierGroup[] = product.modifier_groups ?? [];
   const [variantId, setVariantId] = useState<number | undefined>(
@@ -304,7 +307,7 @@ function ProductRow({ product, fmt, qtyFor, onSet }: any) {
       ))}
 
       <div className="mt-3 flex items-center justify-end gap-3">
-        {missingRequired && cartQty === 0 && <span className="text-[11px] text-muted">Zorunlu seçim yapın</span>}
+        {missingRequired && cartQty === 0 && <span className="text-[11px] text-muted">{t('requiredChoice')}</span>}
         {cartQty === 0 ? (
           <button
             onClick={() => onSet(sel(), 1)}
@@ -312,7 +315,7 @@ function ProductRow({ product, fmt, qtyFor, onSet }: any) {
             className="rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40"
             style={{ color: '#ffffff' }}
           >
-            + Ekle
+            + {t('add')}
           </button>
         ) : (
           <div className="inline-flex items-center gap-2 rounded-full bg-brand-500 p-1">
@@ -331,34 +334,35 @@ function ProductRow({ product, fmt, qtyFor, onSet }: any) {
 }
 
 function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, setAddress, note, setNote, method, setMethod, error, placing, submit, total, fmt, savedCards, savedCardId, setSavedCardId, saveCard, setSaveCard, onBack }: any) {
+  const t = useTranslations('order');
   const canSubmit = name.trim() && phone.trim() && (type === 'takeaway' || address.trim());
   return (
     <div className="px-5 pt-6">
       <button onClick={onBack} className="mb-3 text-sm text-brand-600">
-        ← Menüye dön
+        ← {t('backToMenu')}
       </button>
 
       <div className="mb-4 grid grid-cols-2 gap-2">
-        {(['delivery', 'takeaway'] as const).map((t) => (
+        {(['delivery', 'takeaway'] as const).map((opt) => (
           <button
-            key={t}
-            onClick={() => setType(t)}
+            key={opt}
+            onClick={() => setType(opt)}
             className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
-              type === t ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-muted'
+              type === opt ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-muted'
             }`}
           >
-            {t === 'delivery' ? 'Adrese Teslimat' : 'Gel-Al'}
+            {opt === 'delivery' ? t('delivery') : t('takeaway')}
           </button>
         ))}
       </div>
 
       <div className="space-y-2.5">
-        <Field label="Ad Soyad" value={name} onChange={setName} placeholder="Adınız" />
-        <Field label="Telefon" value={phone} onChange={setPhone} placeholder="05xx…" />
+        <Field label={t('nameLabel')} value={name} onChange={setName} placeholder={t('namePlaceholder')} />
+        <Field label={t('phoneLabel')} value={phone} onChange={setPhone} placeholder="05xx…" />
         {type === 'delivery' && (
-          <Field label="Adres" value={address} onChange={setAddress} placeholder="Teslimat adresi" textarea />
+          <Field label={t('addressLabel')} value={address} onChange={setAddress} placeholder={t('addressPlaceholder')} textarea />
         )}
-        <Field label="Not (opsiyonel)" value={note} onChange={setNote} placeholder="Kapı zili, kat…" />
+        <Field label={t('noteLabel')} value={note} onChange={setNote} placeholder={t('notePlaceholder')} />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -370,7 +374,7 @@ function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, 
               method === m ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-muted'
             }`}
           >
-            {m === 'cod' ? 'Kapıda Ödeme' : 'Online Ödeme'}
+            {m === 'cod' ? t('cod') : t('online')}
           </button>
         ))}
       </div>
@@ -379,7 +383,7 @@ function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, 
         <div className="mt-3 space-y-2 rounded-xl border border-line bg-canvas p-3">
           {savedCards.length > 0 && (
             <>
-              <p className="text-xs font-semibold text-ink">Kayıtlı kartlar</p>
+              <p className="text-xs font-semibold text-ink">{t('savedCards')}</p>
               {savedCards.map((c: any) => (
                 <label key={c.id} className="flex items-center gap-2 text-sm">
                   <input
@@ -389,20 +393,20 @@ function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, 
                     onChange={() => setSavedCardId(c.id)}
                   />
                   <span className="text-ink">
-                    💳 {c.alias ?? 'Kart'} {c.last4 ? `•••• ${c.last4}` : ''}
+                    💳 {c.alias ?? t('card')} {c.last4 ? `•••• ${c.last4}` : ''}
                   </span>
                 </label>
               ))}
               <label className="flex items-center gap-2 text-sm">
                 <input type="radio" name="savedcard" checked={savedCardId === null} onChange={() => setSavedCardId(null)} />
-                <span className="text-ink">Yeni kart ile öde</span>
+                <span className="text-ink">{t('payNewCard')}</span>
               </label>
             </>
           )}
           {savedCardId === null && (
             <label className="flex items-center gap-2 text-sm text-muted">
               <input type="checkbox" checked={saveCard} onChange={(e) => setSaveCard(e.target.checked)} />
-              Kartımı sonraki siparişler için kaydet
+              {t('saveCard')}
             </label>
           )}
         </div>
@@ -416,7 +420,7 @@ function CheckoutForm({ type, setType, name, setName, phone, setPhone, address, 
         className="mt-4 w-full rounded-xl bg-brand-500 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
         style={{ color: '#ffffff' }}
       >
-        {placing ? 'Gönderiliyor…' : `Siparişi Tamamla · ${fmt.format(total)}`}
+        {placing ? t('placing') : `${t('completeOrder')} · ${fmt.format(total)}`}
       </button>
     </div>
   );
@@ -448,14 +452,13 @@ function Field({ label, value, onChange, placeholder, textarea }: any) {
 
 /** Native form POST to Tiko pay3d — card data goes browser→Tiko, never our server. */
 function TikoCardForm({ form, fmt, total }: { form: TikoForm; fmt: Intl.NumberFormat; total: number }) {
+  const t = useTranslations('order');
   const stored = 'CardId' in form.fields;
   return (
     <div className="mx-auto max-w-md px-5 py-10">
-      <h1 className="font-display text-xl font-semibold text-ink">Kart ile Öde · {fmt.format(total)}</h1>
+      <h1 className="font-display text-xl font-semibold text-ink">{t('payWithCard')} · {fmt.format(total)}</h1>
       <p className="mt-1 text-sm text-muted">
-        {stored
-          ? 'Kayıtlı kartınızla güvenli ödeme yapılacak.'
-          : 'Kart bilgileriniz doğrudan Tiko güvenli ödeme sayfasına gönderilir.'}
+        {stored ? t('storedCardInfo') : t('newCardInfo')}
       </p>
       <form method="POST" action={form.url} className="mt-5 space-y-3">
         {Object.entries(form.fields).map(([k, v]) => (
@@ -463,17 +466,17 @@ function TikoCardForm({ form, fmt, total }: { form: TikoForm; fmt: Intl.NumberFo
         ))}
         {!stored && (
           <>
-            <CardField name="CardName" label="Kart Sahibi" placeholder="Ad Soyad" />
-            <CardField name="CardNo" label="Kart Numarası" placeholder="0000 0000 0000 0000" inputMode="numeric" />
+            <CardField name="CardName" label={t('cardHolder')} placeholder={t('nameLabel')} />
+            <CardField name="CardNo" label={t('cardNumber')} placeholder="0000 0000 0000 0000" inputMode="numeric" />
             <div className="grid grid-cols-3 gap-2">
-              <CardField name="CardExpireMonth" label="Ay" placeholder="12" inputMode="numeric" />
-              <CardField name="CardExpireYear" label="Yıl" placeholder="27" inputMode="numeric" />
+              <CardField name="CardExpireMonth" label={t('month')} placeholder="12" inputMode="numeric" />
+              <CardField name="CardExpireYear" label={t('year')} placeholder="27" inputMode="numeric" />
               <CardField name="CardCvv" label="CVV" placeholder="123" inputMode="numeric" />
             </div>
           </>
         )}
         <button type="submit" className="w-full rounded-xl bg-brand-500 py-3.5 text-sm font-semibold text-white" style={{ color: '#ffffff' }}>
-          Güvenli Öde
+          {t('paySecure')}
         </button>
       </form>
     </div>
@@ -496,15 +499,16 @@ function CardField({ name, label, placeholder, inputMode }: { name: string; labe
 }
 
 function SuccessView({ order, method, fmt }: { order: any; method: string; fmt: Intl.NumberFormat }) {
+  const t = useTranslations('order');
   return (
     <div className="mx-auto max-w-md px-5 py-16 text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-sage-bg text-3xl">✓</div>
-      <h1 className="mt-4 font-display text-2xl font-semibold text-ink">Siparişiniz alındı</h1>
+      <h1 className="mt-4 font-display text-2xl font-semibold text-ink">{t('placed')}</h1>
       <p className="mt-1 text-sm text-muted">
-        #{order.id} · {order.type === 'delivery' ? 'Adrese teslimat' : 'Gel-al'} · {fmt.format(Number(order.grand_total))}
+        #{order.id} · {order.type === 'delivery' ? t('delivery') : t('takeaway')} · {fmt.format(Number(order.grand_total))}
       </p>
       <p className="mt-3 text-sm text-muted">
-        {method === 'cod' ? 'Ödemeyi teslimatta yapacaksınız.' : 'Ödemeniz alındı, teşekkürler.'}
+        {method === 'cod' ? t('codInfo') : t('paidInfo')}
       </p>
     </div>
   );
