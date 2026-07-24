@@ -482,6 +482,20 @@ export class ApiClient {
   adminBranches(): Promise<any[]> {
     return this.request('/admin/branches');
   }
+
+  // --- Waiter app (M10) — floor board + service calls + serve/ack ---
+  waiterTables(branchId?: number): Promise<any[]> {
+    return this.request(`/waiter/tables${branchId ? `?branch_id=${branchId}` : ''}`);
+  }
+  waiterNotifications(): Promise<{ service_calls: any[]; ready_items: any[] }> {
+    return this.request('/waiter/notifications');
+  }
+  waiterServed(itemId: number): Promise<any> {
+    return this.request(`/waiter/order-items/${itemId}/served`, { method: 'POST' });
+  }
+  waiterAck(sessionId: number): Promise<any> {
+    return this.request(`/waiter/sessions/${sessionId}/ack`, { method: 'POST' });
+  }
   createBranch(body: Record<string, unknown>): Promise<any> {
     return this.request('/admin/branches', { method: 'POST', body: JSON.stringify(body) });
   }
