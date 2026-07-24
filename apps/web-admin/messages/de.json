@@ -583,7 +583,8 @@
     "shiftClosed": "Schicht geschlossen",
     "topProducts": "Meistverkaufte Produkte",
     "noSalesToday": "Heute keine Verkäufe.",
-    "qtyCount": "{n} Stk"
+    "qtyCount": "{n} Stk",
+    "backToWaiter": "Kellner"
   },
   "settings": {
     "title": "Restauranteinstellungen",
@@ -906,6 +907,7 @@
     "free": "Frei",
     "planLocked": "Die Kellner-App ist in diesem Tarif nicht enthalten.",
     "noAccess": "Sie haben keinen Zugriff auf diese Seite.",
-    "loadError": "Laden fehlgeschlagen, bitte erneut."
+    "loadError": "Laden fehlgeschlagen, bitte erneut.",
+    "tapToOrder": "Tippen Sie auf einen Tisch, um zu bestellen"
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { BrandLogo } from '@/components/BrandLogo';
@@ -55,6 +55,7 @@ export default function PosPage() {
   const router = useRouter();
   const { api, me, ready } = useApi('/pos/login');
   const isCashier = me?.user.role === 'cashier';
+  const isWaiter = me?.user.role === 'waiter';
   const currency = (me?.tenant as any)?.currency ?? 'TRY';
   const venueName = (me?.tenant as any)?.name ?? 'ComiQR';
   const vertical = (me?.tenant as any)?.settings?.vertical ?? 'restaurant';
@@ -120,6 +121,40 @@ export default function PosPage() {
   useEffect(() => {
     if (ready) load();
   }, [ready, load]);
+
+  // Deep-link from the waiter app: /pos?table=<id> seats that table and jumps to
+  // the sale view so the waiter can build the ticket at once. If the table already
+  // has an open tab, recall it (adding a round via posAddItems) instead of seating
+  // a fresh ticket — a plain place() would create a duplicate order on the session.
+  const seatedFromUrl = useRef(false);
+  useEffect(() => {
+    if (seatedFromUrl.current || tables.length === 0) return;
+    const raw = new URLSearchParams(window.location.search).get('table');
+    seatedFromUrl.current = true;
+    window.history.replaceState(null, '', '/pos'); // don't re-seat on refresh
+    if (!raw) return;
+    const tb = tables.find((x) => x.id === Number(raw));
+    if (!tb) return;
+    (async () => {
+      try {
+        const open = await api.posOrders({ scope: 'open', branch_id: activeBranch ?? undefined });
+        const existing = open.find((o: any) => o.table_code === tb.code);
+        if (existing) {
+          pickRecalled(existing);
+          setView('sale');
+          return;
+        }
+      } catch {
+        /* fall through to a fresh ticket */
+      }
+      resetTicket();
+      setOrderType('table');
+      setTableId(tb.id);
+      setTableCode(tb.code);
+      setView('sale');
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tables, activeBranch]);
 
   // The POS is tenant-scoped — a superadmin (no tenant) can't operate the terminal.
   useEffect(() => {
@@ -430,16 +465,18 @@ export default function PosPage() {
             </TopBtn>
             <TopBtn onClick={() => loadRecall('open')}>❏ {t('draftList')}</TopBtn>
             <TopBtn onClick={() => !order && setShowMap(true)}>🍽️ {t('tableOrder')}</TopBtn>
-            {!isCashier && (
+            {isWaiter ? (
+              <TopBtn onClick={() => router.push('/waiter')}>← {t('backToWaiter')}</TopBtn>
+            ) : !isCashier ? (
               <>
                 <TopBtn onClick={() => setShowKds(true)}>🍳 {t('kitchen')}</TopBtn>
                 <TopBtn onClick={() => router.push('/dashboard')}>← {t('panel')}</TopBtn>
               </>
-            )}
+            ) : null}
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 gap-4 overflow-hidden p-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4 lg:flex-row">
         {view === 'sale' ? (
         <>
         {/* ---- Products ---- */}
@@ -526,7 +563,7 @@ export default function PosPage() {
         </section>
 
         {/* ---- Order panel ---- */}
-        <aside className="flex w-[360px] shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-white xl:w-[400px]">
+        <aside className="flex max-h-[46vh] w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-white lg:max-h-none lg:w-[360px] xl:w-[400px]">
           {/* Search existing + order context */}
           <div className="space-y-2.5 border-b border-line p-3">
             <button

@@ -258,13 +258,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/reviews/{review}/status', [ReviewController::class, 'setStatus']);
         });
 
-        // --- POS terminal reads — the cashier role has no menu-editing rights but
-        // needs to read the product grid, categories, branches and tables to build a
-        // ticket. Registered AFTER the manager group so these GETs resolve here
+        // --- POS terminal reads — the cashier/waiter role has no menu-editing rights
+        // but needs to read the product grid, categories, branches and tables to build
+        // a ticket. Registered AFTER the manager group so these GETs resolve here
         // (Laravel keeps the last-registered route per method+URI); gated
-        // role:manager,cashier — waiter stays out (matching prior behaviour) and it is
-        // deliberately NOT plan-gated so a manager on any plan keeps read access. ---
-        Route::middleware('role:manager,cashier')->group(function () {
+        // role:manager,cashier,waiter — the waiter app bridges into /pos to take
+        // orders (the write path stays plan:ordering-gated). Deliberately NOT
+        // plan-gated so a manager on any plan keeps read access. ---
+        Route::middleware('role:manager,cashier,waiter')->group(function () {
             Route::get('admin/products', [ProductController::class, 'index']);
             Route::get('admin/products/{product}', [ProductController::class, 'show']);
             Route::get('admin/categories', [CategoryController::class, 'index']);

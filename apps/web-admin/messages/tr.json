@@ -583,7 +583,8 @@
     "shiftClosed": "vardiya kapalı",
     "topProducts": "En Çok Satan Ürünler",
     "noSalesToday": "Bugün satış yok.",
-    "qtyCount": "{n} adet"
+    "qtyCount": "{n} adet",
+    "backToWaiter": "Garson"
   },
   "settings": {
     "title": "Restoran Ayarları",
@@ -906,6 +907,7 @@
     "free": "Boş",
     "planLocked": "Garson uygulaması bu planda kapalı.",
     "noAccess": "Bu sayfaya erişiminiz yok.",
-    "loadError": "Yüklenemedi, tekrar deneyin."
+    "loadError": "Yüklenemedi, tekrar deneyin.",
+    "tapToOrder": "Sipariş almak için masaya dokunun"
   }
 }

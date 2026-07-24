@@ -12,6 +12,7 @@ use App\Support\Tenancy\TenantManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
+use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
@@ -29,6 +30,18 @@ function posVenue(): array
         return compact('tenant', 'product', 'table');
     });
 }
+
+it('lets a waiter read the POS grid (products/categories/tables) to build a ticket', function () {
+    // The waiter app bridges into /pos to take orders — it must be able to read the
+    // menu, not just POST the order.
+    ['tenant' => $tenant] = posVenue();
+    Sanctum::actingAs(User::factory()->forTenant($tenant)->role(Role::Waiter)->create());
+
+    getJson('/v1/admin/products')->assertOk();
+    getJson('/v1/admin/categories')->assertOk();
+    getJson('/v1/admin/tables')->assertOk();
+    getJson('/v1/admin/branches')->assertOk();
+});
 
 it('lets a waiter create a dine-in POS order and settle it by card', function () {
     ['tenant' => $tenant, 'product' => $product, 'table' => $table] = posVenue();

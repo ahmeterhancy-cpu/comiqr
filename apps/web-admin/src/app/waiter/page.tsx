@@ -184,10 +184,11 @@ export default function WaiterPage() {
 
             {/* Floor board */}
             <section className="mt-6">
-              <div className="mb-2 flex items-baseline justify-between">
+              <div className="mb-1 flex items-baseline justify-between">
                 <h2 className="text-[13px] font-bold uppercase tracking-wide text-muted">{t('floor')}</h2>
                 <span className="text-[11px] text-muted">{t('occupiedOfTotal', { occupied, total: tables.length })}</span>
               </div>
+              <p className="mb-2 text-[11px] text-muted">{t('tapToOrder')}</p>
               {tables.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-line bg-white py-6 text-center text-sm text-muted">{t('noTables')}</p>
               ) : (
@@ -195,9 +196,11 @@ export default function WaiterPage() {
                   {tables.map((tb) => {
                     const flagged = tb.waiter_called || tb.bill_requested;
                     return (
-                      <div
+                      <button
                         key={tb.table_id}
-                        className={`relative flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 p-2 text-center ${
+                        type="button"
+                        onClick={() => router.push(`/pos?table=${tb.table_id}`)}
+                        className={`relative flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 p-2 text-center transition active:scale-95 ${
                           flagged
                             ? 'border-amber-300 bg-amber-50 text-amber-800'
                             : tb.state === 'occupied'
@@ -209,7 +212,7 @@ export default function WaiterPage() {
                         <span className="text-xl">{tb.state === 'occupied' ? '🍽️' : '🪑'}</span>
                         <b className="text-sm">{tb.code}</b>
                         <span className="text-[10px] font-semibold">{tb.state === 'occupied' ? t('occupied') : t('free')}</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
