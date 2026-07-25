@@ -259,7 +259,7 @@ export default function OrderScreen() {
       {/* Product grid (3 columns, photos) */}
       <View className="flex-1">
       {loading ? (
-        <ActivityIndicator className="mt-10" color="#f4337a" />
+        <ActivityIndicator className="mt-10" color="#f05020" />
       ) : (
         <ScrollView className="flex-1" contentContainerClassName="p-2 pb-4">
           <View className="flex-row flex-wrap" style={{ marginHorizontal: -4 }}>

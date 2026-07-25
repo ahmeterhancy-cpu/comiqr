@@ -183,7 +183,7 @@ export default function BoardScreen() {
           </Pressable>
         </View>
       ) : loading && tables.length === 0 ? (
-        <ActivityIndicator className="mt-10" color="#f4337a" />
+        <ActivityIndicator className="mt-10" color="#f05020" />
       ) : (
         <ScrollView contentContainerClassName="p-3">
           <View className="flex-row flex-wrap" style={{ marginHorizontal: -5 }}>

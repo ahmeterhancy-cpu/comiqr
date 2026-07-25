@@ -1,8 +1,8 @@
-// MENULUX tarzı marka gradyanı (magenta → kırmızı, çapraz).
-export const GRADIENT = ['#f5327f', '#e11d48'] as const;
+// ComiQR marka gradyanı — logodan alınan turuncu (ana ton #f05020).
+export const GRADIENT = ['#f97136', '#e5400d'] as const;
 export const BRAND = {
-  pink: '#f4337a',
-  pinkDark: '#e11d5f',
+  primary: '#f05020',
+  primaryDark: '#d83f12',
   green: '#16a34a',
   amber: '#f59e0b',
 };
