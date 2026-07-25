@@ -19,7 +19,11 @@
       "package": "com.comiqr.waiter",
       "edgeToEdgeEnabled": true
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-audio"
+    ],
     "experiments": {
       "typedRoutes": true
     },

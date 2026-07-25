@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAudioPlayer } from 'expo-audio';
 import { useAuthStore } from '@/stores/auth';
 import { waiterApi, type ReadyItem, type ServiceCall, type Table } from '@/api/waiter';
 import { POLL_MS } from '@/constants/config';
@@ -26,6 +27,11 @@ export default function BoardScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Sesli + titreşimli uyarı: yeni bir garson çağrısı / hesap isteği geldiğinde.
+  const alertPlayer = useAudioPlayer(require('../assets/alert.wav'));
+  const seenCalls = useRef<Set<number>>(new Set());
+  const callsInit = useRef(false);
 
   const load = useCallback(async () => {
     try {
@@ -65,6 +71,25 @@ export default function BoardScreen() {
 
   const shown = useMemo(() => tables.filter((t) => (t.area ?? 'Masalar') === area), [tables, area]);
 
+  // A new call/bill-request (session id not seen last poll) → beep + vibrate.
+  useEffect(() => {
+    const ids = new Set(calls.map((c) => c.session_id));
+    if (callsInit.current) {
+      const hasNew = [...ids].some((sid) => !seenCalls.current.has(sid));
+      if (hasNew) {
+        try {
+          alertPlayer.seekTo(0);
+          alertPlayer.play();
+        } catch {
+          /* ignore */
+        }
+        Vibration.vibrate([0, 400, 150, 400]);
+      }
+    }
+    seenCalls.current = ids;
+    callsInit.current = true;
+  }, [calls, alertPlayer]);
+
   async function ack(sessionId: number) {
     setBusy(sessionId);
     try {
@@ -99,7 +124,7 @@ export default function BoardScreen() {
           <View className="flex-row items-center justify-between px-4 py-3">
             <View className="flex-row items-center gap-2.5">
               <View className="h-9 w-9 items-center justify-center rounded-xl bg-white/25">
-                <Text className="text-lg">🍽️</Text>
+                <Text className="text-lg">🍴</Text>
               </View>
               <Text className="text-2xl font-extrabold text-white">Garson</Text>
             </View>
@@ -188,7 +213,7 @@ export default function BoardScreen() {
                 ))}
                 {ready.map((it) => (
                   <View key={`r${it.order_item_id}`} className="flex-row items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3.5 py-3">
-                    <Text className="text-xl">🍽️</Text>
+                    <Text className="text-xl">🍴</Text>
                     <View className="flex-1">
                       <Text className="text-sm font-semibold text-emerald-900">{it.quantity}× {it.product ?? 'Ürün'}</Text>
                       <Text className="text-[11px] text-emerald-700">Servise hazır</Text>

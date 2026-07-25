@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgUri } from 'react-native-svg';
 import { useAuthStore } from '@/stores/auth';
 import { waiterApi, type OrderItemInput } from '@/api/waiter';
 import { money } from '@/lib/money';
+import { printAdisyon } from '@/lib/print';
 import { POLL_MS, API_URL } from '@/constants/config';
 import { GRADIENT } from '@/theme';
 
@@ -36,7 +37,9 @@ const STATUS: Record<string, { label: string; bg: string; fg: string }> = {
 function productImage(p: any): { uri: string; svg: boolean } | null {
   const raw = p?.images?.[0] ?? p?.image_paths_json?.[0] ?? p?.image_path;
   if (!raw) return null;
-  let uri = String(raw).replace(/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/i, API_URL.replace(/\/$/, ''));
+  const base = API_URL.replace(/\/$/, '');
+  let uri = String(raw).replace(/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/i, base);
+  if (!/^https?:\/\//i.test(uri)) uri = `${base}/${uri.replace(/^\//, '')}`; // relative → API host
   return { uri, svg: /\.svg(\?|$)/i.test(uri) };
 }
 
@@ -44,9 +47,11 @@ function ProductThumb({ product }: { product: any }) {
   const img = productImage(product);
   if (img?.svg) return <SvgUri uri={img.uri} width="100%" height="100%" />;
   if (img) return <Image source={{ uri: img.uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />;
+  // No image → clean initials tile (emoji glyphs aren't reliable across devices).
+  const initials = (product?.name ?? '?').trim().slice(0, 2).toLocaleUpperCase('tr');
   return (
     <View className="h-full w-full items-center justify-center bg-brand-50">
-      <Text className="text-2xl">🍽️</Text>
+      <Text className="text-xl font-black text-brand-300">{initials}</Text>
     </View>
   );
 }
@@ -55,8 +60,10 @@ export default function OrderScreen() {
   const router = useRouter();
   const { id, code } = useLocalSearchParams<{ id: string; code: string }>();
   const tableId = Number(id);
+  const insets = useSafeAreaInsets();
   const token = useAuthStore((s) => s.token)!;
   const currency = useAuthStore((s) => s.currency)();
+  const venue = useAuthStore((s) => s.tenant?.name) ?? 'ComiQR';
 
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -71,6 +78,7 @@ export default function OrderScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [serving, setServing] = useState<number | null>(null);
+  const [printing, setPrinting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const loadOrder = useCallback(async () => {
@@ -180,6 +188,18 @@ export default function OrderScreen() {
     }
   }
 
+  async function onPrint() {
+    if (!order || printing) return;
+    setPrinting(true);
+    try {
+      await printAdisyon({ order, tableCode: String(code), currency, venue });
+    } catch {
+      /* kullanıcı diyaloğu iptal etti veya yazıcı yok */
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   return (
     <View className="flex-1 bg-slate-100">
       {/* Gradient header */}
@@ -237,10 +257,11 @@ export default function OrderScreen() {
       </View>
 
       {/* Product grid (3 columns, photos) */}
+      <View className="flex-1">
       {loading ? (
         <ActivityIndicator className="mt-10" color="#f4337a" />
       ) : (
-        <ScrollView contentContainerClassName="p-2 pb-24">
+        <ScrollView className="flex-1" contentContainerClassName="p-2 pb-4">
           <View className="flex-row flex-wrap" style={{ marginHorizontal: -4 }}>
             {shown.map((p) => (
               <View key={p.id} style={{ width: '33.333%', padding: 4 }}>
@@ -259,14 +280,23 @@ export default function OrderScreen() {
           </View>
         </ScrollView>
       )}
+      </View>
 
-      {/* Cart FAB (when items pending) */}
-      {cartCount > 0 && !cartOpen && (
-        <Pressable onPress={() => { setCartTab('sepet'); setCartOpen(true); }} className="absolute inset-x-4 bottom-6 flex-row items-center justify-between rounded-2xl bg-brand-500 px-5 py-3.5 shadow-lg active:opacity-90">
-          <Text className="text-sm font-bold text-white">🛒 {cartCount} ürün</Text>
-          <Text className="text-sm font-extrabold text-white">{money(cartTotal, currency)} ›</Text>
+      {/* Bottom action bar — always-visible Geri + cart summary */}
+      <View style={{ paddingBottom: Math.max(insets.bottom, 8) }} className="flex-row items-center gap-2 border-t border-slate-200 bg-white px-3 pt-2.5">
+        <Pressable onPress={() => router.back()} className="flex-row items-center gap-1 rounded-xl border border-slate-300 bg-white px-5 py-3 active:opacity-70">
+          <Text className="text-lg text-slate-600">‹</Text>
+          <Text className="text-sm font-bold text-slate-700">Geri</Text>
         </Pressable>
-      )}
+        {cartCount > 0 ? (
+          <Pressable onPress={() => { setCartTab('sepet'); setCartOpen(true); }} className="flex-1 flex-row items-center justify-between rounded-xl bg-brand-500 px-4 py-3 active:opacity-90">
+            <Text className="text-sm font-bold text-white">🛒 {cartCount} ürün</Text>
+            <Text className="text-sm font-extrabold text-white">{money(cartTotal, currency)} ›</Text>
+          </Pressable>
+        ) : (
+          <View className="flex-1" />
+        )}
+      </View>
 
       {/* Cart sheet (Sepet / Adisyonlar) */}
       <Modal visible={cartOpen} transparent animationType="slide" onRequestClose={() => setCartOpen(false)}>
@@ -341,32 +371,45 @@ export default function OrderScreen() {
                 </View>
               </>
             ) : (
-              <ScrollView className="flex-1 px-4 pb-6">
-                {committed.length === 0 ? (
-                  <Text className="py-16 text-center text-sm text-slate-400">Bu masada henüz sipariş yok.</Text>
-                ) : (
-                  committed.map((i: any) => {
-                    const st = STATUS[i.status] ?? STATUS.pending;
-                    return (
-                      <View key={i.id} className="flex-row items-center gap-3 border-b border-slate-100 py-3">
-                        <View className="flex-1">
-                          <Text className="text-sm font-semibold text-slate-800">{i.quantity}× {i.product_name ?? 'Ürün'}</Text>
-                          {(i.modifiers ?? []).length > 0 && <Text className="text-[11px] text-slate-500">{i.modifiers.map((m: any) => m.name).join(', ')}</Text>}
-                        </View>
-                        {i.status === 'ready' ? (
-                          <Pressable onPress={() => serve(i.id)} disabled={serving === i.id} className="rounded-lg bg-emerald-600 px-3 py-1.5 active:opacity-80" style={{ opacity: serving === i.id ? 0.5 : 1 }}>
-                            <Text className="text-xs font-bold text-white">Servis Et</Text>
-                          </Pressable>
-                        ) : (
-                          <View className={`rounded-full px-2.5 py-1 ${st.bg}`}>
-                            <Text className={`text-[11px] font-bold ${st.fg}`}>{st.label}</Text>
+              <>
+                <ScrollView className="flex-1 px-4">
+                  {committed.length === 0 ? (
+                    <Text className="py-16 text-center text-sm text-slate-400">Bu masada henüz sipariş yok.</Text>
+                  ) : (
+                    committed.map((i: any) => {
+                      const st = STATUS[i.status] ?? STATUS.pending;
+                      return (
+                        <View key={i.id} className="flex-row items-center gap-3 border-b border-slate-100 py-3">
+                          <View className="flex-1">
+                            <Text className="text-sm font-semibold text-slate-800">{i.quantity}× {i.product_name ?? 'Ürün'}</Text>
+                            {(i.modifiers ?? []).length > 0 && <Text className="text-[11px] text-slate-500">{i.modifiers.map((m: any) => m.name).join(', ')}</Text>}
                           </View>
-                        )}
-                      </View>
-                    );
-                  })
+                          {i.status === 'ready' ? (
+                            <Pressable onPress={() => serve(i.id)} disabled={serving === i.id} className="rounded-lg bg-emerald-600 px-3 py-1.5 active:opacity-80" style={{ opacity: serving === i.id ? 0.5 : 1 }}>
+                              <Text className="text-xs font-bold text-white">Servis Et</Text>
+                            </Pressable>
+                          ) : (
+                            <View className={`rounded-full px-2.5 py-1 ${st.bg}`}>
+                              <Text className={`text-[11px] font-bold ${st.fg}`}>{st.label}</Text>
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })
+                  )}
+                </ScrollView>
+                {committed.length > 0 && (
+                  <View className="border-t border-slate-100 px-4 pb-6 pt-3">
+                    <View className="mb-3 flex-row items-center justify-between">
+                      <Text className="text-sm font-bold text-slate-500">TOPLAM</Text>
+                      <Text className="text-xl font-black text-slate-900">{money(order?.grand_total ?? 0, currency)}</Text>
+                    </View>
+                    <Pressable onPress={onPrint} disabled={printing} className="items-center rounded-2xl bg-slate-900 py-4 active:opacity-90" style={{ opacity: printing ? 0.6 : 1 }}>
+                      {printing ? <ActivityIndicator color="#ffffff" /> : <Text className="text-base font-bold text-white">Adisyon Yazdır</Text>}
+                    </Pressable>
+                  </View>
                 )}
-              </ScrollView>
+              </>
             )}
           </View>
         </View>
