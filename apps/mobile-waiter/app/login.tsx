@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -48,9 +49,7 @@ export default function LoginScreen() {
         <ScrollView contentContainerClassName="flex-grow justify-center px-6 py-10" keyboardShouldPersistTaps="handled">
           <View className="rounded-3xl bg-white p-7 shadow-xl">
             <View className="mb-7 items-center">
-              <View className="mb-3 h-14 w-14 items-center justify-center rounded-2xl bg-brand-500">
-                <Text className="text-2xl">🍽️</Text>
-              </View>
+              <Image source={require('../assets/comiqr-logo.png')} style={{ width: 180, height: 55, marginBottom: 10 }} resizeMode="contain" />
               <Text className="text-xl font-extrabold text-slate-900">Garson Girişi</Text>
               <Text className="mt-1 text-xs text-slate-500">Hesabınla giriş yap, kat planına git.</Text>
             </View>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -136,10 +136,10 @@ export default function BoardScreen() {
         <SafeAreaView edges={['top']}>
           <View className="flex-row items-center justify-between px-4 py-3">
             <View className="flex-row items-center gap-2.5">
-              <View className="h-9 w-9 items-center justify-center rounded-xl bg-white/25">
-                <Text className="text-lg">🍴</Text>
+              <View className="rounded-lg bg-white px-2 py-1">
+                <Image source={require('../assets/comiqr-logo.png')} style={{ width: 72, height: 22 }} resizeMode="contain" />
               </View>
-              <Text className="text-2xl font-extrabold text-white">Garson</Text>
+              <Text className="text-xl font-extrabold text-white">Garson</Text>
             </View>
             <View className="flex-row items-center gap-1">
               <Pressable onPress={() => setNotifOpen(true)} className="h-10 w-10 items-center justify-center rounded-full active:bg-white/20">
