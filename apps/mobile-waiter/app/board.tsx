@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, Vibration, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { useAuthStore } from '@/stores/auth';
 import { waiterApi, type ReadyItem, type ServiceCall, type Table } from '@/api/waiter';
 import { POLL_MS } from '@/constants/config';
@@ -28,10 +28,19 @@ export default function BoardScreen() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Sesli + titreşimli uyarı: yeni bir garson çağrısı / hesap isteği geldiğinde.
+  // Sesli + titreşimli uyarı — güçlü ve cevaplanana kadar döngüde.
   const alertPlayer = useAudioPlayer(require('../assets/alert.wav'));
-  const seenCalls = useRef<Set<number>>(new Set());
-  const callsInit = useRef(false);
+
+  // Sessiz/DND modunda bile duyulsun + tam ses + döngü.
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => undefined);
+    try {
+      alertPlayer.loop = true;
+      alertPlayer.volume = 1;
+    } catch {
+      /* ignore */
+    }
+  }, [alertPlayer]);
 
   const load = useCallback(async () => {
     try {
@@ -71,24 +80,28 @@ export default function BoardScreen() {
 
   const shown = useMemo(() => tables.filter((t) => (t.area ?? 'Masalar') === area), [tables, area]);
 
-  // A new call/bill-request (session id not seen last poll) → beep + vibrate.
+  // Cevaplanmamış çağrı OLDUĞU sürece alarm döngüde çalar + telefon sürekli
+  // titrer. Herhangi bir garson Onayla'ya basıp çağrıyı temizleyince (poll ile
+  // calls boşalır) alarm susar. Uygulama açılışında bekleyen çağrı varsa da çalar.
+  const hasCalls = calls.length > 0;
   useEffect(() => {
-    const ids = new Set(calls.map((c) => c.session_id));
-    if (callsInit.current) {
-      const hasNew = [...ids].some((sid) => !seenCalls.current.has(sid));
-      if (hasNew) {
-        try {
-          alertPlayer.seekTo(0);
-          alertPlayer.play();
-        } catch {
-          /* ignore */
-        }
-        Vibration.vibrate([0, 400, 150, 400]);
-      }
+    if (!hasCalls) return;
+    try {
+      alertPlayer.seekTo(0);
+      alertPlayer.play();
+    } catch {
+      /* ignore */
     }
-    seenCalls.current = ids;
-    callsInit.current = true;
-  }, [calls, alertPlayer]);
+    Vibration.vibrate([0, 700, 400, 700, 400, 700], true);
+    return () => {
+      try {
+        alertPlayer.pause();
+      } catch {
+        /* ignore */
+      }
+      Vibration.cancel();
+    };
+  }, [hasCalls, alertPlayer]);
 
   async function ack(sessionId: number) {
     setBusy(sessionId);
