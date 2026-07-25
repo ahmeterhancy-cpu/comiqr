@@ -23,7 +23,7 @@ class WaiterController extends Controller
         $tables = Table::query()
             ->when($request->filled('branch_id'), fn ($q) => $q->where('branch_id', $request->integer('branch_id')))
             ->where('is_active', true)
-            ->with(['sessions' => fn ($q) => $q->where('status', 'open')])
+            ->with(['sessions' => fn ($q) => $q->where('status', 'open'), 'diningArea:id,name'])
             ->orderBy('code')
             ->get()
             ->map(function (Table $t) {
@@ -35,10 +35,14 @@ class WaiterController extends Controller
                 return [
                     'table_id' => $t->id,
                     'code' => $t->code,
+                    'area' => $t->diningArea?->name,
+                    'area_id' => $t->dining_area_id,
                     'state' => $session ? 'occupied' : 'free',
                     'session_id' => $session?->id,
                     'order_status' => $order?->status,
                     'payment_status' => $order?->payment_status,
+                    'total' => $order?->grand_total,
+                    'opened_at' => $session?->opened_at,
                     'waiter_called' => (bool) $session?->waiter_called_at,
                     'bill_requested' => (bool) $session?->bill_requested_at,
                 ];

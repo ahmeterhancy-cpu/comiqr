@@ -20,10 +20,14 @@ export interface AuthSession {
 export interface Table {
   table_id: number;
   code: string;
+  area: string | null;
+  area_id: number | null;
   state: 'occupied' | 'free';
   session_id: number | null;
   order_status: string | null;
   payment_status: string | null;
+  total: string | number | null;
+  opened_at: string | null;
   waiter_called: boolean;
   bill_requested: boolean;
 }
@@ -77,4 +81,6 @@ export const waiterApi = {
     apiRequest<any>('/admin/pos/orders', { method: 'POST', token, body: { table_id: tableId, items } }),
   addItems: (token: string, orderId: number, items: OrderItemInput[]) =>
     apiRequest<any>(`/admin/pos/orders/${orderId}/items`, { method: 'POST', token, body: { items } }),
+  serviceCharge: (token: string, orderId: number, percent: number) =>
+    apiRequest<any>(`/admin/pos/orders/${orderId}/service-charge`, { method: 'POST', token, body: { percent } }),
 };

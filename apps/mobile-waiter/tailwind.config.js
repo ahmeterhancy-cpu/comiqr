@@ -5,18 +5,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ComiQR marka rengi (web-admin ile aynı brand tonu).
+        // MENULUX tarzı canlı pembe/magenta marka.
         brand: {
-          50: '#eef6ff',
-          100: '#d9ebff',
-          200: '#bcdcff',
-          300: '#8ec6ff',
-          400: '#59a6ff',
-          500: '#2f83f5',
-          600: '#1f66e0',
-          700: '#1a51c0',
-          800: '#1c469b',
-          900: '#1c3d7a',
+          50: '#fff1f5',
+          100: '#ffe4ec',
+          200: '#fecdda',
+          300: '#fda4bd',
+          400: '#fb6f97',
+          500: '#f4337a',
+          600: '#e11d5f',
+          700: '#bd144b',
+          800: '#9e1440',
+          900: '#87143b',
         },
       },
     },
