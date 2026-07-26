@@ -139,7 +139,12 @@
     "year": "Yıl",
     "paySecure": "Güvenli Öde",
     "codInfo": "Ödemeyi teslimatta yapacaksınız.",
-    "paidInfo": "Ödemeniz alındı, teşekkürler."
+    "paidInfo": "Ödemeniz alındı, teşekkürler.",
+    "terminalTitle": "Kart ile Ödeme",
+    "terminalPrompt": "Kartınızı POS cihazına okutun",
+    "terminalHint": "Temassız yaklaştırabilir, takabilir veya sürtebilirsiniz",
+    "terminalProcessing": "Ödeme alınıyor…",
+    "payCard": "Kart ile Öde"
   },
   "cart": {
     "title": "Sepetim",

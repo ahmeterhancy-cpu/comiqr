@@ -24,7 +24,18 @@ function lineKey(productId: number, variantId: number | undefined, modifierIds: 
   return `${productId}::${variantId ?? 0}::${[...modifierIds].sort((a, b) => a - b).join(',')}`;
 }
 
-export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToken: string; tableCode?: string }) {
+export function OrderableMenu({
+  menu,
+  qrToken,
+  tableCode,
+  terminalPay = false,
+}: {
+  menu: Menu;
+  qrToken: string;
+  tableCode?: string;
+  /** Kiosk: pay via the attached physical POS terminal (gateway `terminal`). */
+  terminalPay?: boolean;
+}) {
   const t = useTranslations('order');
   const mt = useTranslations('menu');
   const locale = useLocale();
@@ -61,6 +72,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(false);
   const [chargedRoom, setChargedRoom] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [reviewed, setReviewed] = useState(false);
@@ -292,6 +304,7 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
   }
 
   async function pay() {
+    if (terminalPay) return payTerminal();
     setPaying(true);
     try {
       await api.request(`/sessions/${encodeURIComponent(qrToken)}/orders/${order.id}/pay`, {
@@ -303,6 +316,28 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
       /* ignore */
     } finally {
       setPaying(false);
+    }
+  }
+
+  // Kiosk: charge the attached physical POS terminal. The `terminal` gateway
+  // completes server-side; we hold the "tap your card" screen for a moment so the
+  // (simulated) card interaction feels real. A live provider would poll here.
+  async function payTerminal() {
+    setTerminalOpen(true);
+    setPaying(true);
+    try {
+      const req = api.request(`/sessions/${encodeURIComponent(qrToken)}/orders/${order.id}/pay`, {
+        method: 'POST',
+        body: JSON.stringify({ gateway: 'terminal' }),
+      });
+      await new Promise((r) => setTimeout(r, 2600));
+      await req;
+      setPaid(true);
+    } catch {
+      /* ignore */
+    } finally {
+      setPaying(false);
+      setTerminalOpen(false);
     }
   }
 
@@ -602,6 +637,25 @@ export function OrderableMenu({ menu, qrToken, tableCode }: { menu: Menu; qrToke
       )}
 
       {menu.venue?.ai_chat && <MenuChat slug={menu.venue?.slug} />}
+
+      {/* Kiosk: physical POS terminal payment overlay */}
+      {terminalOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 px-8 text-center text-white" style={{ background: 'color-mix(in srgb, var(--color-navy) 96%, transparent)' }}>
+          <p className="text-sm font-bold uppercase tracking-[0.3em]" style={{ color: '#ffffff', opacity: 0.8 }}>
+            {t('terminalTitle')}
+          </p>
+          <div className="text-6xl font-black" style={{ color: '#ffffff' }}>
+            {fmt.format(Number(order?.grand_total ?? 0))}
+          </div>
+          <div className="my-1 grid h-32 w-32 animate-pulse place-items-center rounded-3xl bg-white/10 text-6xl">💳</div>
+          <p className="text-2xl font-bold" style={{ color: '#ffffff' }}>{t('terminalPrompt')}</p>
+          <p className="text-sm" style={{ color: '#ffffff', opacity: 0.75 }}>{t('terminalHint')}</p>
+          <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: '#ffffff', opacity: 0.9 }}>
+            <span className="h-2.5 w-2.5 animate-ping rounded-full bg-white" />
+            {t('terminalProcessing')}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

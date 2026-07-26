@@ -18,6 +18,7 @@ class PaymentManager
             'cash' => new CashGateway,
             'card' => new CardGateway,
             'tiko' => new TikoGateway((array) config('payments.gateways.tiko', [])),
+            'terminal' => new TerminalGateway((array) config('payments.gateways.terminal', [])),
             default => throw new InvalidArgumentException("Unknown payment gateway: {$name}"),
         };
     }

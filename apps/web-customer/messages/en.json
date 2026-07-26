@@ -139,7 +139,12 @@
     "year": "Year",
     "paySecure": "Pay Securely",
     "codInfo": "You will pay on delivery.",
-    "paidInfo": "Your payment has been received, thank you."
+    "paidInfo": "Your payment has been received, thank you.",
+    "terminalTitle": "Card Payment",
+    "terminalPrompt": "Tap or insert your card on the terminal",
+    "terminalHint": "Contactless, chip or swipe",
+    "terminalProcessing": "Processing payment…",
+    "payCard": "Pay by Card"
   },
   "cart": {
     "title": "My Cart",

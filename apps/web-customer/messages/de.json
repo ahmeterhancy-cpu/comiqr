@@ -139,7 +139,12 @@
     "year": "Jahr",
     "paySecure": "Sicher bezahlen",
     "codInfo": "Sie zahlen bei der Lieferung.",
-    "paidInfo": "Ihre Zahlung ist eingegangen, vielen Dank."
+    "paidInfo": "Ihre Zahlung ist eingegangen, vielen Dank.",
+    "terminalTitle": "Kartenzahlung",
+    "terminalPrompt": "Karte am Terminal auflegen oder einstecken",
+    "terminalHint": "Kontaktlos, Chip oder Magnetstreifen",
+    "terminalProcessing": "Zahlung wird verarbeitet…",
+    "payCard": "Mit Karte zahlen"
   },
   "cart": {
     "title": "Mein Warenkorb",

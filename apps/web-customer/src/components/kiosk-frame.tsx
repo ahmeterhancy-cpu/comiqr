@@ -45,7 +45,7 @@ export function KioskFrame({ menu, qrToken, tableCode }: { menu: Menu; qrToken: 
           {t('newOrder')}
         </button>
       </div>
-      <OrderableMenu menu={menu} qrToken={qrToken} tableCode={tableCode} />
+      <OrderableMenu menu={menu} qrToken={qrToken} tableCode={tableCode} terminalPay />
     </div>
   );
 }

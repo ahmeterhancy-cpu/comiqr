@@ -4,8 +4,9 @@ return [
     // Default gateway when the client doesn't specify one.
     'default' => env('PAYMENT_DEFAULT_GATEWAY', 'cash'),
 
-    // Gateways offered to customers (docs/04 §4.6). Online card = Tiko; cash is base.
-    'enabled' => array_filter(explode(',', (string) env('PAYMENT_ENABLED', 'cash,tiko'))),
+    // Gateways offered to customers (docs/04 §4.6). Online card = Tiko; cash is
+    // base; terminal = physical POS card terminal (kiosk).
+    'enabled' => array_filter(explode(',', (string) env('PAYMENT_ENABLED', 'cash,tiko,terminal'))),
 
     // Customer result page the 3DS browser-return redirects to (web-customer).
     'result_url' => env('PAYMENT_RESULT_URL', 'http://localhost:3010/order-result'),
@@ -25,6 +26,15 @@ return [
             'currency' => env('TIKO_CURRENCY', 'TRY'),
             'url_ok' => env('TIKO_URL_OK'),       // falls back to the return route
             'url_fail' => env('TIKO_URL_FAIL'),
+        ],
+
+        // Physical POS card terminal (kiosk). `simulate` auto-approves for the
+        // demo; set to `live` + wire a provider adapter once a terminal +
+        // merchant credentials exist (see TerminalGateway).
+        'terminal' => [
+            'mode' => env('TERMINAL_MODE', 'simulate'),
+            'terminal_id' => env('TERMINAL_ID'),
+            'provider' => env('TERMINAL_PROVIDER'),
         ],
     ],
 ];

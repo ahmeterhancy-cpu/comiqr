@@ -43,8 +43,8 @@ class PaymentController extends Controller
         $model = $this->orderForToken($qrToken, $order);
 
         // Online payment gateways (card/Tiko) require the plan's payments feature.
-        // Cash is a base method and stays available on every plan.
-        if ($gateway !== 'cash') {
+        // Cash + terminal (physical POS, kiosk) are base methods on every plan.
+        if (! in_array($gateway, ['cash', 'terminal'], true)) {
             $tenant = \App\Models\Tenant::find($model->tenant_id);
             abort_unless($tenant && \App\Support\Plans\PlanGate::allows($tenant, 'payments'), 402, 'Online ödeme bu planda kapalı.');
         }
