@@ -188,7 +188,10 @@
   },
   "kiosk": {
     "title": "Самообслуживание",
-    "newOrder": "Новый заказ"
+    "newOrder": "Новый заказ",
+    "startOrdering": "Начать заказ",
+    "attractSubtitle": "Киоск самообслуживания",
+    "tapToStart": "Нажмите, чтобы начать"
   },
   "board": {
     "menu": "Меню"

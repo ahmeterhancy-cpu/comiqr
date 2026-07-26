@@ -188,7 +188,10 @@
   },
   "kiosk": {
     "title": "طلب ذاتي الخدمة",
-    "newOrder": "طلب جديد"
+    "newOrder": "طلب جديد",
+    "startOrdering": "ابدأ الطلب",
+    "attractSubtitle": "كشك الطلب الذاتي",
+    "tapToStart": "اضغط للبدء"
   },
   "board": {
     "menu": "القائمة"

@@ -188,7 +188,10 @@
   },
   "kiosk": {
     "title": "Self-Service Ordering",
-    "newOrder": "New Order"
+    "newOrder": "New Order",
+    "startOrdering": "Start Ordering",
+    "attractSubtitle": "Self Order Kiosk",
+    "tapToStart": "Tap to start"
   },
   "board": {
     "menu": "Menu"

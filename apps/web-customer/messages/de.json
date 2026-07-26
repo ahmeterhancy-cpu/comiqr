@@ -188,7 +188,10 @@
   },
   "kiosk": {
     "title": "Selbstbedienungs-Bestellung",
-    "newOrder": "Neue Bestellung"
+    "newOrder": "Neue Bestellung",
+    "startOrdering": "Bestellung starten",
+    "attractSubtitle": "Selbstbedienungs-Kiosk",
+    "tapToStart": "Zum Starten tippen"
   },
   "board": {
     "menu": "Speisekarte"

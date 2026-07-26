@@ -188,7 +188,10 @@
   },
   "kiosk": {
     "title": "Self-Servis Sipariş",
-    "newOrder": "Yeni Sipariş"
+    "newOrder": "Yeni Sipariş",
+    "startOrdering": "Siparişe Başla",
+    "attractSubtitle": "Self Servis Sipariş",
+    "tapToStart": "Başlamak için dokunun"
   },
   "board": {
     "menu": "Menü"
