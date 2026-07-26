@@ -191,7 +191,16 @@
     "newOrder": "Новый заказ",
     "startOrdering": "Начать заказ",
     "attractSubtitle": "Киоск самообслуживания",
-    "tapToStart": "Нажмите, чтобы начать"
+    "tapToStart": "Нажмите, чтобы начать",
+    "greeting": "Что закажете?",
+    "featured": "Рекомендуем",
+    "selectCategory": "Выберите категорию",
+    "searchProduct": "Поиск блюда",
+    "startOver": "Начать заново",
+    "browseMenu": "Открыть меню",
+    "heroKicker": "Выбор дня",
+    "heroSub": "Откройте и наслаждайтесь",
+    "dineIn": "В зале"
   },
   "board": {
     "menu": "Меню"

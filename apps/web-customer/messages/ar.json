@@ -191,7 +191,16 @@
     "newOrder": "طلب جديد",
     "startOrdering": "ابدأ الطلب",
     "attractSubtitle": "كشك الطلب الذاتي",
-    "tapToStart": "اضغط للبدء"
+    "tapToStart": "اضغط للبدء",
+    "greeting": "ماذا تودّ أن تطلب؟",
+    "featured": "مميزة",
+    "selectCategory": "اختر فئة",
+    "searchProduct": "ابحث عن منتج",
+    "startOver": "ابدأ من جديد",
+    "browseMenu": "تصفح القائمة",
+    "heroKicker": "عروض اليوم",
+    "heroSub": "اكتشف واستمتع",
+    "dineIn": "في المطعم"
   },
   "board": {
     "menu": "القائمة"

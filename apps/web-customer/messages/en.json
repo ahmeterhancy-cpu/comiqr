@@ -191,7 +191,16 @@
     "newOrder": "New Order",
     "startOrdering": "Start Ordering",
     "attractSubtitle": "Self Order Kiosk",
-    "tapToStart": "Tap to start"
+    "tapToStart": "Tap to start",
+    "greeting": "What would you like to order?",
+    "featured": "Featured Products",
+    "selectCategory": "Select a Category",
+    "searchProduct": "Search Product",
+    "startOver": "Start Over",
+    "browseMenu": "Browse Menu",
+    "heroKicker": "Today's Picks",
+    "heroSub": "Discover & enjoy",
+    "dineIn": "Dine In"
   },
   "board": {
     "menu": "Menu"

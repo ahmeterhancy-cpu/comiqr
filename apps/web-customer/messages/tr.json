@@ -191,7 +191,16 @@
     "newOrder": "Yeni Sipariş",
     "startOrdering": "Siparişe Başla",
     "attractSubtitle": "Self Servis Sipariş",
-    "tapToStart": "Başlamak için dokunun"
+    "tapToStart": "Başlamak için dokunun",
+    "greeting": "Ne sipariş etmek istersiniz?",
+    "featured": "Öne Çıkanlar",
+    "selectCategory": "Kategori Seç",
+    "searchProduct": "Ürün Ara",
+    "startOver": "Baştan Başla",
+    "browseMenu": "Menüye Göz At",
+    "heroKicker": "Günün Fırsatları",
+    "heroSub": "Afiyetle keşfet",
+    "dineIn": "Masada"
   },
   "board": {
     "menu": "Menü"

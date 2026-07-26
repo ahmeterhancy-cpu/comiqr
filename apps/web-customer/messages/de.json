@@ -191,7 +191,16 @@
     "newOrder": "Neue Bestellung",
     "startOrdering": "Bestellung starten",
     "attractSubtitle": "Selbstbedienungs-Kiosk",
-    "tapToStart": "Zum Starten tippen"
+    "tapToStart": "Zum Starten tippen",
+    "greeting": "Was möchten Sie bestellen?",
+    "featured": "Empfohlen",
+    "selectCategory": "Kategorie wählen",
+    "searchProduct": "Produkt suchen",
+    "startOver": "Neu beginnen",
+    "browseMenu": "Menü ansehen",
+    "heroKicker": "Angebote des Tages",
+    "heroSub": "Entdecken & genießen",
+    "dineIn": "Vor Ort"
   },
   "board": {
     "menu": "Speisekarte"
