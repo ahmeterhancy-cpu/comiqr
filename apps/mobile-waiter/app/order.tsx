@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -78,6 +78,7 @@ export default function OrderScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [serving, setServing] = useState<number | null>(null);
+  const [cancelling, setCancelling] = useState<number | null>(null);
   const [printing, setPrinting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -186,6 +187,26 @@ export default function OrderScreen() {
     } finally {
       setServing(null);
     }
+  }
+
+  function cancelItem(item: any) {
+    Alert.alert('Kalemi iptal et?', `${item.quantity}× ${item.product_name ?? 'Ürün'} adisyondan çıkarılacak.`, [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'İptal Et',
+        style: 'destructive',
+        onPress: async () => {
+          if (!order) return;
+          setCancelling(item.id);
+          try {
+            await waiterApi.voidItem(token, order.id, item.id);
+            await loadOrder();
+          } finally {
+            setCancelling(null);
+          }
+        },
+      },
+    ]);
   }
 
   async function onPrint() {
@@ -384,15 +405,22 @@ export default function OrderScreen() {
                             <Text className="text-sm font-semibold text-slate-800">{i.quantity}× {i.product_name ?? 'Ürün'}</Text>
                             {(i.modifiers ?? []).length > 0 && <Text className="text-[11px] text-slate-500">{i.modifiers.map((m: any) => m.name).join(', ')}</Text>}
                           </View>
-                          {i.status === 'ready' ? (
-                            <Pressable onPress={() => serve(i.id)} disabled={serving === i.id} className="rounded-lg bg-emerald-600 px-3 py-1.5 active:opacity-80" style={{ opacity: serving === i.id ? 0.5 : 1 }}>
-                              <Text className="text-xs font-bold text-white">Servis Et</Text>
-                            </Pressable>
-                          ) : (
-                            <View className={`rounded-full px-2.5 py-1 ${st.bg}`}>
-                              <Text className={`text-[11px] font-bold ${st.fg}`}>{st.label}</Text>
-                            </View>
-                          )}
+                          <View className="flex-row items-center gap-2">
+                            {i.status === 'ready' ? (
+                              <Pressable onPress={() => serve(i.id)} disabled={serving === i.id} className="rounded-lg bg-emerald-600 px-3 py-1.5 active:opacity-80" style={{ opacity: serving === i.id ? 0.5 : 1 }}>
+                                <Text className="text-xs font-bold text-white">Servis Et</Text>
+                              </Pressable>
+                            ) : (
+                              <View className={`rounded-full px-2.5 py-1 ${st.bg}`}>
+                                <Text className={`text-[11px] font-bold ${st.fg}`}>{st.label}</Text>
+                              </View>
+                            )}
+                            {i.status !== 'served' && (
+                              <Pressable onPress={() => cancelItem(i)} disabled={cancelling === i.id} className="rounded-lg bg-red-50 px-2.5 py-1.5 active:opacity-70" style={{ opacity: cancelling === i.id ? 0.5 : 1 }}>
+                                <Text className="text-xs font-bold text-red-500">İptal</Text>
+                              </Pressable>
+                            )}
+                          </View>
                         </View>
                       );
                     })

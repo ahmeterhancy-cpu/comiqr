@@ -81,6 +81,8 @@ export const waiterApi = {
     apiRequest<any>('/admin/pos/orders', { method: 'POST', token, body: { table_id: tableId, items } }),
   addItems: (token: string, orderId: number, items: OrderItemInput[]) =>
     apiRequest<any>(`/admin/pos/orders/${orderId}/items`, { method: 'POST', token, body: { items } }),
+  voidItem: (token: string, orderId: number, itemId: number) =>
+    apiRequest<any>(`/admin/pos/orders/${orderId}/items/${itemId}/void`, { method: 'POST', token }),
   serviceCharge: (token: string, orderId: number, percent: number) =>
     apiRequest<any>(`/admin/pos/orders/${orderId}/service-charge`, { method: 'POST', token, body: { percent } }),
 };
