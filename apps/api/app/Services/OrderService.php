@@ -14,6 +14,7 @@ use App\Support\Restaurant\Vat;
 use App\Support\Tenancy\TenantManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -97,11 +98,22 @@ class OrderService
      */
     public function addItems(Order $order, array $items): Order
     {
+        $existing = $order->items()->pluck('id');
+
         DB::transaction(function () use ($order, $items) {
             $this->addLines($order, $items);
             $order->recalculateTotals();
             $this->applyHappyHour($order); // re-scale the discount to the grown order
         });
+
+        // The kitchen wants an "ek sipariş" slip with only the new lines, not the
+        // whole tab reprinted. Best-effort: a printer problem must not fail the add.
+        try {
+            $added = $order->items()->whereNotIn('id', $existing)->get();
+            app(PrintRouter::class)->routeAddition($order, $added);
+        } catch (\Throwable $e) {
+            Log::warning('Print routing failed for addition', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
 
         return $order->load('items');
     }

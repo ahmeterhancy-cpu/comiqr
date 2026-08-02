@@ -27,7 +27,8 @@
     "finance": "Finanzen",
     "expenses": "Ausgaben",
     "accounts": "Kontokorrent",
-    "reports": "Gewinn / Verlust"
+    "reports": "Gewinn / Verlust",
+    "printers": "Drucker"
   },
   "auth": {
     "registerTitle": "Erstellen Sie Ihr Unternehmen",
@@ -1074,5 +1075,42 @@
     "wd_4": "Freitag",
     "wd_5": "Samstag",
     "wd_6": "Sonntag"
+  },
+  "printers": {
+    "title": "Druckerzuordnung",
+    "gated": "Die Druckerzuordnung ist in diesem Tarif deaktiviert. Für Küchen- und Barbons bitte upgraden.",
+    "bridgeNote": "Hier legen Sie fest, welche Warengruppe wo gedruckt wird; die Bons landen in der Warteschlange. Das Drucken übernimmt ein kleines Hilfsprogramm im Netz des Betriebs — es holt die Warteschlange ab und meldet zurück. Bis dahin warten die Bons.",
+    "addPrinter": "Drucker anlegen",
+    "noPrinters": "Noch keine Drucker.",
+    "namePlaceholder": "Küche, Bar, Kasse…",
+    "kind": "Art",
+    "kind_kitchen": "Küche",
+    "kind_bar": "Bar",
+    "kind_cashier": "Kasse",
+    "kind_label": "Etikett",
+    "target": "Ziel",
+    "targetHint": "Adresse für das Hilfsprogramm (IP:Port oder Freigabename).",
+    "routes": "Hier gedruckte Gruppen",
+    "routesHint": "Ohne Auswahl druckt dieser Drucker alles, was keine Station beansprucht.",
+    "allCategories": "Alles (Auffang)",
+    "copies": "Kopien",
+    "queue": "Warteschlange",
+    "queueTitle": "Bon-Warteschlange",
+    "noJobs": "Warteschlange ist leer.",
+    "pendingJobs": "Offene Bons: {count}",
+    "printer": "Drucker",
+    "jobType": "Bon",
+    "content": "Inhalt",
+    "type_order": "Bestellung",
+    "type_addition": "Nachbestellung",
+    "type_bill": "Rechnung",
+    "type_test": "Test",
+    "status_pending": "Wartet",
+    "status_printed": "Gedruckt",
+    "status_failed": "Fehlgeschlagen",
+    "retry": "Erneut versuchen",
+    "testPrint": "Testbon",
+    "testQueued": "Testbon für {name} eingereiht.",
+    "confirmDelete": "Diesen Drucker löschen?"
   }
 }

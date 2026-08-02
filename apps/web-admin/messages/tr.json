@@ -27,7 +27,8 @@
     "finance": "Finans",
     "expenses": "Giderler",
     "accounts": "Cari Hesaplar",
-    "reports": "Kâr / Zarar"
+    "reports": "Kâr / Zarar",
+    "printers": "Yazıcılar"
   },
   "auth": {
     "registerTitle": "İşletmenizi oluşturun",
@@ -1074,5 +1075,42 @@
     "wd_4": "Cuma",
     "wd_5": "Cumartesi",
     "wd_6": "Pazar"
+  },
+  "printers": {
+    "title": "Yazıcı yönlendirme",
+    "gated": "Yazıcı yönlendirme bu planda kapalı. Mutfak/bar fiş yönlendirmesi için planı yükseltin.",
+    "bridgeNote": "Hangi ürün grubunun nerede basılacağını burada belirlersiniz; fişler kuyruğa düşer. Kâğıda basma işini işletmenin ağındaki küçük bir yardımcı program üstlenir — kuyruğu çeker ve sonucu bildirir. Yardımcı program kurulmadan fişler kuyrukta bekler.",
+    "addPrinter": "Yazıcı ekle",
+    "noPrinters": "Henüz yazıcı tanımlı değil.",
+    "namePlaceholder": "Mutfak, Bar, Kasa…",
+    "kind": "Tür",
+    "kind_kitchen": "Mutfak",
+    "kind_bar": "Bar",
+    "kind_cashier": "Kasa",
+    "kind_label": "Etiket",
+    "target": "Hedef",
+    "targetHint": "Yardımcı programın kullanacağı adres (IP:port veya paylaşım adı).",
+    "routes": "Basılacak gruplar",
+    "routesHint": "Hiçbiri seçilmezse bu yazıcı, başka istasyonun almadığı her şeyi basar.",
+    "allCategories": "Tümü (yakalayıcı)",
+    "copies": "Kopya",
+    "queue": "Kuyruk",
+    "queueTitle": "Fiş kuyruğu",
+    "noJobs": "Kuyrukta fiş yok.",
+    "pendingJobs": "Bekleyen fiş: {count}",
+    "printer": "Yazıcı",
+    "jobType": "Fiş",
+    "content": "İçerik",
+    "type_order": "Sipariş",
+    "type_addition": "Ek sipariş",
+    "type_bill": "Adisyon",
+    "type_test": "Test",
+    "status_pending": "Bekliyor",
+    "status_printed": "Basıldı",
+    "status_failed": "Başarısız",
+    "retry": "Tekrar dene",
+    "testPrint": "Test fişi",
+    "testQueued": "{name} için test fişi kuyruğa bırakıldı.",
+    "confirmDelete": "Bu yazıcı silinsin mi?"
   }
 }

@@ -26,6 +26,7 @@ const NAV_FEATURE: Record<string, string> = {
   expenses: 'finance',
   accounts: 'finance',
   reports: 'finance',
+  printers: 'printing',
 };
 
 const NAV: NavNode[] = [
@@ -58,6 +59,7 @@ const NAV: NavNode[] = [
     key: 'settingsGroup',
     children: [
       { key: 'settings', href: '/settings' },
+      { key: 'printers', href: '/printers' },
       { key: 'users', href: '/users' },
       { key: 'integrations', href: '/integrations' },
       { key: 'billing', href: '/billing' },
@@ -89,6 +91,7 @@ const ICONS: Record<string, string> = {
   expenses: 'M3 6h18v12H3zM3 10h18M7 14h4M17 3v3M7 3v3',
   accounts: 'M3 5h18v14H3zM3 9h18M7 13h5M16 13h2M16 16h2',
   reports: 'M3 3v18h18M7 15l3.5-4.5 3 2.5L20 6',
+  printers: 'M7 8V3h10v5M7 19H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M7 15h10v6H7z',
 };
 
 function NavIcon({ k }: { k: string }) {

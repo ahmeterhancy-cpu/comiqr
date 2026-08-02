@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Admin\MenuPdfController;
 use App\Http\Controllers\Api\Admin\ModifierGroupController;
 use App\Http\Controllers\Api\Admin\PosController;
 use App\Http\Controllers\Api\Admin\PosShiftController;
+use App\Http\Controllers\Api\Admin\PrinterController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\ProductMediaController;
 use App\Http\Controllers\Api\Admin\ProductVariantController;
@@ -259,6 +260,17 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('admin/hotel/rooms/{table}/settle', [HotelController::class, 'settle']);
             });
 
+            // Printer routing (Faz 4) — which product group prints where. Plan-gated.
+            Route::middleware('plan:printing')->group(function () {
+                Route::apiResource('admin/printers', PrinterController::class)
+                    ->only(['index', 'store', 'update', 'destroy']);
+                Route::post('admin/printers/{printer}/test', [PrinterController::class, 'test'])
+                    ->middleware('throttle:20,1');
+                Route::get('admin/print-jobs', [PrinterController::class, 'jobs']);
+                Route::post('admin/print-jobs/{job}/retry', [PrinterController::class, 'retry'])
+                    ->middleware('throttle:60,1');
+            });
+
             // Reviews (Faz 3) — list + reputation, reply, moderate.
             Route::get('admin/reviews', [ReviewController::class, 'index']);
             Route::post('admin/reviews/{review}/reply', [ReviewController::class, 'reply']);
@@ -376,6 +388,15 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('waiter/notifications', [WaiterController::class, 'notifications']);
             Route::post('waiter/order-items/{item}/served', [WaiterController::class, 'served']);
             Route::post('waiter/sessions/{session}/ack', [WaiterController::class, 'acknowledge']);
+        });
+
+        // --- Print bridge (Faz 4) — the small agent on the venue's network polls
+        // its printer's queue and reports back. Kitchen+ so it can run under a
+        // station account rather than a manager's credentials. ---
+        Route::middleware(['role:kitchen', 'plan:printing'])->group(function () {
+            Route::get('admin/print-jobs/pending', [PrinterController::class, 'pending']);
+            Route::post('admin/print-jobs/{job}/ack', [PrinterController::class, 'ack'])
+                ->middleware('throttle:300,1');
         });
 
         // --- KDS (M6, docs/06 §6.7) — kitchen+, plan-gated ---

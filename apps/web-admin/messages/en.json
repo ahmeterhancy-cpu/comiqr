@@ -27,7 +27,8 @@
     "finance": "Finance",
     "expenses": "Expenses",
     "accounts": "Accounts",
-    "reports": "Profit / Loss"
+    "reports": "Profit / Loss",
+    "printers": "Printers"
   },
   "auth": {
     "registerTitle": "Create your business",
@@ -1074,5 +1075,42 @@
     "wd_4": "Friday",
     "wd_5": "Saturday",
     "wd_6": "Sunday"
+  },
+  "printers": {
+    "title": "Printer routing",
+    "gated": "Printer routing is off on this plan. Upgrade to route kitchen and bar tickets.",
+    "bridgeNote": "Decide here which product group prints where; tickets land in the queue. Putting them on paper is done by a small helper on the venue network — it pulls the queue and reports back. Until it is installed, tickets simply wait.",
+    "addPrinter": "Add printer",
+    "noPrinters": "No printers yet.",
+    "namePlaceholder": "Kitchen, Bar, Till…",
+    "kind": "Kind",
+    "kind_kitchen": "Kitchen",
+    "kind_bar": "Bar",
+    "kind_cashier": "Till",
+    "kind_label": "Label",
+    "target": "Target",
+    "targetHint": "Address the helper should use (IP:port or share name).",
+    "routes": "Groups printed here",
+    "routesHint": "Pick none and this printer takes whatever no station claimed.",
+    "allCategories": "Everything (catch-all)",
+    "copies": "Copies",
+    "queue": "Queue",
+    "queueTitle": "Ticket queue",
+    "noJobs": "Queue is empty.",
+    "pendingJobs": "Pending tickets: {count}",
+    "printer": "Printer",
+    "jobType": "Ticket",
+    "content": "Content",
+    "type_order": "Order",
+    "type_addition": "Added items",
+    "type_bill": "Bill",
+    "type_test": "Test",
+    "status_pending": "Waiting",
+    "status_printed": "Printed",
+    "status_failed": "Failed",
+    "retry": "Retry",
+    "testPrint": "Test slip",
+    "testQueued": "Test slip queued for {name}.",
+    "confirmDelete": "Delete this printer?"
   }
 }

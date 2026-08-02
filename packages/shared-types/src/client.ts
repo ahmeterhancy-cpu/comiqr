@@ -623,6 +623,30 @@ export class ApiClient {
     });
   }
 
+  // --- Printer routing (Faz 4) ---
+  adminPrinters(): Promise<any[]> {
+    return this.request('/admin/printers');
+  }
+  createPrinter(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/printers', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updatePrinter(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/printers/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deletePrinter(id: number): Promise<any> {
+    return this.request(`/admin/printers/${id}`, { method: 'DELETE' });
+  }
+  /** Kuyruğa bir test fişi bırakır. */
+  testPrinter(id: number): Promise<any> {
+    return this.request(`/admin/printers/${id}/test`, { method: 'POST' });
+  }
+  printJobs(params: Record<string, string | number | undefined> = {}): Promise<{ data?: any; meta?: any } | null> {
+    return this.envelope(`/admin/print-jobs${queryString(params)}`);
+  }
+  retryPrintJob(id: number): Promise<any> {
+    return this.request(`/admin/print-jobs/${id}/retry`, { method: 'POST' });
+  }
+
   // --- External integrations (POS/ÖKC/ERP/delivery) ---
   adminIntegrations(): Promise<any[]> {
     return this.request('/admin/integrations');
