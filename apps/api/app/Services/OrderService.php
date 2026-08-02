@@ -10,7 +10,9 @@ use App\Models\ProductVariant;
 use App\Models\Table;
 use App\Models\TableSession;
 use App\Support\Restaurant\HappyHour;
+use App\Support\Restaurant\Vat;
 use App\Support\Tenancy\TenantManager;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -34,6 +36,9 @@ class OrderService
                 'table_session_id' => $session->id,
                 'customer_id' => $customer?->id,
                 'source' => 'qr',
+                // Null for a guest scanning the QR; set when a waiter/cashier rings
+                // it up, which is what the per-staff report counts.
+                'created_by' => Auth::id(),
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
                 'note' => $note,
@@ -67,6 +72,7 @@ class OrderService
                 'table_session_id' => null,
                 'customer_id' => $customer?->id,
                 'source' => 'web',
+                'created_by' => Auth::id(),
                 'type' => $type,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
@@ -134,6 +140,8 @@ class OrderService
      */
     protected function addLines(Order $order, array $items): void
     {
+        $tenantSettings = app(TenantManager::class)->get()?->settings_json;
+
         foreach ($items as $line) {
             $product = Product::where('is_active', true)->with('nutritionSummary')->find($line['product_id']);
             if (! $product) {
@@ -173,12 +181,17 @@ class OrderService
                 ? (float) $product->nutritionSummary->cost_per_portion
                 : null;
 
+            // VAT is frozen too: the rate a sale was made under is a fact about that
+            // sale, and changing the menu rate later must not rewrite the tax report.
+            $vatRate = Vat::rateFor($product, $tenantSettings);
+
             $order->items()->create([
                 'product_id' => $product->id,
                 'variant_id' => $variant?->id,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'unit_cost' => $unitCost !== null ? round($unitCost, 2) : null,
+                'vat_rate' => $vatRate,
                 'modifiers_json' => $modifiers,
                 'line_total' => $unitPrice * $quantity,
                 'status' => 'pending',

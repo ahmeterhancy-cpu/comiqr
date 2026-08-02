@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
+import { CockpitView } from '@/components/cockpit-view';
 import { Gated, Kpi, RangeBar, firstOfMonth, money, pct, today } from '@/components/finance-kit';
 import { Button, Card } from '@/components/ui';
 import { API_URL } from '@/lib/api';
@@ -18,13 +19,22 @@ export default function ReportsPage() {
 
   const [from, setFrom] = useState(firstOfMonth());
   const [to, setTo] = useState(today());
+  const [tab, setTab] = useState<'pnl' | 'cockpit'>('pnl');
   const [data, setData] = useState<any | null>(null);
+  const [cockpit, setCockpit] = useState<any | null>(null);
   const [gated, setGated] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const branchId = getActiveBranchId() ?? undefined;
-      setData(await api.profitLoss({ from, to, branch_id: branchId }));
+      // Both cuts share one range, so they are fetched together and the tabs
+      // switch instantly instead of re-querying on every click.
+      const [pnl, deep] = await Promise.all([
+        api.profitLoss({ from, to, branch_id: branchId }),
+        api.cockpitReport({ from, to, branch_id: branchId }),
+      ]);
+      setData(pnl);
+      setCockpit(deep);
       setGated(false);
     } catch {
       setGated(true);
@@ -73,7 +83,25 @@ export default function ReportsPage() {
             }
           />
 
-          {!data ? (
+          <div className="mb-5 flex gap-1 rounded-xl border border-line bg-surface p-1 shadow-sm sm:inline-flex">
+            {(['pnl', 'cockpit'] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition sm:flex-none ${
+                  tab === key ? 'bg-brand-500 text-white shadow-sm' : 'text-muted hover:text-ink'
+                }`}
+                style={tab === key ? { color: '#ffffff' } : undefined}
+              >
+                {t(`tab_${key}` as never)}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'cockpit' && <CockpitView data={cockpit} currency={currency} />}
+
+          {tab === 'pnl' && (!data ? (
             <p className="text-sm text-muted">{c('loading')}</p>
           ) : (
             <>
@@ -188,7 +216,7 @@ export default function ReportsPage() {
                 )}
               </Card>
             </>
-          )}
+          ))}
         </>
       )}
     </AdminShell>

@@ -88,6 +88,8 @@ class ProductController extends Controller
             'name' => [$id ? 'sometimes' : 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => [$id ? 'sometimes' : 'required', 'numeric', 'min:0'],
+            // Null → the tenant default. The price stays VAT-inclusive either way.
+            'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:99'],
             'image_paths_json' => ['nullable', 'array'],
             'video_path' => ['nullable', 'string'],
             'is_active' => ['boolean'],

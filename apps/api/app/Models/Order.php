@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,13 +15,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class Order extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrderFactory> */
+    /** @use HasFactory<OrderFactory> */
     use BelongsToTenant, HasFactory;
 
     public const TYPES = ['dine_in', 'delivery', 'takeaway'];
 
     protected $fillable = [
-        'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'type', 'charged_to_room', 'status', 'payment_status',
+        'tenant_id', 'branch_id', 'table_session_id', 'customer_id', 'source', 'created_by', 'type', 'charged_to_room', 'status', 'payment_status',
         'subtotal', 'discount_total', 'discount_source', 'tip_total', 'tax_total', 'delivery_fee', 'grand_total', 'note',
         'contact_phone', 'address', 'placed_at',
     ];

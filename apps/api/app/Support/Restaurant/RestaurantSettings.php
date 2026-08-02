@@ -56,6 +56,9 @@ class RestaurantSettings
             'settings_json.allow_takeaway' => ['sometimes', 'boolean'],
             'settings_json.allow_delivery' => ['sometimes', 'boolean'],
             'settings_json.delivery_charge' => ['sometimes', 'numeric', 'min:0'],
+            // Default VAT rate (%). Menu prices stay VAT-INCLUSIVE — the rate only
+            // splits them for the tax report. Products may override it.
+            'settings_json.vat_rate' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99'],
             'settings_json.order_notification' => ['sometimes', 'boolean'],
             'settings_json.allow_online_payment' => ['sometimes', 'boolean'],
             // Menu display toggles (customer QR menu) — what the guest menu shows.

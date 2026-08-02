@@ -324,6 +324,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('admin/reports/profit-loss.csv', [FinanceReportController::class, 'profitLossCsv'])
                 ->middleware('throttle:20,1');
             Route::get('admin/reports/accounts', [FinanceReportController::class, 'accounts']);
+            Route::get('admin/reports/cockpit', [FinanceReportController::class, 'cockpit']);
         });
 
         // --- Analytics (M9) — manager+, plan-gated ---

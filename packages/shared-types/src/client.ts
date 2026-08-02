@@ -610,6 +610,10 @@ export class ApiClient {
   accountsReport(): Promise<any> {
     return this.request('/admin/reports/accounts');
   }
+  /** Rapor Kokpiti: saatlik yoğunluk, kategori, personel, ikram, vergi. */
+  cockpitReport(params: Record<string, string | number | undefined> = {}): Promise<any> {
+    return this.request(`/admin/reports/cockpit${queryString(params)}`);
+  }
 
   /** POS: siparişi cariye yaz (veresiye). */
   chargeOrderToAccount(orderId: number, body: Record<string, unknown>): Promise<any> {

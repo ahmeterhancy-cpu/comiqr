@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasTranslations;
+use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,13 +19,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Product extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProductFactory> */
+    /** @use HasFactory<ProductFactory> */
     use BelongsToTenant, HasFactory, HasTranslations, SoftDeletes;
 
     protected array $translatable = ['name', 'description'];
 
     protected $fillable = [
-        'tenant_id', 'category_id', 'name', 'description', 'price',
+        'tenant_id', 'category_id', 'name', 'description', 'price', 'vat_rate',
         'image_paths_json', 'video_path', 'is_active', 'age_restricted', 'sort', 'prep_minutes',
         'calories_display', 'tags_json', 'external_pos_id',
     ];
@@ -33,6 +34,7 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'vat_rate' => 'decimal:2',
             'image_paths_json' => 'array',
             'tags_json' => 'array',
             'is_active' => 'boolean',

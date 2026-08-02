@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\CockpitReport;
 use App\Services\FinanceReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,16 @@ class FinanceReportController extends Controller
 
         return response()->json([
             'data' => $this->report->profitLoss($from, $to, $request->integer('branch_id') ?: null),
+        ]);
+    }
+
+    /** GET /admin/reports/cockpit — saatlik yoğunluk, kategori, personel, ikram, vergi. */
+    public function cockpit(Request $request, CockpitReport $cockpit): JsonResponse
+    {
+        [$from, $to] = $this->range($request);
+
+        return response()->json([
+            'data' => $cockpit->build($from, $to, $request->integer('branch_id') ?: null),
         ]);
     }
 
