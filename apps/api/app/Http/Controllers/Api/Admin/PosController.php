@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Events\OrderPlaced;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
+use App\Models\Account;
 use App\Models\Branch;
 use App\Models\LoyaltyAccount;
 use App\Models\Order;
@@ -291,6 +292,55 @@ class PosController extends Controller
         return response()->json([
             'data' => new OrderResource($model->fresh('items.product')),
             'meta' => ['redeemed_points' => $result['points'], 'balance' => (int) $account->fresh()->points_balance],
+        ]);
+    }
+
+    /**
+     * POST /admin/pos/orders/{order}/charge-account — veresiye (Faz 4). Books the
+     * bill onto a current account instead of taking money now. Partial amounts are
+     * allowed, so a table can pay half in cash and put the rest on the tab.
+     */
+    public function chargeAccount(Request $request, string $order): JsonResponse
+    {
+        $tenantId = app(TenantManager::class)->id();
+
+        $data = $request->validate([
+            'account_id' => [
+                'required',
+                Rule::exists('accounts', 'id')
+                    ->where('tenant_id', $tenantId)
+                    ->where('is_active', true)
+                    ->whereNull('deleted_at'),
+            ],
+            'amount' => ['nullable', 'numeric', 'min:0.01'],
+            'note' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        $model = Order::findOrFail($order);
+        abort_if($model->payment_status === 'paid', 422, 'Sipariş zaten ödendi.');
+
+        $account = Account::findOrFail($data['account_id']);
+
+        $result = $this->payments->chargeToAccount(
+            $model,
+            $account,
+            isset($data['amount']) ? (float) $data['amount'] : null,
+            $data['note'] ?? null,
+        );
+
+        // Link the sale to the CRM card behind the account, so veresiye guests
+        // still show up in customer history and loyalty.
+        if (! $model->customer_id && $account->customer_id) {
+            $model->update(['customer_id' => $account->customer_id]);
+        }
+
+        return response()->json([
+            'data' => new OrderResource($model->fresh('items.product')),
+            'meta' => [
+                'charged' => $result['amount'],
+                'account' => ['id' => $account->id, 'name' => $account->name, 'balance' => $result['balance']],
+                'outstanding' => $this->payments->outstandingFor($model->fresh()),
+            ],
         ]);
     }
 

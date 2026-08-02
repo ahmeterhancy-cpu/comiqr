@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AccountController;
 use App\Http\Controllers\Api\Admin\AiController;
 use App\Http\Controllers\Api\Admin\AnalyticsController;
 use App\Http\Controllers\Api\Admin\BranchController;
@@ -8,21 +9,25 @@ use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\CouponController;
 use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\DiningAreaController;
+use App\Http\Controllers\Api\Admin\ExpenseCategoryController;
+use App\Http\Controllers\Api\Admin\ExpenseController;
+use App\Http\Controllers\Api\Admin\FinanceReportController;
 use App\Http\Controllers\Api\Admin\IngredientController;
 use App\Http\Controllers\Api\Admin\IntegrationController;
 use App\Http\Controllers\Api\Admin\MenuPdfController;
 use App\Http\Controllers\Api\Admin\ModifierGroupController;
-use App\Http\Controllers\Api\Admin\ProductController;
-use App\Http\Controllers\Api\Admin\ProductMediaController;
-use App\Http\Controllers\Api\Admin\RestaurantMediaController;
 use App\Http\Controllers\Api\Admin\PosController;
 use App\Http\Controllers\Api\Admin\PosShiftController;
+use App\Http\Controllers\Api\Admin\ProductController;
+use App\Http\Controllers\Api\Admin\ProductMediaController;
 use App\Http\Controllers\Api\Admin\ProductVariantController;
 use App\Http\Controllers\Api\Admin\RecipeController;
+use App\Http\Controllers\Api\Admin\RestaurantMediaController;
 use App\Http\Controllers\Api\Admin\StockController;
 use App\Http\Controllers\Api\Admin\TableController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DiscoveryController;
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\HotelController;
 use App\Http\Controllers\Api\KdsController;
 use App\Http\Controllers\Api\MarketplaceOrderController;
@@ -36,9 +41,11 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\WaiterController;
+use App\Models\Allergen;
+use App\Models\Plan;
 use App\Support\Tenancy\SlugGenerator;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,7 +59,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('ping', fn () => response()->json(['data' => ['ok' => true, 'app' => config('app.name')]]));
 
 // A4: readiness probe — DB + cache reachability for load balancers / uptime checks.
-Route::get('health', \App\Http\Controllers\Api\HealthController::class);
+Route::get('health', HealthController::class);
 
 Route::post('auth/register-tenant', [AuthController::class, 'registerTenant'])
     ->middleware('throttle:onboarding');
@@ -70,14 +77,14 @@ Route::get('auth/slug-available/{slug}', function (string $slug, SlugGenerator $
 
 // --- Public media (product images) ---
 Route::get('media/{path}', function (string $path) {
-    abort_unless(\Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);
+    abort_unless(Storage::disk('public')->exists($path), 404);
 
-    return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
+    return Storage::disk('public')->response($path);
 })->where('path', '.*');
 
 // --- Public SaaS plans (onboarding plan picker) — code/price/verticals ---
 Route::get('plans', function () {
-    return response()->json(['data' => \App\Models\Plan::where('is_active', true)->orderBy('sort')->get()
+    return response()->json(['data' => Plan::where('is_active', true)->orderBy('sort')->get()
         ->map(fn ($p) => [
             'code' => $p->code,
             'name' => $p->name,
@@ -201,7 +208,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::apiResource('admin/branches', BranchController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::get('admin/allergens', fn () => response()->json([
-                'data' => \App\Models\Allergen::orderBy('id')->get(['id', 'code', 'name']),
+                'data' => Allergen::orderBy('id')->get(['id', 'code', 'name']),
             ]));
 
             Route::post('admin/categories/reorder', [CategoryController::class, 'reorder']);
@@ -286,12 +293,37 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('admin/pos/orders/{order}/pay', [PosController::class, 'pay'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/refund', [PosController::class, 'refund'])->middleware('throttle:120,1');
             Route::post('admin/pos/orders/{order}/redeem', [PosController::class, 'redeem'])->middleware('throttle:120,1');
+            // Veresiye — needs the finance module on top of ordering.
+            Route::post('admin/pos/orders/{order}/charge-account', [PosController::class, 'chargeAccount'])
+                ->middleware(['plan:finance', 'throttle:120,1']);
             Route::post('admin/pos/orders/{order}/service-charge', [PosController::class, 'serviceCharge'])->middleware('throttle:120,1');
 
             // Cash-drawer shift (Z-report).
             Route::get('admin/pos/shift/current', [PosShiftController::class, 'current']);
             Route::post('admin/pos/shift/open', [PosShiftController::class, 'open'])->middleware('throttle:60,1');
             Route::post('admin/pos/shift/{shift}/close', [PosShiftController::class, 'close'])->middleware('throttle:60,1');
+        });
+
+        // --- Finance (Faz 4 — gider · cari · maliyet-kâr) — manager+, plan-gated ---
+        Route::middleware(['role:manager', 'plan:finance'])->group(function () {
+            Route::apiResource('admin/expense-categories', ExpenseCategoryController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->parameters(['expense-categories' => 'category']);
+
+            Route::apiResource('admin/expenses', ExpenseController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+
+            // Cari hesaplar + defter. The ledger POST is the tahsilat/ödeme entry.
+            Route::get('admin/accounts/{account}/transactions', [AccountController::class, 'transactions']);
+            Route::post('admin/accounts/{account}/transactions', [AccountController::class, 'storeTransaction'])
+                ->middleware('throttle:60,1');
+            Route::apiResource('admin/accounts', AccountController::class)
+                ->only(['index', 'show', 'store', 'update', 'destroy']);
+
+            Route::get('admin/reports/profit-loss', [FinanceReportController::class, 'profitLoss']);
+            Route::get('admin/reports/profit-loss.csv', [FinanceReportController::class, 'profitLossCsv'])
+                ->middleware('throttle:20,1');
+            Route::get('admin/reports/accounts', [FinanceReportController::class, 'accounts']);
         });
 
         // --- Analytics (M9) — manager+, plan-gated ---

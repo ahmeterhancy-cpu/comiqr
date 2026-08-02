@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Table;
 use App\Models\TableSession;
+use App\Support\Restaurant\HappyHour;
+use App\Support\Tenancy\TenantManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -22,7 +26,7 @@ class OrderService
     /**
      * @param  array<int,array{product_id:int,variant_id?:int|null,quantity:int,modifiers?:array<int,int>,note?:string}>  $items
      */
-    public function place(Table $table, TableSession $session, array $items, ?string $note = null, ?\App\Models\Customer $customer = null): Order
+    public function place(Table $table, TableSession $session, array $items, ?string $note = null, ?Customer $customer = null): Order
     {
         return DB::transaction(function () use ($table, $session, $items, $note, $customer) {
             $order = Order::create([
@@ -55,7 +59,7 @@ class OrderService
      * @param  array<int,array<string,mixed>>  $items
      * @param  array{name?:string,phone?:string,address?:string}  $contact
      */
-    public function placeDirect(\App\Models\Branch $branch, array $items, string $type, array $contact = [], ?string $note = null, ?\App\Models\Customer $customer = null, float $deliveryFee = 0): Order
+    public function placeDirect(Branch $branch, array $items, string $type, array $contact = [], ?string $note = null, ?Customer $customer = null, float $deliveryFee = 0): Order
     {
         return DB::transaction(function () use ($branch, $items, $type, $contact, $note, $customer, $deliveryFee) {
             $order = Order::create([
@@ -108,8 +112,8 @@ class OrderService
             return;
         }
 
-        $tenant = app(\App\Support\Tenancy\TenantManager::class)->get();
-        $percent = \App\Support\Restaurant\HappyHour::percent($tenant?->settings_json, null, $tenant?->timezone);
+        $tenant = app(TenantManager::class)->get();
+        $percent = HappyHour::percent($tenant?->settings_json, null, $tenant?->timezone);
         if ($percent <= 0) {
             return;
         }
@@ -131,7 +135,7 @@ class OrderService
     protected function addLines(Order $order, array $items): void
     {
         foreach ($items as $line) {
-            $product = Product::where('is_active', true)->find($line['product_id']);
+            $product = Product::where('is_active', true)->with('nutritionSummary')->find($line['product_id']);
             if (! $product) {
                 throw ValidationException::withMessages([
                     'items' => ["Product {$line['product_id']} is unavailable."],
@@ -160,11 +164,21 @@ class OrderService
 
             $quantity = max(1, (int) ($line['quantity'] ?? 1));
 
+            // Freeze today's recipe cost onto the line so the P&L report (Faz 4)
+            // prices historical sales at the cost they actually carried, not at
+            // whatever the ingredients cost when the report is run.
+            // A zero cost means "no recipe", not "free to make" — keep it null so the
+            // report can tell missing costs apart from real ones.
+            $unitCost = (float) ($product->nutritionSummary?->cost_per_portion ?? 0) > 0
+                ? (float) $product->nutritionSummary->cost_per_portion
+                : null;
+
             $order->items()->create([
                 'product_id' => $product->id,
                 'variant_id' => $variant?->id,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
+                'unit_cost' => $unitCost !== null ? round($unitCost, 2) : null,
                 'modifiers_json' => $modifiers,
                 'line_total' => $unitPrice * $quantity,
                 'status' => 'pending',

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OrderItem extends Model
 {
     protected $fillable = [
-        'order_id', 'product_id', 'variant_id', 'quantity', 'unit_price', 'discount_total',
+        'order_id', 'product_id', 'variant_id', 'quantity', 'unit_price', 'unit_cost', 'discount_total',
         'modifiers_json', 'line_total', 'status', 'kds_station_id', 'note',
     ];
 
@@ -19,6 +19,7 @@ class OrderItem extends Model
     {
         return [
             'unit_price' => 'decimal:2',
+            'unit_cost' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'line_total' => 'decimal:2',
             'modifiers_json' => 'array',

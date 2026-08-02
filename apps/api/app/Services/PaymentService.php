@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\Account;
 use App\Models\LoyaltyAccount;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\PaymentManager;
-use App\Payments\PaymentSession;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Payment orchestration (M5, docs/04 §4.6). Creates payment rows, delegates to
@@ -173,6 +174,50 @@ class PaymentService
             : ($collected > 0.001 ? 'partially_paid' : 'unpaid');
 
         $order->update(['payment_status' => $status]);
+    }
+
+    /**
+     * Settle the bill onto a current account — veresiye (Faz 4). The sale is
+     * booked as revenue now (a 'credit' tender, so the cash drawer is untouched)
+     * and the guest's account carries the receivable until it is collected.
+     *
+     * The ledger is charged FIRST: if the account is over its credit ceiling the
+     * ledger throws and the whole transaction rolls back, so an over-limit guest
+     * can never end up with a settled order and no matching debt.
+     *
+     * @return array{payment:Payment,amount:float,balance:float}
+     */
+    public function chargeToAccount(Order $order, Account $account, ?float $amount = null, ?string $note = null): array
+    {
+        return DB::transaction(function () use ($order, $account, $amount, $note) {
+            Order::whereKey($order->id)->lockForUpdate()->first();
+
+            $outstanding = $this->outstanding($order);
+            $charge = round($amount === null ? $outstanding : min($amount, $outstanding), 2);
+
+            if ($charge < 0.01) {
+                throw ValidationException::withMessages(['amount' => ['Cariye yazılacak tutar yok.']]);
+            }
+
+            app(AccountLedger::class)->chargeOrder($account, $order, $charge, $note);
+
+            $payment = Payment::create([
+                'order_id' => $order->id,
+                'gateway' => 'credit',
+                'amount' => $charge,
+                'tip_amount' => 0,
+                'status' => 'paid',
+                'split_meta_json' => ['account_id' => $account->id, 'credit' => true],
+            ]);
+
+            $this->finalize($payment->fresh());
+
+            return [
+                'payment' => $payment->fresh(),
+                'amount' => $charge,
+                'balance' => round((float) $account->fresh()->balance, 2),
+            ];
+        });
     }
 
     /**

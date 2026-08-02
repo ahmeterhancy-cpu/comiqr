@@ -31,6 +31,7 @@ const FEATURES: [string, string][] = [
   ['multi_branch', 'Çok şube'],
   ['happy_hour', 'Happy Hour (bar)'],
   ['folio', 'Oda/Şezlong folyosu'],
+  ['finance', 'Gider · Cari · Kâr raporu'],
   ['white_label', 'White-label'],
   ['custom_integration', 'Özel entegrasyon'],
   ['sla', 'SLA'],

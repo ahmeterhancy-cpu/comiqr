@@ -40,6 +40,17 @@ export class ApiError extends Error {
   }
 }
 
+/** Build a `?a=1&b=2` suffix, dropping empty values. */
+function queryString(params: Record<string, string | number | undefined | null>): string {
+  const sp = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') sp.set(key, String(value));
+  }
+  const q = sp.toString();
+
+  return q ? `?${q}` : '';
+}
+
 export interface ApiClientOptions {
   baseUrl: string;
   token?: string | null;
@@ -70,7 +81,12 @@ export class ApiClient {
     return this;
   }
 
-  async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  /**
+   * The whole response envelope — for endpoints whose `meta` carries totals the
+   * caller needs (finance lists, reports). {@link request} is the usual entry
+   * point and returns just `data`.
+   */
+  async envelope<T>(path: string, init: RequestInit = {}): Promise<ApiEnvelope<T> | null> {
     const headers = new Headers(init.headers);
     headers.set('Accept', 'application/json');
     const isForm = typeof FormData !== 'undefined' && init.body instanceof FormData;
@@ -97,6 +113,12 @@ export class ApiClient {
         body?.errors ?? {},
       );
     }
+
+    return body;
+  }
+
+  async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const body = await this.envelope<T>(path, init);
 
     return (body?.data ?? (body as unknown)) as T;
   }
@@ -535,6 +557,66 @@ export class ApiClient {
   }
   sendCampaign(id: number): Promise<any> {
     return this.request(`/admin/campaigns/${id}/send`, { method: 'POST' });
+  }
+
+  // --- Finance: gider · cari · maliyet-kâr (Faz 4) ---
+  adminExpenseCategories(): Promise<any[]> {
+    return this.request('/admin/expense-categories');
+  }
+  createExpenseCategory(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/expense-categories', { method: 'POST', body: JSON.stringify(body) });
+  }
+  deleteExpenseCategory(id: number): Promise<any> {
+    return this.request(`/admin/expense-categories/${id}`, { method: 'DELETE' });
+  }
+
+  /** Paginated expenses plus the period totals carried in `meta`. */
+  adminExpenses(params: Record<string, string | number | undefined> = {}): Promise<{ data?: any; meta?: any } | null> {
+    return this.envelope(`/admin/expenses${queryString(params)}`);
+  }
+  createExpense(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/expenses', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateExpense(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteExpense(id: number): Promise<any> {
+    return this.request(`/admin/expenses/${id}`, { method: 'DELETE' });
+  }
+
+  adminAccounts(params: Record<string, string | number | undefined> = {}): Promise<any[]> {
+    return this.request(`/admin/accounts${queryString(params)}`);
+  }
+  createAccount(body: Record<string, unknown>): Promise<any> {
+    return this.request('/admin/accounts', { method: 'POST', body: JSON.stringify(body) });
+  }
+  updateAccount(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/accounts/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  deleteAccount(id: number): Promise<any> {
+    return this.request(`/admin/accounts/${id}`, { method: 'DELETE' });
+  }
+  accountTransactions(id: number): Promise<any> {
+    return this.request(`/admin/accounts/${id}/transactions`);
+  }
+  /** Tahsilat / ödeme / düzeltme — direction: collect | settle | charge | adjustment. */
+  postAccountTransaction(id: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/accounts/${id}/transactions`, { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  profitLoss(params: Record<string, string | number | undefined> = {}): Promise<any> {
+    return this.request(`/admin/reports/profit-loss${queryString(params)}`);
+  }
+  accountsReport(): Promise<any> {
+    return this.request('/admin/reports/accounts');
+  }
+
+  /** POS: siparişi cariye yaz (veresiye). */
+  chargeOrderToAccount(orderId: number, body: Record<string, unknown>): Promise<any> {
+    return this.request(`/admin/pos/orders/${orderId}/charge-account`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
   }
 
   // --- External integrations (POS/ÖKC/ERP/delivery) ---
