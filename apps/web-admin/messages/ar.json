@@ -741,7 +741,8 @@
     "areaTypeRoom": "غرفة",
     "areaTypeSunbed": "كرسي شاطئي",
     "areaTypeStand": "منصة",
-    "qrAlt": "رمز QR لـ {code}"
+    "qrAlt": "رمز QR لـ {code}",
+    "printAll": "طباعة ملصقات QR"
   },
   "branches": {
     "title": "الفروع",
@@ -1126,5 +1127,13 @@
   "qr": {
     "downloadPng": "تنزيل PNG",
     "downloadSvg": "تنزيل SVG"
+  },
+  "tablesPrint": {
+    "title": "طباعة ملصقات QR",
+    "print": "طباعة",
+    "count": "{count} نقطة",
+    "hint": "مهيّأة لورق A4 عمودي. اطبع ثم قصّ على الخطوط المتقطعة وألصقها على الطاولات. النقاط غير النشطة غير مُدرجة.",
+    "scanHint": "امسح لعرض القائمة",
+    "empty": "لا شيء للطباعة."
   }
 }

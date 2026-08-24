@@ -741,7 +741,8 @@
     "areaTypeRoom": "Oda",
     "areaTypeSunbed": "Şezlong",
     "areaTypeStand": "Stant",
-    "qrAlt": "{code} için QR kodu"
+    "qrAlt": "{code} için QR kodu",
+    "printAll": "QR etiketlerini yazdır"
   },
   "branches": {
     "title": "Şubeler",
@@ -1126,5 +1127,13 @@
   "qr": {
     "downloadPng": "PNG indir",
     "downloadSvg": "SVG indir"
+  },
+  "tablesPrint": {
+    "title": "QR etiketlerini yazdır",
+    "print": "Yazdır",
+    "count": "{count} nokta",
+    "hint": "Sayfa A4 dikey için hazırlandı. Yazdırdıktan sonra kesikli çizgilerden kesip masalara yapıştırın. Pasif noktalar listeye alınmaz.",
+    "scanHint": "Menü için okutun",
+    "empty": "Yazdırılacak nokta yok."
   }
 }

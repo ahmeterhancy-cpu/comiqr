@@ -741,7 +741,8 @@
     "areaTypeRoom": "Room",
     "areaTypeSunbed": "Sunbed",
     "areaTypeStand": "Stand",
-    "qrAlt": "QR code for {code}"
+    "qrAlt": "QR code for {code}",
+    "printAll": "Print QR labels"
   },
   "branches": {
     "title": "Branches",
@@ -1126,5 +1127,13 @@
   "qr": {
     "downloadPng": "Download PNG",
     "downloadSvg": "Download SVG"
+  },
+  "tablesPrint": {
+    "title": "Print QR labels",
+    "print": "Print",
+    "count": "{count} points",
+    "hint": "Laid out for A4 portrait. Print, cut along the dashed lines and stick them on the tables. Inactive points are left out.",
+    "scanHint": "Scan for the menu",
+    "empty": "Nothing to print."
   }
 }

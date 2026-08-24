@@ -741,7 +741,8 @@
     "areaTypeRoom": "Zimmer",
     "areaTypeSunbed": "Liege",
     "areaTypeStand": "Stand",
-    "qrAlt": "QR-Code für {code}"
+    "qrAlt": "QR-Code für {code}",
+    "printAll": "QR-Etiketten drucken"
   },
   "branches": {
     "title": "Filialen",
@@ -1126,5 +1127,13 @@
   "qr": {
     "downloadPng": "PNG herunterladen",
     "downloadSvg": "SVG herunterladen"
+  },
+  "tablesPrint": {
+    "title": "QR-Etiketten drucken",
+    "print": "Drucken",
+    "count": "{count} Punkte",
+    "hint": "Für A4 hochformat ausgelegt. Drucken, an den gestrichelten Linien schneiden und auf die Tische kleben. Inaktive Punkte bleiben weg.",
+    "scanHint": "Für die Karte scannen",
+    "empty": "Nichts zu drucken."
   }
 }

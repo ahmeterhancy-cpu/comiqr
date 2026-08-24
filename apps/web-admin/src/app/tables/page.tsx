@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { AreaType, DiningArea } from '@comiqr/shared-types';
 import { AdminShell } from '@/components/AdminShell';
@@ -168,6 +169,12 @@ export default function TablesPage() {
               </Button>
             </div>
           </form>
+          <Link
+            href="/tables/print"
+            className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-canvas"
+          >
+            {t('printAll')}
+          </Link>
           <p className="mt-2 text-xs text-muted">
             {t('pointHint')}
           </p>
