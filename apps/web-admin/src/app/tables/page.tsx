@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { AreaType, DiningArea } from '@comiqr/shared-types';
 import { AdminShell } from '@/components/AdminShell';
+import { QrSvg, downloadQrPng, downloadQrSvg, useQrMatrix } from '@/components/qr';
 import { Button, Card, Input } from '@/components/ui';
 import { useApi } from '@/lib/useApi';
 
@@ -184,30 +185,76 @@ export default function TablesPage() {
             </h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((t) => (
-                <Card key={t.id}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-ink">
-                      {areaMeta(t.area?.type).icon} {t.code}
-                    </span>
-                    <span className={`text-xs ${t.is_active ? 'text-emerald-700' : 'text-muted'}`}>
-                      {t.is_active ? c('active') : c('inactive')}
-                    </span>
-                  </div>
-                  <a
-                    href={`${CUSTOMER_BASE}${t.menu_path}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 block break-all text-xs text-brand-600 hover:underline"
-                  >
-                    {CUSTOMER_BASE}
-                    {t.menu_path}
-                  </a>
-                </Card>
+                <TableQrCard key={t.id} table={t} />
               ))}
             </div>
           </section>
         );
       })}
     </AdminShell>
+  );
+}
+
+/**
+ * One service point: its code, its QR and the link behind it. The QR leads
+ * because it is the thing that actually goes on the table; the URL underneath is
+ * there for checking and for pasting into a print layout.
+ */
+function TableQrCard({ table }: { table: any }) {
+  const t = useTranslations('tables');
+  const c = useTranslations('common');
+  const q = useTranslations('qr');
+
+  const url = `${CUSTOMER_BASE}${table.menu_path}`;
+  const matrix = useQrMatrix(url);
+  const meta = areaMeta(table.area?.type);
+  const fileBase = `comiqr-${String(table.code).replace(/[^a-zA-Z0-9-_]+/g, '-').toLowerCase()}`;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-ink">
+          {meta.icon} {table.code}
+        </span>
+        <span className={`text-xs ${table.is_active ? 'text-emerald-700' : 'text-muted'}`}>
+          {table.is_active ? c('active') : c('inactive')}
+        </span>
+      </div>
+
+      <div className="mt-3 flex items-start gap-3">
+        <QrSvg
+          matrix={matrix}
+          label={t('qrAlt', { code: table.code })}
+          className="h-24 w-24 shrink-0 rounded-lg border border-line p-1"
+        />
+        <div className="min-w-0">
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="block break-all text-xs text-brand-600 hover:underline"
+          >
+            {url}
+          </a>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={() => downloadQrPng(matrix, `${fileBase}-qr.png`)}
+              className="text-xs font-semibold text-brand-600 hover:underline"
+            >
+              {q('downloadPng')}
+            </button>
+            <span className="text-xs text-muted">·</span>
+            <button
+              type="button"
+              onClick={() => downloadQrSvg(matrix, `${fileBase}-qr.svg`)}
+              className="text-xs font-semibold text-brand-600 hover:underline"
+            >
+              {q('downloadSvg')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }

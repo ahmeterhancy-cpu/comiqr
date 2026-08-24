@@ -740,7 +740,8 @@
     "areaTypeTable": "Стол",
     "areaTypeRoom": "Номер",
     "areaTypeSunbed": "Шезлонг",
-    "areaTypeStand": "Стенд"
+    "areaTypeStand": "Стенд",
+    "qrAlt": "QR-код для {code}"
   },
   "branches": {
     "title": "Филиалы",
@@ -1120,8 +1121,10 @@
     "copy": "Скопировать адрес",
     "copied": "Скопировано",
     "open": "Открыть",
-    "downloadPng": "Скачать PNG",
-    "downloadSvg": "Скачать SVG",
     "qrAlt": "QR-код адреса меню {venue}"
+  },
+  "qr": {
+    "downloadPng": "Скачать PNG",
+    "downloadSvg": "Скачать SVG"
   }
 }

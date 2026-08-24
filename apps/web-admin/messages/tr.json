@@ -740,7 +740,8 @@
     "areaTypeTable": "Masa",
     "areaTypeRoom": "Oda",
     "areaTypeSunbed": "Şezlong",
-    "areaTypeStand": "Stant"
+    "areaTypeStand": "Stant",
+    "qrAlt": "{code} için QR kodu"
   },
   "branches": {
     "title": "Şubeler",
@@ -1120,8 +1121,10 @@
     "copy": "Adresi kopyala",
     "copied": "Kopyalandı",
     "open": "Aç",
-    "downloadPng": "PNG indir",
-    "downloadSvg": "SVG indir",
     "qrAlt": "{venue} menü adresinin QR kodu"
+  },
+  "qr": {
+    "downloadPng": "PNG indir",
+    "downloadSvg": "SVG indir"
   }
 }
