@@ -1122,7 +1122,8 @@
     "copy": "Adresse kopieren",
     "copied": "Kopiert",
     "open": "Öffnen",
-    "qrAlt": "QR-Code für die Menüadresse von {venue}"
+    "qrAlt": "QR-Code für die Menüadresse von {venue}",
+    "copyManual": "Der Browser hat das Kopieren blockiert — die Adresse ist markiert, bitte manuell kopieren."
   },
   "qr": {
     "downloadPng": "PNG herunterladen",

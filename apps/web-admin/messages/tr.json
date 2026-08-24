@@ -1122,7 +1122,8 @@
     "copy": "Adresi kopyala",
     "copied": "Kopyalandı",
     "open": "Aç",
-    "qrAlt": "{venue} menü adresinin QR kodu"
+    "qrAlt": "{venue} menü adresinin QR kodu",
+    "copyManual": "Tarayıcı kopyalamaya izin vermedi — adres seçili, elle kopyalayabilirsiniz."
   },
   "qr": {
     "downloadPng": "PNG indir",

@@ -17,21 +17,54 @@ export function PublicLinkCard({ slug, venueName }: { slug: string; venueName?: 
   const t = useTranslations('publicLink');
   const q = useTranslations('qr');
   const [copied, setCopied] = useState(false);
+  const [manual, setManual] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const url = `${CUSTOMER_URL}/${slug}`;
   const matrix = useQrMatrix(url);
   const fileBase = `comiqr-${slug}`;
 
+  /**
+   * Copy with a fallback. The async clipboard API is refused outside a secure
+   * context — an owner opening the panel over plain http on a LAN address hits
+   * exactly that — so a failure falls back to the old execCommand path, and if
+   * that fails too the address is selected so it can be copied by hand. A dead
+   * button with no explanation is the one outcome worth avoiding.
+   */
   function copy() {
-    navigator.clipboard
-      ?.writeText(url)
-      .then(() => {
-        setCopied(true);
-        if (timer.current) clearTimeout(timer.current);
-        timer.current = setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(() => undefined);
+    const done = (ok: boolean) => {
+      setCopied(ok);
+      setManual(!ok);
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        setCopied(false);
+        setManual(false);
+      }, 2500);
+    };
+
+    const legacyCopy = () => {
+      try {
+        const field = document.createElement("textarea");
+        field.value = url;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(field);
+        done(ok);
+      } catch {
+        done(false);
+      }
+    };
+
+    if (!navigator.clipboard?.writeText) {
+      legacyCopy();
+      return;
+    }
+
+    navigator.clipboard.writeText(url).then(() => done(true)).catch(legacyCopy);
   }
 
   return (
@@ -42,7 +75,7 @@ export function PublicLinkCard({ slug, venueName }: { slug: string; venueName?: 
       <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 rounded-xl border border-line bg-canvas px-3 py-2.5">
-            <span className="min-w-0 flex-1 break-all font-mono text-sm text-ink">{url}</span>
+            <span className="min-w-0 flex-1 select-all break-all font-mono text-sm text-ink">{url}</span>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -58,6 +91,8 @@ export function PublicLinkCard({ slug, venueName }: { slug: string; venueName?: 
               {t('open')}
             </a>
           </div>
+
+          {manual && <p className="mt-2 text-xs font-medium text-amber-700">{t('copyManual')}</p>}
 
           <p className="mt-3 text-xs text-muted">{t('tableHint')}</p>
         </div>
