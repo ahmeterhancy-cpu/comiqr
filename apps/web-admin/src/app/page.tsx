@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/BrandLogo';
+import { createApi } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 
 /* Orange brand scope — overrides the admin's indigo tokens for the public site only. */
@@ -253,16 +254,111 @@ const VERTICALS = [
   { e: '🏖️', t: 'Plaj Kulübü', d: 'Şezlong servisi ve şezlonga yansıtma; sahilden sipariş.' },
 ];
 
-const PLANS = [
-  { name: 'Başlangıç', price: '₺0', per: '/ay', desc: 'Dijital QR menüye geçen küçük işletmeler için.', cta: 'Ücretsiz Başla', feat: false,
-    items: ['QR menü + 3 tema', 'Çalışma saati, WiFi, iletişim', 'Besin değeri & alerjen', '5 dil', 'Fotoğraftan menü içe aktarma'] },
-  { name: 'Pro', price: '₺29', per: '/ay', desc: 'Masadan sipariş ve servis akışı isteyenler için.', cta: '14 Gün Ücretsiz', feat: true,
-    items: ['Başlangıç’taki her şey', 'Sepet, sipariş & mutfak ekranı (KDS)', 'Garson çağır & hesap iste', 'Online ödeme (Tiko)', 'AI menü asistanı & analitik'] },
-  { name: 'Business', price: '₺79', per: '/ay', desc: 'Otel, plaj ve çok şubeli işletmeler için.', cta: '14 Gün Ücretsiz', feat: false,
-    items: ['Pro’daki her şey', 'Otel & plaj (folyo)', 'Çok şube & personel POS', 'Sadakat: puan & kupon', 'Gelişmiş raporlar'] },
-  { name: 'Kurumsal', price: 'Özel', per: '', desc: 'Markalı deneyim ve öncelikli destek.', cta: 'İletişime Geç', feat: false,
-    items: ['Business’taki her şey', 'White-label & kendi alan adı', 'AI içgörüler & API', 'Öncelikli destek & SLA'] },
+/**
+ * API'ye ulaşılamazsa fiyat bölümü boş kalmasın diye yedek. Kaynak gerçeklik
+ * PlanSeeder'dır; buradaki kopya yalnızca sayfanın ayakta kalması içindir.
+ */
+const FALLBACK_PLANS = [
+  { code: 'free', name: 'Free', price_monthly: 0, limits: { branches: 1, menu_items: 30, monthly_scans: 500 },
+    features: { menu: true, qr: true, nutrition_display: true } },
+  { code: 'pro', name: 'Pro', price_monthly: 29, limits: { branches: 1, menu_items: -1, monthly_scans: 10000 },
+    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, analytics: true, ai: true, happy_hour: true } },
+  { code: 'business', name: 'Business', price_monthly: 79, limits: { branches: 5, menu_items: -1, monthly_scans: 50000 },
+    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, analytics: true, ai: true, ai_advanced: true, loyalty: true, multi_branch: true, folio: true, happy_hour: true, finance: true, pos_integration: true } },
+  { code: 'enterprise', name: 'Enterprise', price_monthly: 0, limits: { branches: -1, menu_items: -1, monthly_scans: -1 },
+    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, analytics: true, ai: true, ai_advanced: true, loyalty: true, multi_branch: true, folio: true, happy_hour: true, finance: true, pos_integration: true, white_label: true, sla: true } },
 ];
+
+/** Deneme süresi tek yerden: onboarding tenant'a 14 gün yazıyor (TenantOnboardingService). */
+const TRIAL_DAYS = 14;
+
+/**
+ * Plan kartlarının pazarlama tarafı. Fiyat, limit ve özellik işaretleri API'den
+ * gelir (superadmin planı panelden değiştirebiliyor); burada yalnızca sıralama,
+ * anlatım ve hangi kartın öne çıkacağı durur. Böylece liste gerçeklikten kayamaz.
+ */
+const PLAN_META: Record<string, { title: string; desc: string; cta: string; feat?: boolean; items: string[] }> = {
+  free: {
+    title: 'Başlangıç',
+    desc: 'Dijital QR menüye geçen küçük işletmeler için.',
+    cta: 'Ücretsiz Başla',
+    items: ['QR menü + 3 tema', 'Çalışma saati, WiFi, iletişim', 'Kalori & alerjen gösterimi', 'Menü beş dilde'],
+  },
+  pro: {
+    title: 'Pro',
+    desc: 'Masadan sipariş ve servis akışı isteyenler için.',
+    cta: `${TRIAL_DAYS} Gün Ücretsiz`,
+    feat: true,
+    items: [
+      'Başlangıç’taki her şey',
+      'Sepet, masadan sipariş & mutfak ekranı',
+      'Garson uygulaması, çağrı ve hesap isteme',
+      'Tam besin değerleri & AI menü asistanı',
+      'Analitik ve menü performansı',
+    ],
+  },
+  business: {
+    title: 'Business',
+    desc: 'Otel, plaj ve çok şubeli işletmeler için.',
+    cta: `${TRIAL_DAYS} Gün Ücretsiz`,
+    items: [
+      'Pro’daki her şey',
+      'Gider, cari hesap & kâr raporu',
+      'Otel odası ve plaj şezlong folyosu',
+      'Çok şube, sadakat puanı & kuponlar',
+      'AI Danışman: menü içgörüleri',
+    ],
+  },
+  enterprise: {
+    title: 'Kurumsal',
+    desc: 'Markalı deneyim ve öncelikli destek.',
+    cta: 'İletişime Geç',
+    items: ['Business’taki her şey', 'White-label: kendi markanız', 'Öncelikli destek & SLA'],
+  },
+};
+
+/** Karşılaştırma tablosu — işaretler plan bayraklarından gelir, elle yazılmaz. */
+const FEATURE_ROWS: [string, string][] = [
+  ['menu', 'Dijital QR menü'],
+  ['nutrition_display', 'Kalori & alerjen'],
+  ['nutrition_full', 'Tam besin değerleri'],
+  ['ordering', 'Masadan sipariş & sepet'],
+  ['payments', 'Online ödeme'],
+  ['kds', 'Mutfak ekranı (KDS)'],
+  ['waiter_app', 'Garson uygulaması'],
+  ['analytics', 'Analitik'],
+  ['ai', 'AI menü asistanı'],
+  ['ai_advanced', 'AI Danışman (işletme)'],
+  ['loyalty', 'Sadakat puanı & kupon'],
+  ['multi_branch', 'Çok şube'],
+  ['folio', 'Otel / plaj folyosu'],
+  ['happy_hour', 'Happy Hour (bar)'],
+  ['finance', 'Gider · cari · kâr raporu'],
+  ['pos_integration', 'Entegrasyon (webhook)'],
+  ['white_label', 'White-label'],
+  ['sla', 'SLA & öncelikli destek'],
+];
+
+const LIMIT_ROWS: [string, string][] = [
+  ['branches', 'Şube'],
+  ['menu_items', 'Menü ürünü'],
+  ['monthly_scans', 'Aylık menü açılışı'],
+];
+
+/** -1 / eksik değer = sınırsız. */
+function limitLabel(v: unknown): string {
+  const n = Number(v);
+  if (v === undefined || v === null || !Number.isFinite(n) || n === -1) return 'Sınırsız';
+
+  return n.toLocaleString('tr-TR');
+}
+
+function priceLabel(p: { code: string; price_monthly?: unknown }): { price: string; per: string } {
+  if (p.code === 'enterprise') return { price: 'Özel', per: '' };
+  const n = Number(p.price_monthly ?? 0);
+
+  return { price: n > 0 ? `₺${n.toLocaleString('tr-TR')}` : '₺0', per: '/ay' };
+}
 
 const FAQS = [
   ['Menüyü tekrar tekrar bastırıyor musunuz?', 'Fiyat mı değişti, ürün mü tükendi? Panelden düzenlersiniz, misafirin telefonuna anında yansır. Baskı, bekleme, çöpe giden menü yok.'],
@@ -289,9 +385,16 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [open, setOpen] = useState<number | null>(0);
+  const [plans, setPlans] = useState<any[]>(FALLBACK_PLANS);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
+    // Fiyat ve özellik işaretleri gerçek plan kayıtlarından gelsin: superadmin planı
+    // panelden değiştirdiğinde sayfa kendiliğinden doğru kalır. Ulaşılamazsa yedek liste kalır.
+    createApi()
+      .plans()
+      .then((list: any[]) => { if (Array.isArray(list) && list.length) setPlans(list); })
+      .catch(() => undefined);
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -363,7 +466,7 @@ export default function Home() {
               ))}
             </ul>
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
-              {['30 gün ücretsiz deneme', 'Kurulum ücreti yok', 'İstediğin an iptal'].map((x) => (
+              {[`${TRIAL_DAYS} gün ücretsiz deneme`, 'Kurulum ücreti yok', 'İstediğin an iptal'].map((x) => (
                 <span key={x} className="inline-flex items-center gap-2"><Check />{x}</span>
               ))}
             </div>
@@ -527,21 +630,68 @@ export default function Home() {
       <section id="fiyatlar" className="mx-auto max-w-6xl px-5 py-20 lg:py-28">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-extrabold tracking-tight text-balance sm:text-[2.6rem]">Ücretsiz başlayın.<br /><span className="text-brand-600">Hazır olunca büyüyün.</span></h2>
-          <p className="mt-4 text-lg text-muted">14 gün deneyin, komisyon yok, gizli ücret yok. İstediğiniz an yükseltin.</p>
+          <p className="mt-4 text-lg text-muted">{TRIAL_DAYS} gün deneyin, komisyon yok, gizli ücret yok. İstediğiniz an yükseltin.</p>
         </div>
+
         <div className="mt-14 grid gap-5 lg:grid-cols-4">
-          {PLANS.map((p) => (
-            <div key={p.name} className={`relative flex flex-col rounded-2xl border bg-surface p-6 ${p.feat ? 'border-brand-500 shadow-lg ring-1 ring-brand-100' : 'border-line shadow-sm'}`}>
-              {p.feat && <span className="absolute -top-3 left-6 rounded-full bg-brand-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">En popüler</span>}
-              <div className="text-sm font-bold">{p.name}</div>
-              <div className="mt-3 text-4xl font-extrabold tracking-tight">{p.price}<span className="text-sm font-semibold text-muted">{p.per}</span></div>
-              <p className="mt-2 min-h-[40px] text-sm text-muted">{p.desc}</p>
-              <ul className="my-6 flex-1 space-y-3">
-                {p.items.map((it) => (<li key={it} className="flex gap-2.5 text-sm"><Check />{it}</li>))}
-              </ul>
-              <Link href={authed ? '/billing' : '/register'} className={`rounded-xl py-2.5 text-center text-sm font-bold transition ${p.feat ? 'bg-brand-500 text-white hover:bg-brand-600' : 'border border-line bg-surface text-ink hover:bg-canvas'}`}>{p.cta}</Link>
-            </div>
-          ))}
+          {plans.map((p) => {
+            const meta = PLAN_META[p.code];
+            if (!meta) return null;
+            const { price, per } = priceLabel(p);
+            const caps = LIMIT_ROWS.map(([k, l]) => `${l}: ${limitLabel(p.limits?.[k])}`).join(' · ');
+
+            return (
+              <div key={p.code} className={`relative flex flex-col rounded-2xl border bg-surface p-6 ${meta.feat ? 'border-brand-500 shadow-lg ring-1 ring-brand-100' : 'border-line shadow-sm'}`}>
+                {meta.feat && <span className="absolute -top-3 left-6 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide" style={{ background: '#ea5b1a', color: '#ffffff' }}>En popüler</span>}
+                <div className="text-sm font-bold">{meta.title}</div>
+                <div className="mt-3 text-4xl font-extrabold tracking-tight">{price}<span className="text-sm font-semibold text-muted">{per}</span></div>
+                <p className="mt-2 min-h-[40px] text-sm text-muted">{meta.desc}</p>
+                <ul className="my-6 flex-1 space-y-3">
+                  {meta.items.map((it) => (<li key={it} className="flex gap-2.5 text-sm"><Check />{it}</li>))}
+                </ul>
+                <p className="mb-4 text-[11px] leading-relaxed text-muted">{caps}</p>
+                <Link href={authed ? '/billing' : '/register'} className={`rounded-xl py-2.5 text-center text-sm font-bold transition ${meta.feat ? 'text-white hover:opacity-90' : 'border border-line bg-surface text-ink hover:bg-canvas'}`} style={meta.feat ? { background: '#ea5b1a', color: '#ffffff' } : undefined}>{meta.cta}</Link>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Karşılaştırma — işaretler plan bayraklarından okunur, elle yazılmaz. */}
+        <div className="mt-14 overflow-x-auto rounded-2xl border border-line bg-surface shadow-sm">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-line">
+                <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-muted">Tüm özellikler</th>
+                {plans.map((p) => (
+                  <th key={p.code} className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wide text-muted">{PLAN_META[p.code]?.title ?? p.name}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {FEATURE_ROWS.map(([key, label]) => (
+                <tr key={key} className="border-b border-line/60 last:border-0">
+                  <td className="px-5 py-3 text-ink">{label}</td>
+                  {plans.map((p) => (
+                    <td key={p.code} className="px-4 py-3 text-center">
+                      {p.features?.[key] === true ? (
+                        <span className="inline-block font-bold text-brand-600">✓</span>
+                      ) : (
+                        <span className="inline-block text-muted/50">—</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {LIMIT_ROWS.map(([key, label]) => (
+                <tr key={key} className="border-b border-line/60 bg-canvas/60 last:border-0">
+                  <td className="px-5 py-3 font-medium text-ink">{label}</td>
+                  {plans.map((p) => (
+                    <td key={p.code} className="px-4 py-3 text-center text-muted">{limitLabel(p.limits?.[key])}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -579,7 +729,7 @@ export default function Home() {
       {/* FINAL CTA */}
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <div className="relative overflow-hidden rounded-3xl px-6 py-16 text-center shadow-xl" style={{ background: 'radial-gradient(120% 140% at 50% -20%,#ea5b1a,#9e3a0c 72%)' }}>
-          <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white text-balance sm:text-4xl">İlk menünüz 30 gün ücretsiz.</h2>
+          <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white text-balance sm:text-4xl">İlk menünüz {TRIAL_DAYS} gün ücretsiz.</h2>
           <p className="mx-auto mt-4 max-w-lg text-lg text-white/85">Kurulum dakikalar sürer, misafirleriniz farkı ilk taramada görür.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href={primaryHref} className="rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-brand-700 shadow-sm transition hover:bg-white/90">{authed ? 'Panele Git' : 'Ücretsiz Dene'}</Link>
