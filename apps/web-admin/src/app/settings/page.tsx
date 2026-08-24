@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AdminShell } from '@/components/AdminShell';
+import { PublicLinkCard } from '@/components/PublicLinkCard';
 import { RestaurantSettingsForm } from '@/components/RestaurantSettingsForm';
 import { useApi } from '@/lib/useApi';
 
@@ -19,17 +20,20 @@ export default function SettingsPage() {
   return (
     <AdminShell title={t('title')}>
       {tenant ? (
-        <RestaurantSettingsForm
-          initialName={tenant.name}
-          initialSettings={tenant.settings}
-          currency={tenant.currency}
-          slug={tenant.slug}
-          allowedVerticals={tenant.plan?.features?.verticals}
-          whiteLabel={!!tenant.plan?.features?.white_label}
-          happyHour={!!tenant.plan?.features?.happy_hour}
-          onSave={(payload) => api.updateTenant(payload as any)}
-          onUpload={(type, file) => api.uploadRestaurantMedia(type, file)}
-        />
+        <>
+          {tenant.slug && <PublicLinkCard slug={tenant.slug} venueName={tenant.name} />}
+          <RestaurantSettingsForm
+            initialName={tenant.name}
+            initialSettings={tenant.settings}
+            currency={tenant.currency}
+            slug={tenant.slug}
+            allowedVerticals={tenant.plan?.features?.verticals}
+            whiteLabel={!!tenant.plan?.features?.white_label}
+            happyHour={!!tenant.plan?.features?.happy_hour}
+            onSave={(payload) => api.updateTenant(payload as any)}
+            onUpload={(type, file) => api.uploadRestaurantMedia(type, file)}
+          />
+        </>
       ) : (
         <p className="text-sm text-muted">{c('loading')}</p>
       )}

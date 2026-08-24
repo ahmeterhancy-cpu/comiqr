@@ -1112,5 +1112,16 @@
     "testPrint": "Testbon",
     "testQueued": "Testbon für {name} eingereiht.",
     "confirmDelete": "Diesen Drucker löschen?"
+  },
+  "publicLink": {
+    "title": "Ihre Menüadresse",
+    "hint": "Diese Adresse ist an keinen Tisch gebunden. Setzen Sie sie in Ihre Instagram-Bio, Ihren Google-Eintrag, ein Plakat oder eine Nachricht; wer sie öffnet, sieht die Karte und kann bestellen, wenn Bestellen aktiv ist.",
+    "tableHint": "Tischbezogene QR-Codes sind separat und stehen unter Tische & QR.",
+    "copy": "Adresse kopieren",
+    "copied": "Kopiert",
+    "open": "Öffnen",
+    "downloadPng": "PNG herunterladen",
+    "downloadSvg": "SVG herunterladen",
+    "qrAlt": "QR-Code für die Menüadresse von {venue}"
   }
 }

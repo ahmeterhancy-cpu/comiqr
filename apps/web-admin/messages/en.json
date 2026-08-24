@@ -1112,5 +1112,16 @@
     "testPrint": "Test slip",
     "testQueued": "Test slip queued for {name}.",
     "confirmDelete": "Delete this printer?"
+  },
+  "publicLink": {
+    "title": "Your menu address",
+    "hint": "This address is not tied to a table. Put it in your Instagram bio, your Google listing, a poster or a message; whoever opens it sees the menu and can order when ordering is on.",
+    "tableHint": "Per-table QR codes are separate and live under Tables & QR.",
+    "copy": "Copy address",
+    "copied": "Copied",
+    "open": "Open",
+    "downloadPng": "Download PNG",
+    "downloadSvg": "Download SVG",
+    "qrAlt": "QR code for the {venue} menu address"
   }
 }

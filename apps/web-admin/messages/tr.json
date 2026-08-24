@@ -1112,5 +1112,16 @@
     "testPrint": "Test fişi",
     "testQueued": "{name} için test fişi kuyruğa bırakıldı.",
     "confirmDelete": "Bu yazıcı silinsin mi?"
+  },
+  "publicLink": {
+    "title": "Menü adresiniz",
+    "hint": "Bu adres masaya bağlı değildir. Instagram profilinize, Google kaydınıza, afişe ya da mesaja koyabilirsiniz; açan kişi menüyü görür, sipariş açıksa sipariş de verebilir.",
+    "tableHint": "Masaya özel QR kodlar ayrıdır ve Masalar & QR bölümünde durur.",
+    "copy": "Adresi kopyala",
+    "copied": "Kopyalandı",
+    "open": "Aç",
+    "downloadPng": "PNG indir",
+    "downloadSvg": "SVG indir",
+    "qrAlt": "{venue} menü adresinin QR kodu"
   }
 }
