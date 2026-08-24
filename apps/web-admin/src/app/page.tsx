@@ -26,6 +26,90 @@ function Arrow() {
   return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
 }
 
+/** Servis zinciri: kasadan mutfağa, garsonun cebine. */
+function MockService() {
+  return (
+    <div className="rounded-2xl border border-line bg-surface p-5 shadow-xl">
+      <div className="grid grid-cols-3 gap-2">
+        {['M1', 'M2', 'M3', 'M4', 'M5', 'M6'].map((code, i) => (
+          <div
+            key={code}
+            className={`rounded-lg px-2 py-3 text-center text-xs font-bold ${i % 3 === 1 ? 'text-white' : 'bg-canvas text-ink'}`}
+            style={i % 3 === 1 ? { background: '#ea5b1a', color: '#ffffff' } : undefined}
+          >
+            {code}
+            <div className="mt-0.5 text-[9px] font-semibold opacity-70">{i % 3 === 1 ? 'Açık' : 'Boş'}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-line bg-canvas p-3">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-muted">
+          <span>Mutfak ekranı</span>
+          <span>M2 · 3 kalem</span>
+        </div>
+        <div className="mt-2 space-y-1.5">
+          {[['2×', 'Adana Kebap', 'Hazırlanıyor'], ['1×', 'Humus', 'Hazır'], ['1×', 'Ayran', 'Hazır']].map(([q, n, s]) => (
+            <div key={n} className="flex items-center gap-2 text-xs">
+              <span className="font-bold text-ink">{q}</span>
+              <span className="flex-1 truncate text-ink">{n}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${s === 'Hazır' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>{s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2 rounded-xl border border-line bg-canvas px-3 py-2.5">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[13px]" style={{ background: '#ea5b1a', color: '#ffffff' }}>👤</span>
+        <span className="text-xs text-muted">Garson uygulaması: <b className="text-ink">M2 hesap istedi</b></span>
+      </div>
+    </div>
+  );
+}
+
+/** Kâr tablosu + saatlik yoğunluk şeridi — panelin gerçek kokpitinin özeti. */
+function MockFinance() {
+  const heat = [8, 14, 22, 18, 30, 62, 96, 74, 40, 26];
+
+  return (
+    <div className="rounded-2xl border border-line bg-surface p-5 shadow-xl">
+      <div className="grid grid-cols-3 gap-3">
+        {[['₺184.500', 'Net satış'], ['₺61.200', 'Ürün maliyeti'], ['₺48.900', 'Net kâr']].map(([n, l], i) => (
+          <div key={l} className="rounded-xl bg-canvas p-3 text-center">
+            <div className={`text-[15px] font-extrabold tracking-tight ${i === 2 ? 'text-emerald-600' : 'text-ink'}`}>{n}</div>
+            <div className="text-[10px] font-semibold text-muted">{l}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-muted">
+          <span>Saatlik yoğunluk</span>
+          <span>Zirve 20:00</span>
+        </div>
+        <div className="mt-2 flex items-end gap-1.5">
+          {heat.map((v, i) => (
+            <span
+              key={i}
+              className="flex-1 rounded-sm"
+              style={{ height: `${Math.max(8, v * 0.6)}px`, background: `rgba(234,91,26,${0.2 + (v / 100) * 0.8})` }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-1.5">
+        {[['Kira', '₺18.000'], ['Personel', '₺42.400'], ['Tedarik (vadeli)', '₺23.900']].map(([n, v]) => (
+          <div key={n} className="flex items-center justify-between rounded-lg bg-canvas px-3 py-2 text-xs">
+            <span className="text-ink">{n}</span>
+            <span className="font-semibold text-muted">{v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ---- Feature section: text + checklist on one side, mockup on the other ---- */
 function FeatureSection({ badge, title, body, points, mockup, flip }: { badge: string; title: string; body: string; points: string[]; mockup: ReactNode; flip?: boolean }) {
   return (
@@ -194,6 +278,10 @@ const MORE = [
   { t: 'Alerjen filtreleri', b: 'Misafir menüyü glutensiz, laktozsuz ya da alerjensiz olacak şekilde tek dokunuşla süzer.', d: 'M3 4h18l-7 9v6l-4 2v-8z' },
   { t: 'Kampanya & kupon', b: 'Zamanlı kampanyalar, indirim kodları ve kategoriye toplu indirim; barda happy hour otomatik uygulanır.', d: 'M3 7v5l8 8 9-9-8-8H6a3 3 0 00-3 3zM7.5 7.5h.01' },
   { t: 'AI Danışman (işletme)', b: 'Panelde yapay zekâ; öne çıkan ürünleri, menü boşluklarını ve misafir yorumlarının özetini çıkarır.', d: 'M3 3v18h18M7 14l3-3 3 2 5-6' },
+  { t: 'Çok şube', b: 'Şubeleri tek panelden yönetin; menü, masa ve raporları şubeye göre ayırın.', d: 'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16' },
+  { t: 'Sadakat & puan', b: 'Misafir telefonuyla tanınır, harcadıkça puan kazanır ve puanını hesapta kullanır.', d: 'M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z' },
+  { t: 'Stok ve 86 listesi', b: 'Malzeme stoğu reçeteden düşer; biten ürünü mutfak tek dokunuşla menüden kaldırır.', d: 'M4 7h16v13H4zM4 7l2-3h12l2 3M9 12h6' },
+  { t: 'Beş dil ve kendi markanız', b: 'Menü ve panel Türkçe, İngilizce, Almanca, Rusça ve Arapça; üst paketlerde kendi renginiz ve markanız.', d: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.6 2.5 15 0 18M12 3c-2.5 2.6-2.5 15 0 18' },
 ];
 
 export default function Home() {
@@ -257,7 +345,7 @@ export default function Home() {
               Menünüz kağıttan <span className="text-brand-600">daha iyisini hak ediyor.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-              ComiQR, kağıt menünüzü dijitalleştiren uçtan uca bir sistemdir. Bir kez kurarsınız; fiyatı, ürünü ve kampanyayı telefonunuzdan saniyeler içinde değiştirirsiniz. Misafirleriniz menüyü kendi telefonlarında, kendi dillerinde — daha masaya oturmadan görür.
+              ComiQR dijital menüyle başlar ama orada bitmez: misafir masadan sipariş verir, mutfak ekranı görür, personel kasadan yönetir, siz de gün sonunda ciroyu değil kârı okursunuz. Tek panel, tek abonelik.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href={primaryHref} className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-600 hover:shadow-md">
@@ -265,6 +353,14 @@ export default function Home() {
               </Link>
               <a href="#ozellikler" className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-6 py-3.5 text-sm font-bold text-ink shadow-sm transition hover:bg-canvas">Örnek Menü</a>
             </div>
+            <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-muted">
+              {['Dijital menü', 'Masadan sipariş', 'Personel POS', 'Mutfak ekranı', 'Self-servis kiosk', 'Gider & kâr raporu'].map((x) => (
+                <li key={x} className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#ea5b1a' }} />
+                  {x}
+                </li>
+              ))}
+            </ul>
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
               {['30 gün ücretsiz deneme', 'Kurulum ücreti yok', 'İstediğin an iptal'].map((x) => (
                 <span key={x} className="inline-flex items-center gap-2"><Check />{x}</span>
@@ -344,6 +440,19 @@ export default function Home() {
         />
         <FeatureSection
           flip
+          badge="Servis ekibi"
+          title="Kasadan mutfağa, garsonun cebine kadar."
+          body="Sipariş nereden gelirse gelsin — misafirin telefonundan, kiosktan ya da garsonun elinden — aynı yere düşer. Kasa açar, mutfak görür, garson servis eder; kimse kimseye bağırmaz."
+          points={[
+            'Personel POS: masaya sipariş, ikram, indirim, hesap bölme',
+            'Mutfak ekranı (KDS): kalem kalem hazırlanıyor / hazır',
+            'Garson uygulaması (iOS & Android): masa çağrıları ve adisyon',
+            'Self-servis kiosk: misafir kendi siparişini verir',
+            'Vardiya açma-kapama ve kasa (Z) raporu',
+          ]}
+          mockup={<MockService />}
+        />
+        <FeatureSection
           badge="Anında yanıt"
           title="Kendi kendine yanıtlayan menü."
           body="Misafir menü hakkında her şeyi sorabilir; asistan malzeme, alerjen, fiyat ve kampanyalara göre kendi dilinde yanıtlar. Ekibiniz aynı soruları tekrar tekrar cevaplamaktan kurtulur."
@@ -351,11 +460,26 @@ export default function Home() {
           mockup={<MockChat />}
         />
         <FeatureSection
+          flip
           badge="Analitik"
           title="Menünüzün nasıl performans gösterdiğini görün."
           body="Menünüzü kaç kişi açtı, ne kadar süre inceledi, hangi ürünler öne çıktı — hepsini görün. Değerlendirme ve itibar puanıyla misafir memnuniyetini takip edin."
           points={['Günlük menü açılışları', 'Görüntülenme ve ortalama inceleme süresi', 'En çok bakılan ürünler', 'Değerlendirme & yorumlar, itibar puanı', 'Tek tıkla dışa aktar (rapor)']}
           mockup={<MockAnalytics />}
+        />
+        <FeatureSection
+          badge="İşletme yönetimi"
+          title="Ciro değil, kâr gösteren bir panel."
+          body="Çoğu sistem ne sattığınızı söyler. ComiQR ne kazandığınızı söyler: reçeteden gelen ürün maliyetini ve giderlerinizi satışın karşısına koyar. Ay sonunu beklemeden, hangi günün kâr ettiğini görürsünüz."
+          points={[
+            'Gider yönetimi: kategori, KDV ve belge no ile',
+            'Cari hesap ve veresiye — limitli, tahsilat takipli',
+            'Reçeteden ürün maliyeti (COGS) ve gerçek kâr marjı',
+            'Saatlik yoğunluk: hangi gün, hangi saat doluyorsunuz',
+            'Personel performansı, ikram/iptal ve vergi kırılımı',
+            'Muhasebeciye tek tıkla CSV',
+          ]}
+          mockup={<MockFinance />}
         />
       </div>
 
