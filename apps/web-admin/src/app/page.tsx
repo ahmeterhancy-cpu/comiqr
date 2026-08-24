@@ -343,6 +343,7 @@ export default function Home() {
           <div>
             <h1 className="text-[2.7rem] font-extrabold leading-[1.04] tracking-tight text-balance sm:text-6xl">
               Menünüz kağıttan <span className="text-brand-600">daha iyisini hak ediyor.</span>
+              <span className="block">İşletmeniz de.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
               ComiQR dijital menüyle başlar ama orada bitmez: misafir masadan sipariş verir, mutfak ekranı görür, personel kasadan yönetir, siz de gün sonunda ciroyu değil kârı okursunuz. Tek panel, tek abonelik.
