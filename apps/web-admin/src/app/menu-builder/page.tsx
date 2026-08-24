@@ -181,7 +181,7 @@ export default function MenuBuilderPage() {
   const dev = DEVICES.find((d) => d.key === device)!;
   const frameScale = device === 'desktop' ? 0.86 : 1;
   const previewUrl = previewSlug
-    ? `${CUSTOMER_URL}/v/${previewSlug}?${new URLSearchParams({ locale: lang, preview: '1', theme }).toString()}&_=${reloadKey}`
+    ? `${CUSTOMER_URL}/${previewSlug}?${new URLSearchParams({ locale: lang, preview: '1', theme }).toString()}&_=${reloadKey}`
     : '';
 
   // Show a spinner over the preview until the iframe finishes loading (a cold

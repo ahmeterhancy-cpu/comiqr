@@ -327,7 +327,7 @@ export function RestaurantSettingsForm({
                 <span>{label}</span>
                 {slug && (
                   <a
-                    href={`${CUSTOMER_URL}/v/${slug}?theme=${val}`}
+                    href={`${CUSTOMER_URL}/${slug}?theme=${val}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={theme === val ? 'underline opacity-90' : 'text-brand-600 hover:underline'}

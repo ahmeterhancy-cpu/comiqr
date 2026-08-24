@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/v1';
 
 /**
  * Consumer discovery portal (M20) — browse active venues and open their public
- * menu (/v/{slug}). Debounced name search against the public /discover endpoint.
+ * menu (/{slug}). Debounced name search against the public /discover endpoint.
  */
 export default function DiscoverPage() {
   const t = useTranslations('discover');
@@ -75,7 +75,7 @@ export default function DiscoverPage() {
                   </p>
                 )}
                 <div className="mt-3 flex items-center gap-3">
-                  <Link href={`/v/${v.slug}`} className="text-xs font-semibold text-brand-600 hover:underline">
+                  <Link href={`/${v.slug}`} className="text-xs font-semibold text-brand-600 hover:underline">
                     {t('viewMenu')} →
                   </Link>
                   <Link

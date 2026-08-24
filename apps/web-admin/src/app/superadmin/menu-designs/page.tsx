@@ -157,7 +157,7 @@ export default function MenuDesignsPage() {
                           Canlı menü ↗
                         </a>
                         <a
-                          href={`${CUSTOMER_URL}/v/${demo.slug}`}
+                          href={`${CUSTOMER_URL}/${demo.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3.5 py-2 text-sm font-medium text-ink transition hover:border-brand-500 hover:text-brand-600"
@@ -256,7 +256,7 @@ export default function MenuDesignsPage() {
               </div>
               <p className="mb-3 flex-1 text-[13px] leading-relaxed text-muted">{t.desc}</p>
               <a
-                href={`${CUSTOMER_URL}/v/${THEME_PREVIEW_SLUG}?theme=${t.key}`}
+                href={`${CUSTOMER_URL}/${THEME_PREVIEW_SLUG}?theme=${t.key}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
