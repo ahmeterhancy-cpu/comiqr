@@ -269,8 +269,8 @@ const FALLBACK_PLANS = [
     features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, analytics: true, ai: true, ai_advanced: true, loyalty: true, multi_branch: true, folio: true, happy_hour: true, finance: true, pos_integration: true, white_label: true, sla: true } },
 ];
 
-/** Deneme süresi tek yerden: onboarding tenant'a 14 gün yazıyor (TenantOnboardingService). */
-const TRIAL_DAYS = 14;
+/** Deneme süresi tek yerden: onboarding tenant'a 30 gün yazıyor (TenantOnboardingService). */
+const TRIAL_DAYS = 30;
 
 /**
  * Plan kartlarının pazarlama tarafı. Fiyat, limit ve özellik işaretleri API'den
@@ -718,7 +718,7 @@ export default function Home() {
 
       {/* STATS */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-14 gap-y-6 px-5 py-14 text-center">
-        {[['1.000+', 'İşletme kullanıyor'], ['5', 'Misafir dili'], ['4', 'İşletme türü'], ['%100', 'Uygulamasız'], ['30 gün', 'Ücretsiz deneme']].map(([n, l]) => (
+        {[['1.000+', 'İşletme kullanıyor'], ['5', 'Misafir dili'], ['4', 'İşletme türü'], ['%100', 'Uygulamasız'], [`${TRIAL_DAYS} gün`, 'Ücretsiz deneme']].map(([n, l]) => (
           <div key={l}>
             <div className="text-3xl font-extrabold tracking-tight text-brand-600">{n}</div>
             <div className="mt-1 text-xs font-semibold text-muted">{l}</div>

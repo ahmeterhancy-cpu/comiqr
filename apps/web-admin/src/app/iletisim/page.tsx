@@ -32,7 +32,7 @@ export default function IletisimPage() {
 
         <div className="mt-10 rounded-2xl border border-line bg-brand-50/60 p-6">
           <h2 className="text-base font-bold">Demo mu istiyorsunuz?</h2>
-          <p className="mt-1.5 text-sm text-muted">14 gün ücretsiz deneme hesabı açın; kartsız, dakikalar içinde canlı menünüz hazır olsun.</p>
+          <p className="mt-1.5 text-sm text-muted">30 gün ücretsiz deneme hesabı açın; kartsız, dakikalar içinde canlı menünüz hazır olsun.</p>
           <a href="/register" className="mt-4 inline-flex rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-600">Ücretsiz Dene</a>
         </div>
       </div>

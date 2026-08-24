@@ -46,7 +46,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         <div className="w-full max-w-md">
           <Link href="/" className="mb-6 flex flex-col items-center gap-2.5">
             <BrandLogo className="h-12 w-auto" />
-            <span className="text-xs font-semibold text-muted">14 gün ücretsiz deneme · kart gerekmez</span>
+            <span className="text-xs font-semibold text-muted">30 gün ücretsiz deneme · kart gerekmez</span>
           </Link>
           {children}
         </div>

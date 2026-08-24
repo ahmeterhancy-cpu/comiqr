@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\Hash;
  */
 class TenantOnboardingService
 {
+    /** Ücretsiz deneme süresi (gün). Pazarlama sayfası ve sözleşme metni bununla aynı olmalı. */
+    public const TRIAL_DAYS = 30;
+
     public function __construct(
         protected SlugGenerator $slugs,
         protected TenantManager $tenants,
@@ -60,7 +63,7 @@ class TenantOnboardingService
                 'currency' => $data['currency'] ?? 'EUR',
                 'timezone' => $data['timezone'] ?? 'Asia/Nicosia',
                 'settings_json' => ['vertical' => $vertical],
-                'trial_ends_at' => now()->addDays(14),
+                'trial_ends_at' => now()->addDays(self::TRIAL_DAYS),
             ]);
 
             [$owner, $branch] = $this->tenants->runAs($tenant, function () use ($tenant, $data, $plan) {

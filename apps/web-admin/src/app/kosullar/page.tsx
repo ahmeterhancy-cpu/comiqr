@@ -27,7 +27,7 @@ export default function KosullarPage() {
         </DocSection>
 
         <DocSection title="4. Ücretlendirme ve abonelik">
-          <p>Ücretli planlar, seçtiğiniz döneme göre (aylık/yıllık) tekrarlı olarak ödeme sağlayıcısı Tiko üzerinden tahsil edilir. 14 günlük ücretsiz deneme sonunda plana geçmezseniz ücretli özellikler kısıtlanır. Fiyatlar önceden bildirilerek güncellenebilir.</p>
+          <p>Ücretli planlar, seçtiğiniz döneme göre (aylık/yıllık) tekrarlı olarak ödeme sağlayıcısı Tiko üzerinden tahsil edilir. 30 günlük ücretsiz deneme sonunda plana geçmezseniz ücretli özellikler kısıtlanır. Fiyatlar önceden bildirilerek güncellenebilir.</p>
         </DocSection>
 
         <DocSection title="5. İptal">
