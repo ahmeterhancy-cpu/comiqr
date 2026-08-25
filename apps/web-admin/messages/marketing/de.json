@@ -33,12 +33,6 @@
     "demo-bar": { "title": "Bar", "desc": "18+-Kennzeichnung und Happy-Hour-Rabatt." }
   },
   "sections": {
-    "import": {
-      "badge": "Neu",
-      "title": "Fotografieren Sie sie — wir bauen die Karte.",
-      "body": "Der Teil, der bisher am meisten Arbeit machte, entfällt. Machen Sie ein paar Fotos Ihrer gedruckten Karte oder laden Sie ein PDF hoch; jede Kategorie, jedes Gericht, jede Beschreibung und jeder Preis — sogar Zutaten, Allergene und Nährwerte — wird von der Seite gelesen und eingetragen. Sie tippen nichts.",
-      "points": ["Karte fotografieren oder PDF hochladen", "Jede Kategorie, jedes Gericht und jede Beschreibung der Reihe nach", "Jede Größe mit eigenem Preis", "Zutaten, Allergene und Nährwerte automatisch", "Prüfen, speichern — Ihre Karte ist online"]
-    },
     "live": {
       "badge": "Digitale Karte",
       "title": "Ihr Panel ist Ihre Karte. Live bearbeitbar.",
@@ -173,7 +167,7 @@
       { "q": "Sind Bestellungen und Tische schwer zu überblicken?", "a": "Ob die Bestellung vom Telefon des Gastes, vom Kiosk oder von der Bedienung kommt — sie landet am selben Ort. Der Küchenbildschirm zeigt sie, die Kasse verwaltet sie, der Bon druckt an seiner Station." },
       { "q": "Wissen Sie, wie Ihre Karte läuft?", "a": "Wie oft jedes Gericht angesehen wurde, wie viel es verkauft und wie viel Gewinn es gelassen hat — zusammen mit den Kosten aus dem Rezept." },
       { "q": "Führen Sie mehrere Filialen?", "a": "Führen Sie alle aus einem Panel; Karte, Tische und Berichte je Filiale getrennt." },
-      { "q": "Wie lange dauert die Einrichtung?", "a": "Fotografieren Sie Ihre gedruckte Karte oder laden Sie ein PDF hoch; Kategorien, Gerichte, Preise und Allergene werden von der Seite gelesen und eingetragen. Sie haben {days} Tage gratis und starten ohne Karte." }
+      { "q": "Wie lange dauert die Einrichtung?", "a": "Registrieren Sie sich und legen Sie Ihre Karte im Panel an — Kategorien, Gerichte, Preise und Allergene ganz nach Wunsch. {days} Tage kostenlos testen, ohne Karte starten." }
     ]
   },
   "contact": {

@@ -33,12 +33,6 @@
     "demo-bar": { "title": "Bar", "desc": "18+ markers and Happy Hour discounts." }
   },
   "sections": {
-    "import": {
-      "badge": "New",
-      "title": "Photograph it — we'll build the menu.",
-      "body": "The part that used to wear you out is gone. Take a few photos of your printed menu or upload a PDF; every category, item, description and price — even ingredients, allergens and nutrition — is read off the page and filled in. You type nothing.",
-      "points": ["Photograph the menu or upload a PDF", "Every category, item and description in order", "Each size and its own price", "Ingredients, allergens and nutrition automatically", "Review, save — your menu is live"]
-    },
     "live": {
       "badge": "Digital menu",
       "title": "Your panel is your menu. Edit it live.",
@@ -173,7 +167,7 @@
       { "q": "Are orders and tables hard to manage?", "a": "Whether the order comes from the guest's phone, the kiosk or the waiter, it lands in the same place. The kitchen display shows it, the till manages it, the ticket prints at its own station." },
       { "q": "Do you know how your menu performs?", "a": "How many people viewed each item, how much it sold and how much profit it left — together with the cost that comes from the recipe." },
       { "q": "Running more than one branch?", "a": "Run every branch from one panel; separate the menu, tables and reports per branch." },
-      { "q": "How long does setup take?", "a": "Photograph your printed menu or upload a PDF; categories, items, prices and allergens are read off the page and filled in. You get {days} days free and start without a card." }
+      { "q": "How long does setup take?", "a": "Sign up and build your menu in the panel; add categories, items, prices and allergens as you like. You can try it free for {days} days and start without a card." }
     ]
   },
   "contact": {

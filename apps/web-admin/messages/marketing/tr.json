@@ -33,12 +33,6 @@
     "demo-bar": { "title": "Bar", "desc": "18+ işaretleri ve Happy Hour indirimi." }
   },
   "sections": {
-    "import": {
-      "badge": "Yeni özellik",
-      "title": "Fotoğrafını çek, menüyü biz kuralım.",
-      "body": "Eskiden en çok yorulduğunuz kısım artık yok. Basılı menünüzün birkaç fotoğrafını çekin ya da PDF yükleyin; her kategori, ürün, açıklama ve fiyat — hatta malzeme, alerjen ve besin değerleri sayfadan okunup doldurulur. Siz hiçbir şey yazmazsınız.",
-      "points": ["Menü fotoğraflarını çek ya da PDF yükle", "Her kategori, ürün ve açıklama sırasıyla", "Her boy ve fiyatı ayrı ayrı", "Malzeme, alerjen ve besin değeri otomatik", "Gözden geçir, kaydet — menün hazır"]
-    },
     "live": {
       "badge": "Dijital menü",
       "title": "Paneliniz menünüzdür. Canlı düzenleyin.",
@@ -173,7 +167,7 @@
       { "q": "Siparişleri ve masaları zor mu yönetiyorsunuz?", "a": "Sipariş misafirin telefonundan, kiosktan ya da garsonun elinden gelsin — hepsi aynı yere düşer. Mutfak ekranı görür, kasa yönetir, fiş kendi istasyonunda basılır." },
       { "q": "Menünüzün nasıl performans gösterdiğini bilmiyor musunuz?", "a": "Hangi ürüne kaç kişi baktı, ne kadar sattı, ne kadar kâr bıraktı — reçeteden gelen maliyetle birlikte görürsünüz." },
       { "q": "Birden fazla şube mi yönetiyorsunuz?", "a": "Şubeleri tek panelden yönetin; menüyü, masaları ve raporları şubeye göre ayırın." },
-      { "q": "Kurulum ne kadar sürüyor?", "a": "Basılı menünüzün fotoğrafını çekin ya da PDF yükleyin; kategori, ürün, fiyat ve alerjenler sayfadan okunup doldurulur. {days} gün ücretsiz deneyebilir, kart vermeden başlayabilirsiniz." }
+      { "q": "Kurulum ne kadar sürüyor?", "a": "Kayıt olun, menünüzü panelden girin; kategori, ürün, fiyat ve alerjenleri istediğiniz gibi düzenleyin. {days} gün ücretsiz deneyebilir, kart vermeden başlayabilirsiniz." }
     ]
   },
   "contact": {

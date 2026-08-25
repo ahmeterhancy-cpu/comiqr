@@ -178,30 +178,6 @@ function FeatureSection({ badge, title, body, points, mockup, flip }: { badge: s
 }
 
 /* ---------------------------------------------------------------- Mockups */
-function MockImport() {
-  return (
-    <div className="rounded-2xl border border-line bg-surface p-4 shadow-xl">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-bold">Menüyü Düzenle</span>
-        <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-600">Fotoğraftan içe aktarıldı</span>
-      </div>
-      <div className="space-y-2">
-        {[['Adana Kebap', '₺260', 'linear-gradient(135deg,#e8a24a,#d9762f)'], ['Humus', '₺90', 'linear-gradient(135deg,#7ba05b,#4f7a3a)'], ['Sezar Salata', '₺130', 'linear-gradient(135deg,#8bbf5a,#5a9e3a)']].map(([n, p, g]) => (
-          <div key={n} className="flex items-center gap-3 rounded-xl border border-line bg-canvas p-2.5">
-            <span className="h-11 w-11 shrink-0 rounded-lg" style={{ background: g }} />
-            <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-bold">{n}</div>
-              <div className="text-[11px] text-muted">Malzeme, alerjen ve besin değeri okundu</div>
-            </div>
-            <span className="text-[13px] font-extrabold">{p}</span>
-            <svg viewBox="0 0 24 24" className="h-4 w-4 text-brand-500" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function MockLive() {
   return (
     <div className="rounded-2xl border border-line bg-surface p-5 shadow-xl">
@@ -549,13 +525,6 @@ export default function MarketingHome({ media = {} }: { media?: LandingMedia }) 
 
       {/* FEATURE SECTIONS */}
       <div id="ozellikler" className="divide-y divide-line">
-        <FeatureSection
-          badge={M.sections.import.badge}
-          title={M.sections.import.title}
-          body={M.sections.import.body}
-          points={M.sections.import.points}
-          mockup={<MockImport />}
-        />
         <FeatureSection
           flip
           badge={M.sections.live.badge}
