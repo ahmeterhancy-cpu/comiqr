@@ -120,4 +120,9 @@ deployment:
     # eksik .env tum dagitimi dusurmemeli.
     - /bin/echo "-- migrate --" >> $LOG
     - (/usr/bin/test -f $APPPATH/.env && cd $APPPATH && php artisan migrate --force) >> $LOG 2>&1 || /bin/echo "migrate atlandi veya basarisiz" >> $LOG
+    # --- Baslangic verisi (YALNIZCA BIR KEZ) ---
+    # Planlar ve superadmin. Her dagitimda calistirilirsa panelden duzenlenen
+    # plan fiyatlarini geri ezer; bu yuzden isaret dosyasiyla korunuyor.
+    - /bin/echo "-- baslangic verisi --" >> $LOG
+    - (/usr/bin/test -f $APPPATH/storage/.seeded && /bin/echo "zaten yapilmis" || (cd $APPPATH && php artisan db:seed --force && /usr/bin/touch $APPPATH/storage/.seeded && /bin/echo "baslangic verisi yuklendi")) >> $LOG 2>&1 || /bin/echo "seed atlandi veya basarisiz" >> $LOG
     - /bin/echo "-- bitti --" >> $LOG
