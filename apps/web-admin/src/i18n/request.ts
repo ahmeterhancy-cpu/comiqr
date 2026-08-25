@@ -9,33 +9,24 @@ export const DEFAULT_LOCALE: AppLocale = 'tr';
 // Locales with their own message file; any others fall back to EN messages.
 const TRANSLATED: AppLocale[] = ['tr', 'en', 'de', 'ru', 'ar'];
 
+import { MARKETING_LOCALES } from './locales';
+
+export { MARKETING_LOCALES, MARKETING_LOCALE_NAMES, RTL_LOCALES } from './locales';
+export type { MarketingLocale } from './locales';
+
 /**
- * Pazarlama sayfası panelden daha çok dil konuşur: Bulgarca ve Yunanca yalnız
- * landing için var (Edirne ofisinin komşu pazarları), panelde karşılıkları yok.
- * Bu yüzden `marketing` kümesi ayrı dosyalarda tutulur ve panel mesajlarının
- * üstüne eklenir — panelin dil listesi bundan etkilenmez.
+ * Çevirisi eksikse Türkçeye düşer; sayfa hiçbir zaman boş anahtar göstermez.
+ * Dosya henüz yazılmamış bir dil de (çeviri sırada) hata vermek yerine Türkçe
+ * yayınlanır — yarım bir sayfa, bozuk bir sayfadan iyidir.
  */
-export const MARKETING_LOCALES = ['tr', 'en', 'de', 'ru', 'ar', 'bg', 'el'] as const;
-export type MarketingLocale = (typeof MARKETING_LOCALES)[number];
-
-export const MARKETING_LOCALE_NAMES: Record<MarketingLocale, string> = {
-  tr: 'Türkçe',
-  en: 'English',
-  de: 'Deutsch',
-  ru: 'Русский',
-  ar: 'العربية',
-  bg: 'Български',
-  el: 'Ελληνικά',
-};
-
-/** Sağdan sola yazılan diller. */
-export const RTL_LOCALES: readonly MarketingLocale[] = ['ar'];
-
-/** Çevirisi eksikse Türkçeye düşer; sayfa hiçbir zaman boş anahtar göstermez. */
 export async function marketingMessages(locale: string) {
   const key = (MARKETING_LOCALES as readonly string[]).includes(locale) ? locale : 'tr';
 
-  return (await import(`../../messages/marketing/${key}.json`)).default;
+  try {
+    return (await import(`../../messages/marketing/${key}.json`)).default;
+  } catch {
+    return (await import('../../messages/marketing/tr.json')).default;
+  }
 }
 
 export default getRequestConfig(async () => {

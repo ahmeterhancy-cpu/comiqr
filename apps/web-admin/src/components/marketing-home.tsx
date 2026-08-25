@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { useMessages } from 'next-intl';
+import { useLocale, useMessages } from 'next-intl';
+import { MARKETING_LOCALES, MARKETING_LOCALE_NAMES } from '@/i18n/locales';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/BrandLogo';
 import { createApi } from '@/lib/api';
@@ -110,6 +111,48 @@ function MockFinance() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Dil seçici. Her dilin kendi adresi olduğu için çerez yazmak yerine bağlantı
+ * veriyor: seçim paylaşılabilir ve arama motoru her dili ayrı sayfa olarak görür.
+ * Türkçe kökte (/) yayınlanıyor.
+ */
+function LanguagePicker({ current, label }: { current: string; label: string }) {
+  const [open, setOpen] = useState(false);
+  const href = (code: string) => (code === 'tr' ? '/' : `/${code}`);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={label}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-canvas"
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+          <path d="M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.6 2.5 15 0 18M12 3c-2.5 2.6-2.5 15 0 18" />
+        </svg>
+        {current.toUpperCase()}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-50 mt-2 w-40 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">
+          {MARKETING_LOCALES.map((code) => (
+            <a
+              key={code}
+              href={href(code)}
+              hrefLang={code}
+              className={`block px-4 py-2 text-sm transition hover:bg-canvas ${code === current ? 'font-bold text-brand-600' : 'text-ink'}`}
+            >
+              {MARKETING_LOCALE_NAMES[code]}
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -368,6 +411,7 @@ export default function MarketingHome() {
   // Tüm pazarlama metni çeviri dosyasından; dizileri olduğu gibi okuyabilmek için
   // useTranslations yerine ham mesaj ağacı kullanılıyor.
   const M = (useMessages() as any).marketing as MarketingContent;
+  const locale = useLocale();
 
   useEffect(() => {
     setAuthed(isAuthenticated());
@@ -401,6 +445,7 @@ export default function MarketingHome() {
             <a href="#iletisim" className="text-sm font-semibold text-muted transition hover:text-ink">{M.nav.contact}</a>
           </div>
           <div className="flex items-center gap-2.5">
+            <LanguagePicker current={locale} label={M.nav.language} />
             {!authed && <Link href="/login" className="hidden text-sm font-semibold text-muted transition hover:text-ink sm:block">{M.nav.login}</Link>}
             <Link href={primaryHref} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600">{authed ? M.nav.panel : M.nav.try}</Link>
             <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label={M.nav.menu} aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-ink md:hidden">

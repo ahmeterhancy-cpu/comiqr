@@ -1,0 +1,218 @@
+{
+  "nav": {
+    "features": "Features",
+    "verticals": "Business types",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "login": "Sign in",
+    "loginLong": "Sign in →",
+    "try": "Try it free",
+    "panel": "Go to panel",
+    "menu": "Menu",
+    "language": "Language"
+  },
+  "hero": {
+    "title1": "Your menu deserves better",
+    "title2": "than paper.",
+    "title3": "So does your business.",
+    "body": "ComiQR starts with a digital menu but does not stop there: guests order from the table, the kitchen sees it on screen, staff run the till — and at closing time you read profit, not just turnover. One panel, one subscription.",
+    "demo": "Open a live menu",
+    "chips": ["Digital menu", "Order at the table", "Staff POS", "Kitchen display", "Self-service kiosk", "Expenses & profit"],
+    "checks": ["{days}-day free trial", "No setup fee", "Cancel anytime"]
+  },
+  "demos": {
+    "label": "Don't take our word for it — these are real, working menus",
+    "suffix": "menu",
+    "demo": { "title": "Restaurant", "desc": "Cart, table ordering and category flow." },
+    "demo-otel": { "title": "Hotel", "desc": "Room service and charge to the room folio." },
+    "demo-bar": { "title": "Bar", "desc": "18+ markers and Happy Hour discounts." }
+  },
+  "sections": {
+    "import": {
+      "badge": "New",
+      "title": "Photograph it — we'll build the menu.",
+      "body": "The part that used to wear you out is gone. Take a few photos of your printed menu or upload a PDF; every category, item, description and price — even ingredients, allergens and nutrition — is read off the page and filled in. You type nothing.",
+      "points": ["Photograph the menu or upload a PDF", "Every category, item and description in order", "Each size and its own price", "Ingredients, allergens and nutrition automatically", "Review, save — your menu is live"]
+    },
+    "live": {
+      "badge": "Digital menu",
+      "title": "Your panel is your menu. Edit it live.",
+      "body": "What you edit is what the guest sees; every change reaches their phone instantly. No reprinting, no waiting, and your menu is never out of date.",
+      "points": ["Drag items to reorder or move them to another category", "Hide one item or a whole category with one switch", "Name, price, size, description, ingredients, allergens — edit it all", "Feature a discounted price or flag it as a promotion", "Apply a bulk discount to a category (e.g. 20%)"]
+    },
+    "order": {
+      "badge": "Ordering & service",
+      "title": "Not just a menu — table ordering, service and payment.",
+      "body": "ComiQR does more than show the menu. Guests add to a cart, order at the table, for pickup or delivery, call a waiter or ask for the bill. The order lands on the kitchen display, the call reaches staff instantly.",
+      "points": ["Cart with variants and add-ons", "Dine-in, pickup and delivery", "Call waiter & request bill — by picking the table", "Kitchen display (KDS), staff POS and waiter app", "Online payment (Tiko) — at the door or online"]
+    },
+    "service": {
+      "badge": "Service team",
+      "title": "From the till to the kitchen to the waiter's pocket.",
+      "body": "Wherever the order comes from — the guest's phone, the kiosk or the waiter's hand — it lands in the same place. The till opens it, the kitchen sees it, the waiter serves it; nobody shouts across the room.",
+      "points": ["Staff POS: order to a table, comps, discounts, split bills", "Kitchen display (KDS): item by item, preparing / ready", "Waiter app (iOS & Android): table calls and open tabs", "Kitchen and bar tickets to their own station printer", "Self-service kiosk: the guest orders for themselves", "Shift open/close and end-of-day (Z) report"]
+    },
+    "chat": {
+      "badge": "Instant answers",
+      "title": "A menu that answers for itself.",
+      "body": "Guests can ask anything about the menu; the assistant answers in their own language from ingredients, allergens, prices and promotions. Your team stops answering the same questions all night.",
+      "points": ["Knows every item, its ingredients, allergens and price", "Answers each guest in their own language", "Suggests by budget, appetite or diet (e.g. gluten-free)", "Opening hours, location, WiFi and current promotions", "Day and night, even when you are closed"]
+    },
+    "analytics": {
+      "badge": "Analytics",
+      "title": "See how your menu actually performs.",
+      "body": "How many people opened your menu, how long they browsed, which items stood out — see all of it. Track guest satisfaction with ratings and a reputation score.",
+      "points": ["Daily menu opens", "Views and average browsing time", "Most-viewed items", "Ratings & reviews, reputation score", "Export in one click"]
+    },
+    "finance": {
+      "badge": "Business management",
+      "title": "A panel that shows profit, not just turnover.",
+      "body": "Most systems tell you what you sold. ComiQR tells you what you earned: it puts recipe-based item costs and your expenses against your sales. You see which day made money without waiting for month end.",
+      "points": ["Expense tracking: category, VAT and document number", "Current accounts and store credit — with limits and collections", "Recipe-based item cost (COGS) and real margin", "Hourly demand: which day and hour you fill up", "Staff performance, comps/voids and tax breakdown", "One-click CSV for your accountant"]
+    }
+  },
+  "verticals": {
+    "badge": "One system, four verticals",
+    "heading": "Whatever your business is",
+    "sub": "Pick your type when you sign up; the system sets itself up around it — tables, rooms, sunbeds or tabs.",
+    "items": {
+      "restaurant": { "title": "Restaurant & café", "desc": "Table ordering, pickup and delivery; waiter calls and bill flow." },
+      "hotel": { "title": "Hotel", "desc": "Room service and charge to the room folio; one bill at checkout." },
+      "bar": { "title": "Bar & pub", "desc": "Tab flow, 18+ markers and automatic Happy Hour discounts." },
+      "beach": { "title": "Beach club", "desc": "Sunbed service and charge to the sunbed; order from the shore." }
+    }
+  },
+  "more": {
+    "badge": "On the menu & in the panel",
+    "heading": "And more",
+    "items": [
+      { "title": "Item detail screen", "body": "Tap a card and the guest sees a large photo, description, allergens, nutrition and the \"how many grams of meat\" recipe on one screen." },
+      { "title": "Allergen filters", "body": "Guests filter the menu to gluten-free, lactose-free or allergen-free with one tap." },
+      { "title": "Promotions & coupons", "body": "Scheduled promotions, discount codes and bulk category discounts; happy hour applies itself at the bar." },
+      { "title": "AI advisor (business)", "body": "AI inside the panel: it surfaces standout items, gaps in the menu and a summary of guest reviews." },
+      { "title": "Multi-branch", "body": "Run every branch from one panel; separate menus, tables and reports per branch." },
+      { "title": "Loyalty & points", "body": "Guests are recognised by phone, earn points as they spend and redeem them against the bill." },
+      { "title": "Stock and the 86 list", "body": "Ingredient stock drops through the recipe; the kitchen pulls a sold-out item off the menu with one tap." },
+      { "title": "Many languages, your own brand", "body": "Menu and panel are multilingual; higher plans carry your own colour and branding." }
+    ]
+  },
+  "pricing": {
+    "heading1": "Start for free.",
+    "heading2": "Grow when you're ready.",
+    "sub": "{days} days to try it, no commission, no hidden fees. Upgrade whenever you like.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "saving": "Save {pct}% yearly",
+    "perMonth": "/mo",
+    "custom": "Custom",
+    "yearlyNote": "{total} once a year",
+    "popular": "Most popular",
+    "allFeatures": "All features",
+    "unlimited": "Unlimited",
+    "plans": {
+      "free": {
+        "title": "Starter",
+        "desc": "For small venues moving to a digital QR menu.",
+        "cta": "Start free",
+        "items": ["QR menu + 3 themes", "Opening hours, WiFi, contact", "Calorie & allergen display", "Multilingual menu"]
+      },
+      "pro": {
+        "title": "Pro",
+        "desc": "For venues that want table ordering and service flow.",
+        "cta": "{days} days free",
+        "items": ["Everything in Starter", "Cart, table ordering & kitchen display", "Waiter app, calls and bill requests", "Full nutrition & AI menu assistant", "Analytics and menu performance", "Kitchen & bar ticket printing"]
+      },
+      "business": {
+        "title": "Business",
+        "desc": "For hotels, beach clubs and multi-branch venues.",
+        "cta": "{days} days free",
+        "items": ["Everything in Pro", "Expenses, current accounts & profit report", "Hotel room and beach sunbed folios", "Multi-branch, loyalty points & coupons", "AI advisor: menu insights"]
+      },
+      "enterprise": {
+        "title": "Enterprise",
+        "desc": "For a branded experience and priority support.",
+        "cta": "Talk to us",
+        "items": ["Everything in Business", "White-label: your own brand", "Priority support & SLA"]
+      }
+    },
+    "rows": {
+      "menu": "Digital QR menu",
+      "nutrition_display": "Calories & allergens",
+      "nutrition_full": "Full nutrition",
+      "ordering": "Table ordering & cart",
+      "payments": "Online payment",
+      "kds": "Kitchen display (KDS)",
+      "waiter_app": "Waiter app",
+      "printing": "Kitchen & bar printing",
+      "analytics": "Analytics",
+      "ai": "AI menu assistant",
+      "ai_advanced": "AI advisor (business)",
+      "loyalty": "Loyalty points & coupons",
+      "multi_branch": "Multi-branch",
+      "folio": "Hotel / beach folio",
+      "happy_hour": "Happy Hour (bar)",
+      "finance": "Expenses · accounts · profit",
+      "pos_integration": "Integration (webhook)",
+      "white_label": "White-label",
+      "sla": "SLA & priority support"
+    },
+    "limits": { "branches": "Branches", "menu_items": "Menu items", "monthly_scans": "Monthly menu opens" }
+  },
+  "faq": {
+    "heading": "The problems every venue shares.",
+    "sub": "Here's how each one is solved.",
+    "items": [
+      { "q": "Are you reprinting the menu over and over?", "a": "Price changed, an item ran out, a promotion started — the moment you change it in the panel it updates on the guest's phone. No printing, no waiting." },
+      { "q": "Can tourists not read your menu?", "a": "The menu is multilingual. Guests pick their own language, and the AI assistant answers their questions in it too." },
+      { "q": "Is your staff answering the same questions every day?", "a": "\"Is this gluten-free? What time do you close?\" — the AI assistant knows ingredients, allergens, hours and promotions, and answers day and night." },
+      { "q": "Are orders and tables hard to manage?", "a": "Whether the order comes from the guest's phone, the kiosk or the waiter, it lands in the same place. The kitchen display shows it, the till manages it, the ticket prints at its own station." },
+      { "q": "Do you know how your menu performs?", "a": "How many people viewed each item, how much it sold and how much profit it left — together with the cost that comes from the recipe." },
+      { "q": "Running more than one branch?", "a": "Run every branch from one panel; separate the menu, tables and reports per branch." },
+      { "q": "How long does setup take?", "a": "Photograph your printed menu or upload a PDF; categories, items, prices and allergens are read off the page and filled in. You get {days} days free and start without a card." }
+    ]
+  },
+  "contact": {
+    "badge": "Contact",
+    "heading": "You can start with a conversation",
+    "sub": "We have offices in three countries. Call the one nearest you and we'll set your menu up together.",
+    "regions": { "cyprus": "Cyprus", "turkey": "Türkiye", "uk": "United Kingdom" }
+  },
+  "stats": {
+    "businesses": "venues using it",
+    "languages": "guest languages",
+    "verticals": "business types",
+    "noApp": "no app needed",
+    "trial": "free trial",
+    "days": "days"
+  },
+  "finalCta": {
+    "heading": "Your first menu is free for {days} days.",
+    "phone": "Or reach us at:",
+    "sub": "Setup takes minutes, and your guests see the difference on their first scan."
+  },
+  "footer": {
+    "tagline": "End-to-end QR menu, ordering and service platform for restaurants, hotels, bars and beach clubs.",
+    "platform": "Platform",
+    "start": "Get started",
+    "company": "Company",
+    "links": {
+      "features": "Features",
+      "verticals": "Business types",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "contact": "Contact",
+      "register": "Sign up free",
+      "login": "Sign in",
+      "panel": "Panel",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    },
+    "copyright": "© 2026 ComiQR. All rights reserved.",
+    "regions": "Cyprus · Türkiye · United Kingdom"
+  },
+  "meta": {
+    "title": "ComiQR — QR menu, table ordering and restaurant management",
+    "description": "Start with a digital QR menu; table ordering, kitchen display, staff POS and expense-profit reporting in the same panel. Multilingual, no setup fee, {days} days free."
+  }
+}
