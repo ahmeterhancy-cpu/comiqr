@@ -827,12 +827,17 @@ export default function MarketingHome() {
             ))}
           </div>
 
-          <p className="mt-8 text-center text-sm text-muted">
-            Yazışma için tek adres:{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-ink transition hover:text-brand-600">
+          <div className="mt-10 flex justify-center">
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="inline-flex items-center gap-2.5 rounded-xl border border-line bg-canvas px-5 py-3 text-sm font-semibold text-ink shadow-sm transition hover:border-brand-500 hover:text-brand-600"
+            >
+              <span className="text-brand-600">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18v14H3zM3 7l9 6 9-6" /></svg>
+              </span>
               {CONTACT_EMAIL}
             </a>
-          </p>
+          </div>
         </div>
       </section>
 
