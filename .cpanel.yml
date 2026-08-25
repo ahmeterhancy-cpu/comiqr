@@ -73,6 +73,9 @@ deployment:
     # Laravel'in kendi index.php'si uygulamayi bir ust klasorde arar; burada
     # uygulama ev dizininde oldugu icin giris dosyasi degistirilmis surumle ezilir.
     - /bin/cp -f $APPPATH/deploy/public_html-index.php $DEPLOYPATH/public_html/index.php >> $LOG 2>&1
+    # GECICI tesihs dosyasi -- open_basedir web kokunun disini engelliyor mu?
+    # Cevap alininca bu satir ve dosya silinecek.
+    - /bin/cp -f $APPPATH/deploy/_probe.php $DEPLOYPATH/public_html/_probe.php >> $LOG 2>&1
 
     # --- Eskimis yapilandirma onbellegi .env degisikliklerini gizler ---
     - /bin/rm -f $APPPATH/bootstrap/cache/config.php $APPPATH/bootstrap/cache/routes-v7.php >> $LOG 2>&1
