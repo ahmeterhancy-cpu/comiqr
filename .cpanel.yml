@@ -91,7 +91,11 @@ deployment:
     # composer sunucuda kurulu degil; resmi phar bir kez indirilir ve
     # ~/composer.phar olarak saklanir. Sonraki dagitimlarda tekrar inmez.
     - /bin/echo "-- composer kurulum --" >> $LOG
-    - (/usr/bin/test -f $DEPLOYPATH/composer.phar || php -r "copy('https://getcomposer.org/composer.phar', '$DEPLOYPATH/composer.phar');") >> $LOG 2>&1
+    # Once curl, olmazsa PHP. Ikisi de olmazsa NEDEN olmadigini yaz --
+    # sessiz basarisizlik yuzunden bir tur kaybettik.
+    - (/usr/bin/test -f $DEPLOYPATH/composer.phar || curl -sSL -o $DEPLOYPATH/composer.phar https://getcomposer.org/composer.phar) >> $LOG 2>&1 || /bin/echo "curl ile inmedi" >> $LOG
+    - (/usr/bin/test -f $DEPLOYPATH/composer.phar || php -r "var_dump(ini_get('allow_url_fopen'), copy('https://getcomposer.org/composer.phar','$DEPLOYPATH/composer.phar'));") >> $LOG 2>&1
+    - (/usr/bin/test -s $DEPLOYPATH/composer.phar && /bin/ls -l $DEPLOYPATH/composer.phar || /bin/echo "composer.phar HALA YOK") >> $LOG 2>&1
     - (cd $APPPATH && php $DEPLOYPATH/composer.phar install --no-dev --optimize-autoloader --no-interaction --no-progress) >> $LOG 2>&1 || /bin/echo "composer install BASARISIZ" >> $LOG
 
     # --- APP_KEY (yalnizca bos ise) ---
