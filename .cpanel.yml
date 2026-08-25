@@ -63,6 +63,13 @@ deployment:
     - /bin/cp -a $SRC/app $SRC/bootstrap $SRC/config $SRC/database $SRC/deploy $SRC/public $SRC/resources $SRC/routes $APPPATH/ >> $LOG 2>&1
     - /bin/cp -a $SRC/artisan $SRC/composer.json $SRC/composer.lock $APPPATH/ >> $LOG 2>&1
 
+    # --- .env kolayligi ---
+    # Dosya Yoneticisi'nde .env'i depo kokune koymak kolay; uygulama ise
+    # ~/comiqr'da calisiyor. Hedefte .env YOKSA depo kokundekini oraya kopyala.
+    # Varsa dokunma -- sunucudaki duzenlemeler her dagitimda ezilmesin.
+    - /bin/echo "-- env kopyalama --" >> $LOG
+    - (/usr/bin/test -f $APPPATH/.env && /bin/echo "hedefte env zaten var" || (/usr/bin/test -f .env && /bin/cp .env $APPPATH/.env && /bin/echo "env depo kokunden kopyalandi" || /bin/echo "depo kokunde de env yok")) >> $LOG 2>&1
+
     # --- storage iskeleti (ilk dagitimda yok, Laravel yazamazsa 500 verir) ---
     - /bin/mkdir -p $APPPATH/storage/framework/cache $APPPATH/storage/framework/sessions $APPPATH/storage/framework/views >> $LOG 2>&1
     - /bin/mkdir -p $APPPATH/storage/logs $APPPATH/storage/app/public $APPPATH/bootstrap/cache >> $LOG 2>&1
