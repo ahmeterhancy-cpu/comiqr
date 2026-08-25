@@ -59,57 +59,35 @@ ve `vendor/` tarayıcıdan indirilebilir.
     └── ...            ← public/ içeriği
 ```
 
-## SSH yoksa (Turhost paylaşımlı paketin durumu)
+## Kabuk erişimi kapalı — ne değişiyor
 
-Bu hesapta kabuk erişimi kapalı. İki sonucu var ve ikisinin de çözümü var:
+cPanel şu uyarıyı veriyor: *"Your system administrator must enable shell access
+to allow you to view clone URLs."*
 
-| Normalde | SSH yokken |
+| | Durum |
 |---|---|
-| `composer install` | Çalışmaz → `vendor/` **bir kez elle yüklenir** (ZIP) |
-| `php artisan migrate` | Çalışmaz → **tek seferlik cron** ile koşturulur |
+| Klon adreslerini görüntüleme | ❌ Kabuk gerekiyor |
+| `.cpanel.yml` dağıtım görevleri | ✅ Çalışır — artisan/composer **yalnız** buradan koşturulabilir |
+| Elle `php artisan ...` | ❌ Terminal yok |
 
-`.cpanel.yml` bu yüzden yalnızca dosya kopyalar; composer ve artisan çağırmaz.
+Yani dağıtım görevleri tek çalıştırma yolumuz. Tek seferlik işler de (migrate,
+yönetici hesabı) oraya konur.
 
-**Private depoyu SSH anahtarı olmadan klonlama.** cPanel HTTPS ile çekecek,
-yani adreste kimlik olmalı. GitHub'da **fine-grained personal access token**
-üretin: yalnız `comiqr` deposu, izin **Contents: Read-only**. Klon adresi:
+## Private depo klonlanamıyor
 
-```
-https://x-access-token:<TOKEN>@github.com/<kullanıcı>/comiqr.git
-```
+cPanel klon adresinde parola kabul etmiyor:
 
-⚠️ Token sunucuda `.git/config` içinde **düz metin** durur. Bu yüzden yalnız
-okuma yetkisi ve tek depo kapsamı verin; gerektiğinde GitHub'dan iptal edilir.
+> The clone URL cannot include a password.
 
-## Adımlar
+SSH olmadığı için deploy key de üretilemiyor. Pratikte private bir depoyu bu
+hesaba klonlamanın yolu yok. İki seçenek kalıyor:
 
-1. **Depoyu GitHub'a push edin** (private).
-2. **cPanel → Git Version Control → Create.** Değerler:
-   - **Clone URL:** yukarıdaki token'lı HTTPS adresi
-   - **Repository Path:** `repositories/comiqr` (⚠️ `public_html` OLMAYACAK —
-     dağıtım oraya `.cpanel.yml` ile kopyalar)
-   - **Repository Name:** `ComiQR`
-3. **MySQL veritabanı ve kullanıcısı oluşturun** (cPanel → MySQL Databases).
-4. **`vendor/` yükleyin (bir kez).** Yerelde üretim bağımlılıkları kurulup
-   ZIP'lenir, cPanel **Dosya Yöneticisi** ile `~/comiqr/` altına çıkarılır.
-   Composer bağımlılıkları değişmedikçe tekrar gerekmez.
-5. **`~/comiqr/.env` dosyasını oluşturun** (Dosya Yöneticisi) — aşağıdaki
-   asgari set. `APP_KEY` yerelde `php artisan key:generate --show` ile
-   üretilip yapıştırılır.
-6. **Deploy HEAD Commit** deyin — dosyalar yerine yerleşir.
-7. **Şemayı kurun (tek seferlik cron).** cPanel → Cron Jobs → dakikada bir:
-   ```
-   /usr/local/bin/php /home/<kullanıcı>/comiqr/artisan migrate --force >> /home/<kullanıcı>/migrate.log 2>&1
-   ```
-   Bir kez çalıştıktan sonra `migrate.log`'a bakıp **cron'u silin**.
-8. **Zamanlanmış görev cron'u** (kalıcı, dakikada bir):
-   ```
-   cd /home/<kullanıcı>/comiqr && /usr/local/bin/php artisan schedule:run >/dev/null 2>&1
-   ```
-
-**Not:** PHP CLI yolu barındırıcıya göre değişir (`/usr/local/bin/php`,
-`/opt/cpanel/ea-php83/root/usr/bin/php` gibi). cPanel Cron ekranı genelde
-doğru yolu örnekte gösterir.
+1. **Depoyu public yap.** Öncesinde iki şey doğrulanmalı:
+   - `.env` **hiç** commit'lenmemiş olmalı — Git geçmişi de okunur, geçmişte
+     geçen bir parola yanmış sayılır. *(Kontrol edildi: hiç commit'lenmemiş.)*
+   - Seeder'daki varsayılan parolalar temizlenmeli. *(Düzeltildi: süperadmin
+     parolası artık `SUPERADMIN_PASSWORD`'dan gelir ve üretimde zorunludur.)*
+2. **Git'ten vazgeç**, Dosya Yöneticisi ile ZIP yükle. Güncellemeler elle.
 
 ## İlk dağıtım = teşhis
 
@@ -152,6 +130,46 @@ Kod yine Git'ten gelir, ama iki iş elle kalır:
 > cPanel o dalı çeker. Böylece vendor depoda durmaz ama sunucuya Git'le gelir.
 > Önce A/B'nin hangisi olduğunu görelim.
 
+## `.cpanel.yml` yazarken beş kural
+
+Hepsi **sessiz** hataya yol açar — deploy düşer, "Last Deployed" son başarılı
+commit'te donar, ekranda hata görünmez.
+
+1. **Her görev tek satır.** Çok satırlı komut ayrıştırıcıyı kırar.
+2. **Metinlerde iki nokta + boşluk kullanma.** `echo "ENV: VAR"` dosyayı
+   geçersiz YAML yapar.
+3. **Mutlak yol kullan** (`/bin/cp`, `/bin/mkdir`). Deploy kabuğunun PATH'i dar;
+   `rsync` çoğu sunucuda yok.
+4. **`.env` ve `storage/` kopyalamadan hariç**, ama `storage/framework/{cache,
+   sessions,views}` iskeletini `mkdir -p` ile kur — ilk dağıtımda yoklar.
+5. **Kendi günlüğünü yaz** (`>> ~/deploy-son.log 2>&1`).
+
+## Koddaki tuzaklar
+
+**`env()` yalnız config dosyalarında.** `config:cache` sonrası Laravel `.env`'i
+hiç yüklemez; başka yerdeki `env()` null döner. *Bizde tek ihlal seeder'daydı —
+süperadmin parolası sessizce `password` oluyordu. `config/platform.php`'ye
+taşındı ve üretimde parola verilmezse seeder hata veriyor.*
+
+**vendor PHP sürümü.** Yerel PHP sunucudan yeniyse vendor'a sürüm kontrolü
+gömülür ve site açılmaz. Sunucunun sürümünü `apps/api/composer.json`'a yazın:
+
+```json
+"config": { "platform": { "php": "8.3.33" } }
+```
+
+Sunucudaki sürümü cPanel → **MultiPHP Manager** ve **PHP Selector** ayrı ayrı
+gösterir; ikisi farklı olabilir.
+
+**`storage:link` bize gerekmiyor.** Medya `/v1/media/{path}` üzerinden PHP ile
+servis ediliyor (`Storage::disk('public')->response()`), symlink üzerinden
+değil. Paylaşımlı barındırmanın klasik symlink derdi bu projede yok.
+
+## Yayın döngüsü
+
+**Update from Remote** → **Deploy HEAD Commit** → *Last Deployed* SHA değişti mi
+bak. İkisi ayrı iş; yalnız ikincisine basmak eski kodu tekrar kurar.
+
 ## Asgari `.env`
 
 ```
@@ -162,7 +180,7 @@ APP_KEY=            # php artisan key:generate ile üretin
 APP_URL=https://api.alanadiniz.com
 
 DB_CONNECTION=mysql
-DB_HOST=localhost
+DB_HOST=localhost              # 127.0.0.1 DEGIL - cPanel yetkiyi @localhost verir
 DB_DATABASE=<cpanel_db>
 DB_USERNAME=<cpanel_user>
 DB_PASSWORD=<parola>
@@ -175,6 +193,9 @@ SESSION_DRIVER=file
 # Frontend nerede duruyorsa oradan gelen isteklere izin verin.
 # `*` BIRAKMAYIN — canlıda her siteye açık demektir.
 CORS_ALLOWED_ORIGINS=https://panel.alanadiniz.com,https://menu.alanadiniz.com
+
+SUPERADMIN_EMAIL=
+SUPERADMIN_PASSWORD=           # uretimde zorunlu; verilmezse seeder hata verir
 
 AI_PROVIDER=deepseek
 DEEPSEEK_API_KEY=

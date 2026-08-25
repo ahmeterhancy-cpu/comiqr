@@ -1,58 +1,58 @@
 ---
-# cPanel Git Version Control dağıtımı (Turhost paylaşımlı barındırma denemesi).
+# cPanel Git dagitimi (Turhost paylasimli barindirma).
 #
-# Bu dosya YALNIZCA Laravel API'yi yayına alır. Üç Next.js uygulaması
-# (web-admin, web-customer, web-kds) sunucu tarafında render ediliyor ve
-# sürekli çalışan bir Node süreci istiyor; paylaşımlı pakette cPanel'in
-# "Setup Node.js App" aracı yoksa oraya konulamazlar (bkz. docs/09).
+# Yalnizca Laravel API'yi yayina alir. Uc Next.js uygulamasi SSR ve surekli
+# calisan bir Node sureci ister; paylasimli pakette cPanel'de "Setup Node.js
+# App" yoksa oraya konulamazlar. Ayrinti docs/09-turhost-deploy.md.
 #
-# Yerleşim: uygulama ev dizininde, yalnız `public/` içeriği public_html'de.
-# Laravel'in kodu web kökünün DIŞINDA durmalı — .env ve storage aksi hâlde
-# tarayıcıdan indirilebilir hâle gelir.
+# YAML KURALLARI (Ay Parcasi kurulumundan ogrenildi, hepsi sessiz hataya yol acar)
+#   1. Her gorev TEK SATIR. Cok satirli komut ayristiriciyi kirar.
+#   2. Metinlerde iki nokta + BOSLUK kullanma. `echo "ENV: VAR"` dosyayi
+#      gecersiz YAML yapar; cPanel deploy'u sessizce duser ve "Last Deployed"
+#      son basarili commit'te donar. Hata gorunmez.
+#   3. Mutlak yol kullan. Deploy kabugunun PATH'i dar; rsync cogu sunucuda yok.
+#   4. .env ve storage/ kopyalamadan haric. Dizinler tek tek sayilir.
+#   5. Kendi gunlugunu yaz. cPanel'in gunlugunu aramaktan iyidir.
 #
-# BU İLK SÜRÜM BİLEREK SADECE DOSYA KOPYALAR ve bir teşhis raporu yazar.
-# Hesapta kabuk erişimi kapalı; `php`/`composer` bu bağlamda çalışıyor mu
-# bilinmiyor. Rapor (`~/deploy-report.txt`) bunu ilk dağıtımda söyler:
-#   - `php` çalışıyorsa → composer install + migrate buraya eklenir,
-#     güncellemeler tek tık olur (docs/09 "Tam Git akışı").
-#   - çalışmıyorsa → vendor bir kez ZIP ile yüklenir, migrate cron'la koşar.
+# Yerlesim: uygulama ev dizininde (~/comiqr), yalniz public/ icerigi
+# public_html'de. Boylece alan adinin kok dizinini degistirmeye gerek kalmaz
+# ve .env web kokunun DISINDA kalir.
 deployment:
   tasks:
     - export DEPLOYPATH=${HOME:-/home/comi3149}
     - export APPPATH=$DEPLOYPATH/comiqr
+    - export LOG=$DEPLOYPATH/deploy-son.log
+    - /bin/date > $LOG
 
-    # --- Uygulama kodu (web kökünün dışına) ---
-    # `cp` silmez: sunucuda duran `vendor/`, `.env` ve `storage/` içeriği
-    # dağıtımda korunur. Bunlar bilerek depoda yok.
-    - /bin/mkdir -p $APPPATH
-    - /bin/cp -R apps/api/. $APPPATH/
+    # --- Uygulama kodu, web kokunun disina ---
+    # storage/ ve .env bilerek YOK. `cp` silmez, ama storage'i kopyalamak
+    # sunucudaki gunlukleri ve onbellegi ezebilir.
+    - /bin/mkdir -p $APPPATH >> $LOG 2>&1
+    - /bin/cp -a app bootstrap config database deploy public resources routes $APPPATH/ >> $LOG 2>&1
+    - /bin/cp -a artisan composer.json composer.lock $APPPATH/ >> $LOG 2>&1
 
-    # --- Web kökü: yalnız public/ ---
-    - /bin/cp -R $APPPATH/public/. $DEPLOYPATH/public_html/
-    # Laravel'in kendi index.php'si uygulamayı bir üst klasörde arar; burada
-    # uygulama ev dizininde olduğu için giriş dosyası değiştirilmiş sürümle
-    # ezilir.
-    - /bin/cp -f $APPPATH/deploy/public_html-index.php $DEPLOYPATH/public_html/index.php
+    # --- storage iskeleti (ilk dagitimda yok, Laravel yazamazsa 500 verir) ---
+    - /bin/mkdir -p $APPPATH/storage/framework/cache $APPPATH/storage/framework/sessions $APPPATH/storage/framework/views >> $LOG 2>&1
+    - /bin/mkdir -p $APPPATH/storage/logs $APPPATH/storage/app/public $APPPATH/bootstrap/cache >> $LOG 2>&1
+    - /bin/chmod -R 775 $APPPATH/storage $APPPATH/bootstrap/cache >> $LOG 2>&1
 
-    # --- Eskimiş yapılandırma önbelleği .env değişikliklerini gizler ---
-    - /bin/rm -f $APPPATH/bootstrap/cache/config.php $APPPATH/bootstrap/cache/routes-v7.php
+    # --- Web koku, yalniz public/ ---
+    - /bin/cp -a $APPPATH/public/. $DEPLOYPATH/public_html/ >> $LOG 2>&1
+    # Laravel'in kendi index.php'si uygulamayi bir ust klasorde arar; burada
+    # uygulama ev dizininde oldugu icin giris dosyasi degistirilmis surumle ezilir.
+    - /bin/cp -f $APPPATH/deploy/public_html-index.php $DEPLOYPATH/public_html/index.php >> $LOG 2>&1
 
-    # --- Teşhis: bu ortamda ne çalışıyor? ---
-    # Tek dağıtımla öğrenmek istediklerimiz. Rapor ev dizininde durur
-    # (web'den erişilemez); cPanel Dosya Yöneticisi'yle okunur.
-    - echo "== ComiQR dagitim raporu ==" > $DEPLOYPATH/deploy-report.txt
-    - date >> $DEPLOYPATH/deploy-report.txt
-    - echo "-- kabuk --" >> $DEPLOYPATH/deploy-report.txt
-    - whoami >> $DEPLOYPATH/deploy-report.txt 2>&1 || echo "whoami YOK" >> $DEPLOYPATH/deploy-report.txt
-    - echo "-- php --" >> $DEPLOYPATH/deploy-report.txt
-    - (which php || echo "php PATH'te YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
-    - (php -v || echo "php CALISMIYOR") >> $DEPLOYPATH/deploy-report.txt 2>&1
-    - (/usr/local/bin/php -v || echo "/usr/local/bin/php YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
-    - echo "-- composer --" >> $DEPLOYPATH/deploy-report.txt
-    - (which composer || echo "composer PATH'te YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
-    - echo "-- node --" >> $DEPLOYPATH/deploy-report.txt
-    - (which node || echo "node PATH'te YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
-    - echo "-- vendor kuruldu mu --" >> $DEPLOYPATH/deploy-report.txt
-    - (test -f $APPPATH/vendor/autoload.php && echo "vendor VAR" || echo "vendor YOK - yuklenmeli") >> $DEPLOYPATH/deploy-report.txt
-    - echo "-- .env --" >> $DEPLOYPATH/deploy-report.txt
-    - (test -f $APPPATH/.env && echo ".env VAR" || echo ".env YOK - olusturulmali") >> $DEPLOYPATH/deploy-report.txt
+    # --- Eskimis yapilandirma onbellegi .env degisikliklerini gizler ---
+    - /bin/rm -f $APPPATH/bootstrap/cache/config.php $APPPATH/bootstrap/cache/routes-v7.php >> $LOG 2>&1
+
+    # --- Tesihs (ilk dagitimda ne var ne yok) ---
+    - /bin/echo "-- php --" >> $LOG
+    - (/usr/bin/which php || /bin/echo "php PATH disinda") >> $LOG 2>&1
+    - (php -v || /bin/echo "php calismiyor") >> $LOG 2>&1
+    - /bin/echo "-- composer --" >> $LOG
+    - (/usr/bin/which composer || /bin/echo "composer PATH disinda") >> $LOG 2>&1
+    - /bin/echo "-- vendor --" >> $LOG
+    - (/usr/bin/test -f $APPPATH/vendor/autoload.php && /bin/echo "vendor var" || /bin/echo "vendor yok, yuklenmeli") >> $LOG 2>&1
+    - /bin/echo "-- .env --" >> $LOG
+    - (/usr/bin/test -f $APPPATH/.env && /bin/echo "env var" || /bin/echo "env yok, olusturulmali") >> $LOG 2>&1
+    - /bin/echo "-- bitti --" >> $LOG

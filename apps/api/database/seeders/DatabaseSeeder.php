@@ -18,12 +18,26 @@ class DatabaseSeeder extends Seeder
         $this->call(PlanSeeder::class);
         $this->call(AllergenSeeder::class);
 
+        /*
+         * Degerler config'ten okunur, env()'den DEGIL: `config:cache` sonrasi
+         * Laravel .env'i yuklemez ve buradaki env() null doner -- parola
+         * sessizce varsayilana duserdi.
+         */
+        $password = config('platform.superadmin.password')
+            ?? (app()->environment('production') ? null : 'password');
+
+        abort_if(
+            $password === null,
+            500,
+            'SUPERADMIN_PASSWORD tanimli degil. Uretimde superadmin parolasi acikca verilmelidir.',
+        );
+
         User::withoutTenancy()->updateOrCreate(
-            ['email' => env('SUPERADMIN_EMAIL', 'superadmin@comiqr.com')],
+            ['email' => config('platform.superadmin.email')],
             [
                 'tenant_id' => null,
                 'name' => 'Super Admin',
-                'password' => Hash::make(env('SUPERADMIN_PASSWORD', 'password')),
+                'password' => Hash::make($password),
                 'role' => Role::Superadmin,
                 'email_verified_at' => now(),
             ],
