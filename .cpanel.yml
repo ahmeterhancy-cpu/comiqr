@@ -6,17 +6,16 @@
 # sürekli çalışan bir Node süreci istiyor; paylaşımlı pakette cPanel'in
 # "Setup Node.js App" aracı yoksa oraya konulamazlar (bkz. docs/09).
 #
-# SSH YOK VARSAYIMI: bu hesapta kabuk erişimi kapalı, dolayısıyla burada
-# `composer install` ya da `php artisan` ÇALIŞTIRILMAZ. Görev listesi sadece
-# dosya kopyalar. Bir kereye mahsus işler (vendor yükleme, migrate, key)
-# docs/09'da anlatıldığı gibi cPanel Dosya Yöneticisi ve Cron ile yapılır.
-#
 # Yerleşim: uygulama ev dizininde, yalnız `public/` içeriği public_html'de.
 # Laravel'in kodu web kökünün DIŞINDA durmalı — .env ve storage aksi hâlde
 # tarayıcıdan indirilebilir hâle gelir.
 #
-# DEPLOYPATH ev dizininden okunur; cPanel kullanıcı adı değişirse dosya
-# düzenlenmek zorunda kalmasın diye. $HOME tanımsızsa bilinen yola düşer.
+# BU İLK SÜRÜM BİLEREK SADECE DOSYA KOPYALAR ve bir teşhis raporu yazar.
+# Hesapta kabuk erişimi kapalı; `php`/`composer` bu bağlamda çalışıyor mu
+# bilinmiyor. Rapor (`~/deploy-report.txt`) bunu ilk dağıtımda söyler:
+#   - `php` çalışıyorsa → composer install + migrate buraya eklenir,
+#     güncellemeler tek tık olur (docs/09 "Tam Git akışı").
+#   - çalışmıyorsa → vendor bir kez ZIP ile yüklenir, migrate cron'la koşar.
 deployment:
   tasks:
     - export DEPLOYPATH=${HOME:-/home/comi3149}
@@ -35,7 +34,25 @@ deployment:
     # ezilir.
     - /bin/cp -f $APPPATH/deploy/public_html-index.php $DEPLOYPATH/public_html/index.php
 
-    # --- Önbelleği tazele ---
-    # Yapılandırma önbelleği eskiyse .env değişiklikleri görünmez. Dosyayı
-    # silmek yeterli; Laravel önbellek yoksa .env'i doğrudan okur.
+    # --- Eskimiş yapılandırma önbelleği .env değişikliklerini gizler ---
     - /bin/rm -f $APPPATH/bootstrap/cache/config.php $APPPATH/bootstrap/cache/routes-v7.php
+
+    # --- Teşhis: bu ortamda ne çalışıyor? ---
+    # Tek dağıtımla öğrenmek istediklerimiz. Rapor ev dizininde durur
+    # (web'den erişilemez); cPanel Dosya Yöneticisi'yle okunur.
+    - echo "== ComiQR dagitim raporu ==" > $DEPLOYPATH/deploy-report.txt
+    - date >> $DEPLOYPATH/deploy-report.txt
+    - echo "-- kabuk --" >> $DEPLOYPATH/deploy-report.txt
+    - whoami >> $DEPLOYPATH/deploy-report.txt 2>&1 || echo "whoami YOK" >> $DEPLOYPATH/deploy-report.txt
+    - echo "-- php --" >> $DEPLOYPATH/deploy-report.txt
+    - (which php || echo "php PATH'te YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
+    - (php -v || echo "php CALISMIYOR") >> $DEPLOYPATH/deploy-report.txt 2>&1
+    - (/usr/local/bin/php -v || echo "/usr/local/bin/php YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
+    - echo "-- composer --" >> $DEPLOYPATH/deploy-report.txt
+    - (which composer || echo "composer PATH'te YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
+    - echo "-- node --" >> $DEPLOYPATH/deploy-report.txt
+    - (which node || echo "node PATH'te YOK") >> $DEPLOYPATH/deploy-report.txt 2>&1
+    - echo "-- vendor kuruldu mu --" >> $DEPLOYPATH/deploy-report.txt
+    - (test -f $APPPATH/vendor/autoload.php && echo "vendor VAR" || echo "vendor YOK - yuklenmeli") >> $DEPLOYPATH/deploy-report.txt
+    - echo "-- .env --" >> $DEPLOYPATH/deploy-report.txt
+    - (test -f $APPPATH/.env && echo ".env VAR" || echo ".env YOK - olusturulmali") >> $DEPLOYPATH/deploy-report.txt

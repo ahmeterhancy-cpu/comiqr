@@ -111,6 +111,47 @@ okuma yetkisi ve tek depo kapsamı verin; gerektiğinde GitHub'dan iptal edilir.
 `/opt/cpanel/ea-php83/root/usr/bin/php` gibi). cPanel Cron ekranı genelde
 doğru yolu örnekte gösterir.
 
+## İlk dağıtım = teşhis
+
+`.cpanel.yml` şu an bilerek yalnız dosya kopyalıyor ve ev dizinine
+**`deploy-report.txt`** yazıyor. Cevabını bilmediğimiz soru şu: cPanel'in
+dağıtım görevleri bu hesapta `php` ve `composer` çalıştırabiliyor mu?
+(Kabuk erişimi kapalı olan hesaplarda bazen çalışır, bazen dağıtım hiç
+tetiklenmez.)
+
+İlk **Deploy HEAD Commit**'ten sonra Dosya Yöneticisi'yle
+`/home/<kullanıcı>/deploy-report.txt` dosyasını açın. İçinde `php -v` çıktısı,
+composer ve node yolları, `vendor/` ve `.env` durumu var.
+
+### A) Rapor `php` çalışıyor diyorsa — tam Git akışı
+
+`.cpanel.yml`'e şu iki görev eklenir ve **her güncelleme tek tık** olur:
+
+```yaml
+    - cd $APPPATH && php /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction
+    - cd $APPPATH && php artisan migrate --force
+```
+
+(`composer.phar` yoksa bir kez `~/composer.phar` olarak yüklenir; yol rapora
+göre ayarlanır.)
+
+### B) Rapor `php` çalışmıyor diyorsa
+
+Kod yine Git'ten gelir, ama iki iş elle kalır:
+
+- **`vendor/`** bir kez ZIP olarak Dosya Yöneticisi'yle `~/comiqr/` altına
+  çıkarılır (üretimde ~68 MB). Yalnız composer bağımlılıkları değişince tekrarlanır.
+- **`migrate`** tek seferlik cron ile koşturulur:
+  ```
+  /usr/local/bin/php /home/<kullanıcı>/comiqr/artisan migrate --force >> /home/<kullanıcı>/migrate.log 2>&1
+  ```
+  Çalıştıktan sonra `migrate.log` kontrol edilip cron **silinir**.
+
+> Uzun vadede B senaryosunda bile tam otomasyon mümkün: GitHub Actions
+> `composer install --no-dev` çalıştırıp sonucu bir `deploy` dalına yazar,
+> cPanel o dalı çeker. Böylece vendor depoda durmaz ama sunucuya Git'le gelir.
+> Önce A/B'nin hangisi olduğunu görelim.
+
 ## Asgari `.env`
 
 ```
