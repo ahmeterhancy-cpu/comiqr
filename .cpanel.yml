@@ -38,8 +38,16 @@ deployment:
     - /bin/echo "-- php --" >> $LOG
     - (command -v php || /bin/echo "php PATH disinda") >> $LOG 2>&1
     - (php -v || /bin/echo "php calismiyor") >> $LOG 2>&1
+    - /bin/echo "-- baska php surumleri --" >> $LOG
+    - (/bin/ls -d /opt/cpanel/ea-php* 2>/dev/null || /bin/echo "ea-php yok") >> $LOG 2>&1
+    - (/bin/ls -d /opt/alt/php* 2>/dev/null || /bin/echo "alt-php yok") >> $LOG 2>&1
+    - (/opt/cpanel/ea-php83/root/usr/bin/php -v 2>/dev/null | /usr/bin/head -1 || /bin/echo "ea-php83 yok") >> $LOG 2>&1
+    - (/opt/cpanel/ea-php84/root/usr/bin/php -v 2>/dev/null | /usr/bin/head -1 || /bin/echo "ea-php84 yok") >> $LOG 2>&1
+    - (/opt/alt/php83/usr/bin/php -v 2>/dev/null | /usr/bin/head -1 || /bin/echo "alt-php83 yok") >> $LOG 2>&1
+    - (/opt/alt/php84/usr/bin/php -v 2>/dev/null | /usr/bin/head -1 || /bin/echo "alt-php84 yok") >> $LOG 2>&1
     - /bin/echo "-- composer --" >> $LOG
     - (command -v composer || /bin/echo "composer PATH disinda") >> $LOG 2>&1
+    - (/usr/bin/test -f $DEPLOYPATH/composer.phar && /bin/echo "composer.phar var" || /bin/echo "composer.phar yok") >> $LOG 2>&1
     - /bin/echo "-- vendor --" >> $LOG
     - (/usr/bin/test -f $APPPATH/vendor/autoload.php && /bin/echo "vendor var" || /bin/echo "vendor yok") >> $LOG 2>&1
     - /bin/echo "-- env --" >> $LOG
