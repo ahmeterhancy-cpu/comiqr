@@ -918,6 +918,7 @@ function LiveMenuScreen({ labels }: { labels: { add: string; cart: string } }) {
           title="ComiQR"
           tabIndex={-1}
           aria-hidden
+          scrolling="no"
           className="absolute left-0 top-0 origin-top-left border-0 transition-opacity duration-500"
           style={{
             width: DEVICE_W,
@@ -944,8 +945,8 @@ function MenuScreenPlaceholder({ labels }: { labels: { add: string; cart: string
   return (
     <div className="absolute inset-0 flex flex-col">
       <div style={{ background: 'linear-gradient(150deg,#c9490f,#ea5b1a 55%,#f6944f)' }}>
-        <StatusBar />
-        <div className="mt-2.5 flex items-center justify-between px-3">
+        {/* Durum çubuğu cihaz katmanından geliyor; burada yalnız yeri boş bırakılır. */}
+        <div className="mt-11 flex items-center justify-between px-3">
           <span className="rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow">🌐</span>
           <span className="rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow">🛒</span>
         </div>
@@ -972,10 +973,6 @@ function MenuScreenPlaceholder({ labels }: { labels: { add: string; cart: string
           <span>{labels.cart} · 2</span>
           <span>₺390</span>
         </div>
-      </div>
-      {/* Ana ekran çizgisi — cihazın alt kenarını tamamlar. */}
-      <div className="flex justify-center pb-2">
-        <span className="h-1 w-24 rounded-full bg-ink/20" />
       </div>
     </div>
   );
@@ -1005,7 +1002,23 @@ function PhoneMockup({ children }: { children: ReactNode }) {
         style={{ background: 'linear-gradient(150deg,#9aa1ae,#39404c 28%,#1b1f27 62%,#828a97)' }}
       >
         <div className="rounded-[2.78rem] p-[9px]" style={{ background: '#0b0d11' }}>
-          <div className="relative overflow-hidden rounded-[2.2rem] bg-canvas">{children}</div>
+          <div className="relative overflow-hidden rounded-[2.2rem] bg-canvas">
+            {children}
+
+            {/*
+              Cihaz katmanı ekranın ÜSTÜNDE durur: içerik canlı menü olduğu için
+              durum çubuğu ile ada aksi hâlde iframe'in altında kalıp kayboluyordu.
+              Menünün kendi rengi bilinmediğinden yazının okunurluğunu üstteki
+              koyu perde garanti eder.
+            */}
+            <div className="pointer-events-none absolute inset-x-0 top-0">
+              <div className="absolute inset-x-0 top-0 h-12" style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.42),rgba(0,0,0,0))' }} />
+              <StatusBar />
+            </div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-2">
+              <span className="h-1 w-24 rounded-full" style={{ background: 'rgba(0,0,0,0.28)' }} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
