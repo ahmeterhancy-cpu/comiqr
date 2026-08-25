@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocale, useMessages } from 'next-intl';
 import { MARKETING_LOCALES, MARKETING_LOCALE_NAMES } from '@/i18n/locales';
 import Link from 'next/link';
@@ -860,99 +860,32 @@ export default function MarketingHome({ media = {} }: { media?: LandingMedia }) 
   );
 }
 
-/* Telefon ekranının ölçüleri; iframe ölçeği bunlardan türetilir. */
+/* Telefon ekranının ölçüleri. */
 const SCREEN_W = 264;
 const SCREEN_H = 542;
-/** Menü mobil genişlikte render edilip ekrana sığacak kadar küçültülür. */
-const DEVICE_W = 375;
-const MENU_SCALE = SCREEN_W / DEVICE_W;
-/**
- * Menünün ilk bu kadar pikseli (sayfa ölçüsünde) kadraj dışında bırakılır.
- *
- * Kapak görseli tek başına 240px yer kaplıyor ve ilk yemek kartı ancak 800'de
- * başlıyor; kaydırmasız bir telefon penceresi 770px gösterdiği için hero'da
- * HİÇ yemek görünmüyordu — vitrin, ürünün en anlatıcı kısmını atlıyordu.
- * Bu kayma mekân adından başlatıp ilk kartı tam içeri alır; üstte kalan ince
- * şerit zaten durum çubuğunun perdesinin altında.
- */
-const MENU_OFFSET = 210;
 
 /**
- * Telefonun içindeki ekran: gerçek demo menünün kendisi.
+ * Telefonun içindeki ekran.
  *
- * Elle çizilmiş bir yaklaşıklık yerine ürünün canlı çıktısı gösteriliyor —
- * misafirin göreceği ekranın aynısı, menü değiştikçe kendiliğinden güncel.
+ * Panelden bir ekran görüntüsü yüklendiyse o basılır (Süperadmin → Landing
+ * Sayfası → Hero telefon görüntüsü); yoksa çizim gösterilir.
  *
- * Menü kendi adresinde açılır (dil ve tema oradan gelir); `?preview` KULLANILMAZ
- * çünkü o bayrak önbelleği atlayıp her gösterimde taze çekim yaptırıyor —
- * karşılığında yalnız menü içeriğini çeviriyor, arayüz yazılarını değil.
- *
- * İki koruma var. (1) iframe ilk boyamadan SONRA takılır: hero'nun LCP'si ayrı
- * bir uygulamanın yüklenmesini beklemez. (2) Yer tutucu her zaman altta durur;
- * menü yüklenmezse (müşteri uygulaması kapalı, ağ kesik) ekran boş kalmaz.
- * Gösterim amaçlı olduğu için tıklama geçirmez; ziyaretçi menüyü "Canlı Menüyü
- * Aç" ile kendi sekmesinde açar.
+ * Burada bir zamanlar canlı demo menü iframe olarak gömülüydü. Kaldırıldı:
+ * menü sayfası 63 görsel istiyor ve bunu hero her açılışta tetikliyordu —
+ * yalnız ağır olmakla kalmayıp sayfanın KENDİ içeriğini okuduğu API'yi aç
+ * bırakıyordu (tek iş parçacıklı sunucuda `/v1/landing` kuyruğun arkasında
+ * kalıp zaman aşımına düşüyor, panel düzenlemeleri görünmüyordu). Gerçek
+ * görüntü isteniyorsa doğru yol yüklenen ekran görüntüsü: aynı sonuç, çalışma
+ * zamanı maliyeti yok, müşteri uygulamasının ayakta olmasına bağlı değil.
  */
 function LiveMenuScreen({ labels, screenshot }: { labels: { add: string; cart: string }; screenshot?: string }) {
-  const [mounted, setMounted] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const frame = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    const el = frame.current;
-    if (!el) return;
-
-    const show = () => setLoaded(true);
-    el.addEventListener('load', show);
-    // React'in onLoad'ı, iframe React dinleyiciyi bağlamadan önce yüklenirse
-    // olayı kaçırıyor ve ekran kalıcı olarak saydam kalıyordu; süre dolunca da
-    // göster.
-    const timer = setTimeout(show, 2500);
-
-    return () => {
-      el.removeEventListener('load', show);
-      clearTimeout(timer);
-    };
-  }, [mounted]);
-
-  /*
-   * Panelden bir ekran görüntüsü yüklendiyse onu göster: gerçek pikseller,
-   * çalışma zamanı maliyeti yok, müşteri uygulamasının ayakta olmasına bağlı
-   * değil. Canlı iframe yalnızca görsel yokken devreye girer.
-   */
-  if (screenshot) {
-    return (
-      <div className="relative bg-canvas" style={{ height: SCREEN_H }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={screenshot} alt="" className="h-full w-full object-cover object-top" />
-      </div>
-    );
-  }
-
   return (
     <div className="relative bg-canvas" style={{ height: SCREEN_H }}>
-      <MenuScreenPlaceholder labels={labels} />
-
-      {mounted && (
-        <iframe
-          ref={frame}
-          src={demoUrl('demo')}
-          title="ComiQR"
-          tabIndex={-1}
-          aria-hidden
-          scrolling="no"
-          className="absolute left-0 top-0 origin-top-left border-0 transition-opacity duration-500"
-          style={{
-            width: DEVICE_W,
-            height: SCREEN_H / MENU_SCALE + MENU_OFFSET,
-            transform: `scale(${MENU_SCALE}) translateY(${-MENU_OFFSET}px)`,
-            pointerEvents: 'none',
-            opacity: loaded ? 1 : 0,
-          }}
-        />
+      {screenshot ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={screenshot} alt="" className="h-full w-full object-cover object-top" />
+      ) : (
+        <MenuScreenPlaceholder labels={labels} />
       )}
     </div>
   );
@@ -1032,7 +965,7 @@ function PhoneMockup({ children }: { children: ReactNode }) {
 
             {/*
               Cihaz katmanı ekranın ÜSTÜNDE durur: içerik canlı menü olduğu için
-              durum çubuğu ile ada aksi hâlde iframe'in altında kalıp kayboluyordu.
+              durum çubuğu ile ada aksi hâlde ekran içeriğinin altında kalıyordu.
               Menünün kendi rengi bilinmediğinden yazının okunurluğunu üstteki
               koyu perde garanti eder.
             */}
