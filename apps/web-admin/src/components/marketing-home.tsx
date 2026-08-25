@@ -865,6 +865,16 @@ const SCREEN_H = 542;
 /** Menü mobil genişlikte render edilip ekrana sığacak kadar küçültülür. */
 const DEVICE_W = 375;
 const MENU_SCALE = SCREEN_W / DEVICE_W;
+/**
+ * Menünün ilk bu kadar pikseli (sayfa ölçüsünde) kadraj dışında bırakılır.
+ *
+ * Kapak görseli tek başına 240px yer kaplıyor ve ilk yemek kartı ancak 800'de
+ * başlıyor; kaydırmasız bir telefon penceresi 770px gösterdiği için hero'da
+ * HİÇ yemek görünmüyordu — vitrin, ürünün en anlatıcı kısmını atlıyordu.
+ * Bu kayma mekân adından başlatıp ilk kartı tam içeri alır; üstte kalan ince
+ * şerit zaten durum çubuğunun perdesinin altında.
+ */
+const MENU_OFFSET = 210;
 
 /**
  * Telefonun içindeki ekran: gerçek demo menünün kendisi.
@@ -922,8 +932,8 @@ function LiveMenuScreen({ labels }: { labels: { add: string; cart: string } }) {
           className="absolute left-0 top-0 origin-top-left border-0 transition-opacity duration-500"
           style={{
             width: DEVICE_W,
-            height: SCREEN_H / MENU_SCALE,
-            transform: `scale(${MENU_SCALE})`,
+            height: SCREEN_H / MENU_SCALE + MENU_OFFSET,
+            transform: `scale(${MENU_SCALE}) translateY(${-MENU_OFFSET}px)`,
             pointerEvents: 'none',
             opacity: loaded ? 1 : 0,
           }}
