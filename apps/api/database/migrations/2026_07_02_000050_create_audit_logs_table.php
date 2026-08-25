@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('action');                       // e.g. tenant.registered, tenant.impersonated
             $table->string('subject_type')->nullable();     // morph type
             $table->unsignedBigInteger('subject_id')->nullable();
-            $table->jsonb('meta_json')->nullable();
+            $table->json('meta_json')->nullable();
             $table->string('ip', 45)->nullable();
             $table->timestamps();
 

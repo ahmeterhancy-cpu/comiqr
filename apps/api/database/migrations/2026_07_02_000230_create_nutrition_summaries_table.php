@@ -28,8 +28,8 @@ return new class extends Migration
             $table->decimal('fiber_g', 10, 2)->default(0);
             $table->decimal('sodium_mg', 10, 2)->default(0);
 
-            $table->jsonb('allergen_ids_json')->nullable();   // derived union
-            $table->jsonb('diet_flags_json')->nullable();     // {vegan, vegetarian, gluten_free}
+            $table->json('allergen_ids_json')->nullable();   // derived union
+            $table->json('diet_flags_json')->nullable();     // {vegan, vegetarian, gluten_free}
 
             // Cost / menu engineering.
             $table->decimal('cost_per_portion', 12, 2)->default(0);

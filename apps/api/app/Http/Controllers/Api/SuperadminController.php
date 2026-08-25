@@ -88,7 +88,8 @@ class SuperadminController extends Controller
 
         $rows = $query
             ->where($column, '>=', $from)
-            ->selectRaw("to_char({$column}, 'YYYY-MM-DD') as d, count(*) as c")
+            // `date()` hem Postgres hem MySQL'de var; `to_char` yalniz Postgres'te.
+            ->selectRaw("date({$column}) as d, count(*) as c")
             ->groupBy('d')
             ->pluck('c', 'd');
 

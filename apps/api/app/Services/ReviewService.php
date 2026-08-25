@@ -47,7 +47,9 @@ class ReviewService
     {
         $base = Review::withoutTenancy()->where('tenant_id', $tenantId)->where('status', 'published');
 
-        $agg = (clone $base)->selectRaw('count(*) as count, round(coalesce(avg(rating), 0)::numeric, 1) as average')->first();
+        // Yuvarlama PHP'de: Postgres `round(double, int)` icin ::numeric dokumu
+        // ister, MySQL istemez. Surucuye bagimli SQL yerine tek satir PHP.
+        $agg = (clone $base)->selectRaw('count(*) as count, coalesce(avg(rating), 0) as average')->first();
         $dist = (clone $base)->selectRaw('rating, count(*) as c')->groupBy('rating')->pluck('c', 'rating');
 
         $distribution = [];
@@ -56,7 +58,7 @@ class ReviewService
         }
 
         return [
-            'average' => (float) ($agg->average ?? 0),
+            'average' => round((float) ($agg->average ?? 0), 1),
             'count' => (int) ($agg->count ?? 0),
             'distribution' => $distribution,
         ];
@@ -77,11 +79,11 @@ class ReviewService
         return Review::withoutTenancy()
             ->where('status', 'published')
             ->whereIn('tenant_id', $tenantIds)
-            ->selectRaw('tenant_id, round(avg(rating)::numeric, 1) as average, count(*) as count')
+            ->selectRaw('tenant_id, avg(rating) as average, count(*) as count')
             ->groupBy('tenant_id')
             ->get()
             ->keyBy('tenant_id')
-            ->map(fn ($r) => ['average' => (float) $r->average, 'count' => (int) $r->count])
+            ->map(fn ($r) => ['average' => round((float) $r->average, 1), 'count' => (int) $r->count])
             ->all();
     }
 }

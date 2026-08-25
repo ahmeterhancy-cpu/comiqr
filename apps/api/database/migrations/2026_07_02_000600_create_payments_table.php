@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('tip_amount', 12, 2)->default(0);
             $table->string('status', 16)->default('initiated'); // initiated|paid|failed|refunded
             $table->string('gateway_ref')->nullable();
-            $table->jsonb('split_meta_json')->nullable();
+            $table->json('split_meta_json')->nullable();
             $table->string('invoice_ref')->nullable();
             $table->timestamps();
 

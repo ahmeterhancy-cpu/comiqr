@@ -14,7 +14,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('categories', function (Blueprint $table) {
-            $table->jsonb('promo_json')->nullable()->after('daypart_json');
+            $table->json('promo_json')->nullable()->after('daypart_json');
         });
     }
 

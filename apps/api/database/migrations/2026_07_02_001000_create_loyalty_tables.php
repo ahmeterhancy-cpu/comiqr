@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->text('email')->nullable();        // encrypted
             $table->string('locale', 5)->nullable();
-            $table->jsonb('consent_json')->nullable();
+            $table->json('consent_json')->nullable();
             $table->timestamp('first_seen_at')->nullable();
             $table->timestamp('last_seen_at')->nullable();
             $table->unsignedInteger('total_orders')->default(0);
@@ -50,7 +50,7 @@ return new class extends Migration
             $table->string('type', 8); // earn | redeem | adjust
             $table->integer('points');
             $table->foreignId('order_id')->nullable()->constrained('orders')->nullOnDelete();
-            $table->jsonb('meta_json')->nullable();
+            $table->json('meta_json')->nullable();
             $table->timestamp('created_at')->useCurrent();
         });
 

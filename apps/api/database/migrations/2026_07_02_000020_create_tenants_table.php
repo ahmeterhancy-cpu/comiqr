@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('locale_default', 5)->default('tr');
             $table->string('currency', 3)->default('EUR');
             $table->string('timezone')->default('Asia/Nicosia');
-            $table->jsonb('settings_json')->nullable();        // branding, feature toggles
+            $table->json('settings_json')->nullable();        // branding, feature toggles
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamps();
             $table->softDeletes();

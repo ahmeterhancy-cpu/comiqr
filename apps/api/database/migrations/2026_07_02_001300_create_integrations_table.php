@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('type');                 // pos | okc | erp | delivery
             $table->string('provider');             // webhook | simpra | adisyo | yemeksepeti | ...
             $table->string('name');
-            $table->jsonb('config_json')->nullable(); // { endpoint, secret, ... }
+            $table->json('config_json')->nullable(); // { endpoint, secret, ... }
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();

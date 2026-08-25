@@ -19,13 +19,13 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 12, 2)->default(0);
-            $table->jsonb('image_paths_json')->nullable();
+            $table->json('image_paths_json')->nullable();
             $table->string('video_path')->nullable();
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('sort')->default(0);
             $table->unsignedSmallInteger('prep_minutes')->nullable();
             $table->boolean('calories_display')->default(true);
-            $table->jsonb('tags_json')->nullable(); // new|favorite|spicy|chefs_choice…
+            $table->json('tags_json')->nullable(); // new|favorite|spicy|chefs_choice…
             $table->string('external_pos_id')->nullable();
             $table->timestamps();
             $table->softDeletes();

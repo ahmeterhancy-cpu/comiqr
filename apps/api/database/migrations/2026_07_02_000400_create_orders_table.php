@@ -41,7 +41,7 @@ return new class extends Migration
             $table->foreignId('variant_id')->nullable()->constrained('product_variants')->nullOnDelete();
             $table->unsignedInteger('quantity')->default(1);
             $table->decimal('unit_price', 12, 2)->default(0);
-            $table->jsonb('modifiers_json')->nullable(); // [{id,name,price_delta}]
+            $table->json('modifiers_json')->nullable(); // [{id,name,price_delta}]
             $table->decimal('line_total', 12, 2)->default(0);
             $table->string('status', 16)->default('pending'); // pending|preparing|ready|served|cancelled
             $table->foreignId('kds_station_id')->nullable();

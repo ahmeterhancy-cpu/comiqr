@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedInteger('sort')->default(0);
             $table->boolean('is_active')->default(true);
             $table->string('image_path')->nullable();
-            $table->jsonb('daypart_json')->nullable(); // e.g. {"from":"07:00","to":"11:00"}
+            $table->json('daypart_json')->nullable(); // e.g. {"from":"07:00","to":"11:00"}
             $table->timestamps();
             $table->softDeletes();
 

@@ -25,7 +25,7 @@ return new class extends Migration
             $table->id();
             // landing.content.tr · landing.content.en · landing.media
             $table->string('key')->unique();
-            $table->jsonb('value_json')->nullable();
+            $table->json('value_json')->nullable();
             $table->timestamps();
         });
     }

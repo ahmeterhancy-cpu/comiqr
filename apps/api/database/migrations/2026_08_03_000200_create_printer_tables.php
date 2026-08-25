@@ -27,7 +27,7 @@ return new class extends Migration
             // Where the bridge should send it — ip:port, a share name, or a bridge id.
             $table->string('target')->nullable();
             // Which menu categories print here. Empty/null = everything on the order.
-            $table->jsonb('category_ids_json')->nullable();
+            $table->json('category_ids_json')->nullable();
             $table->unsignedSmallInteger('copies')->default(1);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
@@ -44,7 +44,7 @@ return new class extends Migration
             $table->string('type', 16)->default('order');   // order|addition|bill|test
             // The rendered ticket: header, lines, note. Kept as data so the bridge
             // (or a browser preview) decides how to lay it out.
-            $table->jsonb('payload_json');
+            $table->json('payload_json');
             $table->string('status', 16)->default('pending'); // pending|printed|failed
             $table->unsignedSmallInteger('attempts')->default(0);
             $table->text('error')->nullable();

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('code');
             $table->string('type', 16)->default('percent'); // percent | amount | free_item
             $table->decimal('value', 12, 2)->default(0);
-            $table->jsonb('conditions_json')->nullable(); // e.g. {"min_subtotal":100}
+            $table->json('conditions_json')->nullable(); // e.g. {"min_subtotal":100}
             $table->timestamp('valid_from')->nullable();
             $table->timestamp('valid_to')->nullable();
             $table->unsignedInteger('usage_limit')->nullable();

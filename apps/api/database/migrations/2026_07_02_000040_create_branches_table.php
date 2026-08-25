@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('lng', 10, 7)->nullable();
             $table->string('timezone')->default('Asia/Nicosia');
             $table->boolean('is_active')->default(true);
-            $table->jsonb('settings_json')->nullable();
+            $table->json('settings_json')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->string('name'); // Sıcak | Soğuk | Bar | Tatlı
-            $table->jsonb('category_ids_json')->nullable();
+            $table->json('category_ids_json')->nullable();
             $table->timestamps();
 
             $table->index(['tenant_id', 'branch_id']);

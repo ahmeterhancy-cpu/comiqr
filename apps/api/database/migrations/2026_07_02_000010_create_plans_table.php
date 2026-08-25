@@ -18,8 +18,8 @@ return new class extends Migration
             $table->decimal('price_monthly', 12, 2)->default(0);
             $table->decimal('price_yearly', 12, 2)->default(0);
             $table->string('currency', 3)->default('EUR');
-            $table->jsonb('limits_json')->nullable();   // branches/menu/scan/ai_credit limits
-            $table->jsonb('features_json')->nullable(); // feature flags
+            $table->json('limits_json')->nullable();   // branches/menu/scan/ai_credit limits
+            $table->json('features_json')->nullable(); // feature flags
             $table->unsignedSmallInteger('sort')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
