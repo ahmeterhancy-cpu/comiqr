@@ -10,11 +10,11 @@
 # Laravel'in kodu web kökünün DIŞINDA durmalı — .env ve storage aksi hâlde
 # tarayıcıdan indirilebilir hâle gelir.
 #
-# KULLANMADAN ÖNCE: DEPLOYPATH içindeki kullanıcı adını kendi cPanel
-# kullanıcınızla değiştirin.
+# DEPLOYPATH ev dizininden okunur; cPanel kullanıcı adı degisirse dosya
+# duzenlenmek zorunda kalmasin diye. $HOME tanimsizsa bilinen yola duser.
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/CPANEL_KULLANICI
+    - export DEPLOYPATH=${HOME:-/home/comi3149}
     - export APPPATH=$DEPLOYPATH/comiqr
 
     # --- Uygulama kodu (web kökünün dışına) ---

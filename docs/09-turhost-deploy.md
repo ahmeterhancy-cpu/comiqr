@@ -62,10 +62,18 @@ ve `vendor/` tarayıcıdan indirilebilir.
 ## Adımlar
 
 1. **Depoyu uzak sunucuya al.** cPanel Git bir uzak adresten çeker; önce projeyi
-   GitHub'a (private) push edin. Şu an uzak depo yok.
-2. **cPanel → Git Version Control** → depoyu klonlayın.
-3. **`.cpanel.yml` içindeki `CPANEL_KULLANICI`'yı** kendi kullanıcı adınızla
-   değiştirin.
+   GitHub'a (private) push edin.
+2. **Private depo için dağıtım anahtarı.** cPanel HTTPS ile private bir depoyu
+   parolasız çekemez; SSH anahtarı gerekir:
+   - cPanel → **SSH Access → Manage SSH Keys** → anahtar üretin ve **Authorize** edin.
+   - Genel anahtarı kopyalayın (**View/Download**).
+   - GitHub → depo → **Settings → Deploy keys → Add deploy key** → yapıştırın.
+     *Write access işaretlemeyin* — dağıtım yalnız okur.
+3. **cPanel → Git Version Control → Create.** Değerler:
+   - **Clone URL:** `git@github.com:<kullanıcı>/comiqr.git`
+   - **Repository Path:** `repositories/comiqr` (⚠️ `public_html` OLMAYACAK —
+     dağıtım oraya `.cpanel.yml` ile kopyalar)
+   - **Repository Name:** `ComiQR`
 4. **MySQL veritabanı ve kullanıcısı oluşturun** (cPanel → MySQL Databases).
 5. **`~/comiqr/.env` dosyasını oluşturun** — aşağıdaki asgari set.
 6. **Deploy HEAD Commit** deyin; `.cpanel.yml` composer + migrate + cache yapar.
