@@ -262,11 +262,11 @@ const FALLBACK_PLANS = [
   { code: 'free', name: 'Free', price_monthly: 0, limits: { branches: 1, menu_items: 30, monthly_scans: 500 },
     features: { menu: true, qr: true, nutrition_display: true } },
   { code: 'pro', name: 'Pro', price_monthly: 29, limits: { branches: 1, menu_items: -1, monthly_scans: 10000 },
-    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, analytics: true, ai: true, happy_hour: true } },
+    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, printing: true, analytics: true, ai: true, happy_hour: true } },
   { code: 'business', name: 'Business', price_monthly: 79, limits: { branches: 5, menu_items: -1, monthly_scans: 50000 },
-    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, analytics: true, ai: true, ai_advanced: true, loyalty: true, multi_branch: true, folio: true, happy_hour: true, finance: true, pos_integration: true } },
+    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, printing: true, analytics: true, ai: true, ai_advanced: true, loyalty: true, multi_branch: true, folio: true, happy_hour: true, finance: true, pos_integration: true } },
   { code: 'enterprise', name: 'Enterprise', price_monthly: 0, limits: { branches: -1, menu_items: -1, monthly_scans: -1 },
-    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, analytics: true, ai: true, ai_advanced: true, loyalty: true, multi_branch: true, folio: true, happy_hour: true, finance: true, pos_integration: true, white_label: true, sla: true } },
+    features: { menu: true, qr: true, nutrition_display: true, nutrition_full: true, ordering: true, payments: true, kds: true, waiter_app: true, printing: true, analytics: true, ai: true, ai_advanced: true, loyalty: true, multi_branch: true, folio: true, happy_hour: true, finance: true, pos_integration: true, white_label: true, sla: true } },
 ];
 
 /** Deneme süresi tek yerden: onboarding tenant'a 30 gün yazıyor (TenantOnboardingService). */
@@ -295,6 +295,7 @@ const PLAN_META: Record<string, { title: string; desc: string; cta: string; feat
       'Garson uygulaması, çağrı ve hesap isteme',
       'Tam besin değerleri & AI menü asistanı',
       'Analitik ve menü performansı',
+      'Mutfak & bar fiş yazıcısı',
     ],
   },
   business: {
@@ -326,6 +327,7 @@ const FEATURE_ROWS: [string, string][] = [
   ['payments', 'Online ödeme'],
   ['kds', 'Mutfak ekranı (KDS)'],
   ['waiter_app', 'Garson uygulaması'],
+  ['printing', 'Mutfak & bar fiş yazıcısı'],
   ['analytics', 'Analitik'],
   ['ai', 'AI menü asistanı'],
   ['ai_advanced', 'AI Danışman (işletme)'],
@@ -551,6 +553,7 @@ export default function Home() {
             'Personel POS: masaya sipariş, ikram, indirim, hesap bölme',
             'Mutfak ekranı (KDS): kalem kalem hazırlanıyor / hazır',
             'Garson uygulaması (iOS & Android): masa çağrıları ve adisyon',
+            'Mutfak ve bar fişleri kendi istasyon yazıcısına',
             'Self-servis kiosk: misafir kendi siparişini verir',
             'Vardiya açma-kapama ve kasa (Z) raporu',
           ]}
