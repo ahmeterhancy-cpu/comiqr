@@ -21,6 +21,10 @@
     "chips": ["Digitale Karte", "Bestellen am Tisch", "Personal-POS", "Küchenbildschirm", "Selbstbedienungs-Kiosk", "Ausgaben & Gewinn"],
     "checks": ["{days} Tage kostenlos testen", "Keine Einrichtungsgebühr", "Jederzeit kündbar"]
   },
+  "mockup": {
+    "add": "Hinzufügen",
+    "cart": "Warenkorb"
+  },
   "demos": {
     "label": "Nicht erzählen, ansehen — das sind echte, laufende Karten",
     "suffix": "Karte",

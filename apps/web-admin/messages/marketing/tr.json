@@ -21,6 +21,10 @@
     "chips": ["Dijital menü", "Masadan sipariş", "Personel POS", "Mutfak ekranı", "Self-servis kiosk", "Gider & kâr raporu"],
     "checks": ["{days} gün ücretsiz deneme", "Kurulum ücreti yok", "İstediğin an iptal"]
   },
+  "mockup": {
+    "add": "Ekle",
+    "cart": "Sepet"
+  },
   "demos": {
     "label": "Anlatmayalım, açın bakın — bunlar çalışan gerçek menüler",
     "suffix": "menüsü",

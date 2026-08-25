@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocale, useMessages } from 'next-intl';
 import { MARKETING_LOCALES, MARKETING_LOCALE_NAMES } from '@/i18n/locales';
 import Link from 'next/link';
@@ -507,33 +507,11 @@ export default function MarketingHome() {
             </div>
           </div>
 
-          {/* Phone + QR */}
+          {/* Telefon mockup + QR rozeti */}
           <div className="relative flex justify-center">
-            <div className="w-[280px] max-w-full rounded-[2.6rem] border border-line bg-surface p-3 shadow-2xl">
-              <div className="overflow-hidden rounded-[2rem] bg-canvas">
-                <div className="relative h-32" style={{ background: 'linear-gradient(150deg,#c9490f,#ea5b1a 55%,#f6944f)' }}>
-                  <div className="absolute inset-x-3 top-3 flex justify-between">
-                    <span className="rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow">🌐 Türkçe</span>
-                    <span className="rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow">🛒</span>
-                  </div>
-                  <div className="absolute inset-x-0 bottom-3 text-center text-2xl font-extrabold italic tracking-wide text-amber-50">BOWLS</div>
-                </div>
-                <div className="space-y-2 p-3">
-                  {[['Adana Kebap', '₺260', 'linear-gradient(135deg,#e8a24a,#d9762f)'], ['Sezar Salata', '₺130', 'linear-gradient(135deg,#8bbf5a,#5a9e3a)']].map(([n, p, g]) => (
-                    <div key={n} className="flex gap-2.5 rounded-2xl border border-line bg-surface p-2.5 shadow-sm">
-                      <span className="h-11 w-11 shrink-0 rounded-xl" style={{ background: g }} />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[13px] font-bold">{n}</div>
-                        <div className="mt-1 flex items-center justify-between">
-                          <span className="text-[13px] font-extrabold">{p}</span>
-                          <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-[10px] font-bold text-white">+ Ekle</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <PhoneMockup>
+              <LiveMenuScreen labels={M.mockup} />
+            </PhoneMockup>
             <div className="absolute -bottom-4 -left-3 rounded-2xl border border-line bg-surface p-2.5 shadow-xl sm:-left-6">
               <QrGlyph />
             </div>
@@ -877,6 +855,195 @@ export default function MarketingHome() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* Telefon ekranının ölçüleri; iframe ölçeği bunlardan türetilir. */
+const SCREEN_W = 264;
+const SCREEN_H = 542;
+/** Menü mobil genişlikte render edilip ekrana sığacak kadar küçültülür. */
+const DEVICE_W = 375;
+const MENU_SCALE = SCREEN_W / DEVICE_W;
+
+/**
+ * Telefonun içindeki ekran: gerçek demo menünün kendisi.
+ *
+ * Elle çizilmiş bir yaklaşıklık yerine ürünün canlı çıktısı gösteriliyor —
+ * misafirin göreceği ekranın aynısı, menü değiştikçe kendiliğinden güncel.
+ *
+ * Menü kendi adresinde açılır (dil ve tema oradan gelir); `?preview` KULLANILMAZ
+ * çünkü o bayrak önbelleği atlayıp her gösterimde taze çekim yaptırıyor —
+ * karşılığında yalnız menü içeriğini çeviriyor, arayüz yazılarını değil.
+ *
+ * İki koruma var. (1) iframe ilk boyamadan SONRA takılır: hero'nun LCP'si ayrı
+ * bir uygulamanın yüklenmesini beklemez. (2) Yer tutucu her zaman altta durur;
+ * menü yüklenmezse (müşteri uygulaması kapalı, ağ kesik) ekran boş kalmaz.
+ * Gösterim amaçlı olduğu için tıklama geçirmez; ziyaretçi menüyü "Canlı Menüyü
+ * Aç" ile kendi sekmesinde açar.
+ */
+function LiveMenuScreen({ labels }: { labels: { add: string; cart: string } }) {
+  const [mounted, setMounted] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const frame = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const el = frame.current;
+    if (!el) return;
+
+    const show = () => setLoaded(true);
+    el.addEventListener('load', show);
+    // React'in onLoad'ı, iframe React dinleyiciyi bağlamadan önce yüklenirse
+    // olayı kaçırıyor ve ekran kalıcı olarak saydam kalıyordu; süre dolunca da
+    // göster.
+    const timer = setTimeout(show, 2500);
+
+    return () => {
+      el.removeEventListener('load', show);
+      clearTimeout(timer);
+    };
+  }, [mounted]);
+
+  return (
+    <div className="relative bg-canvas" style={{ height: SCREEN_H }}>
+      <MenuScreenPlaceholder labels={labels} />
+
+      {mounted && (
+        <iframe
+          ref={frame}
+          src={demoUrl('demo')}
+          title="ComiQR"
+          tabIndex={-1}
+          aria-hidden
+          className="absolute left-0 top-0 origin-top-left border-0 transition-opacity duration-500"
+          style={{
+            width: DEVICE_W,
+            height: SCREEN_H / MENU_SCALE,
+            transform: `scale(${MENU_SCALE})`,
+            pointerEvents: 'none',
+            opacity: loaded ? 1 : 0,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Menü gelene kadar (ve gelmezse) görünen çizim. */
+function MenuScreenPlaceholder({ labels }: { labels: { add: string; cart: string } }) {
+  const items: [string, string, string][] = [
+    ['Adana Kebap', '₺260', 'linear-gradient(135deg,#e8a24a,#d9762f)'],
+    ['Sezar Salata', '₺130', 'linear-gradient(135deg,#8bbf5a,#5a9e3a)'],
+    ['Humus', '₺90', 'linear-gradient(135deg,#7ba05b,#4f7a3a)'],
+    ['Kuzu Şiş', '₺320', 'linear-gradient(135deg,#d98b4a,#b8532a)'],
+  ];
+
+  return (
+    <div className="absolute inset-0 flex flex-col">
+      <div style={{ background: 'linear-gradient(150deg,#c9490f,#ea5b1a 55%,#f6944f)' }}>
+        <StatusBar />
+        <div className="mt-2.5 flex items-center justify-between px-3">
+          <span className="rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow">🌐</span>
+          <span className="rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow">🛒</span>
+        </div>
+        <div className="pb-3 pt-5 text-center text-2xl font-extrabold italic tracking-wide" style={{ color: '#fffbeb' }}>BOWLS</div>
+      </div>
+
+      <div className="flex-1 space-y-2 overflow-hidden p-3">
+        {items.map(([n, p, g]) => (
+          <div key={n} className="flex gap-2.5 rounded-2xl border border-line bg-surface p-2.5 shadow-sm">
+            <span className="h-11 w-11 shrink-0 rounded-xl" style={{ background: g }} />
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-bold">{n}</div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-[13px] font-extrabold">{p}</span>
+                <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-[10px] font-bold" style={{ color: '#ffffff' }}>+ {labels.add}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="px-3 pb-2">
+        <div className="flex items-center justify-between rounded-full bg-brand-500 px-4 py-2.5 text-[12px] font-bold" style={{ color: '#ffffff' }}>
+          <span>{labels.cart} · 2</span>
+          <span>₺390</span>
+        </div>
+      </div>
+      {/* Ana ekran çizgisi — cihazın alt kenarını tamamlar. */}
+      <div className="flex justify-center pb-2">
+        <span className="h-1 w-24 rounded-full bg-ink/20" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Hero'daki cihaz çerçevesi.
+ *
+ * Menü örneği önce çerçevesiz, havada duran bir karttı — ürünün misafirin KENDİ
+ * telefonunda açıldığı okunmuyordu. Gövde üç katman: dış metal kenar (degrade),
+ * iç siyah cam halkası ve ekran. Yan tuşlar çerçevenin dışına birkaç piksel
+ * taşar; hacim hissini veren şey bu taşma.
+ */
+function PhoneMockup({ children }: { children: ReactNode }) {
+  const sideButton = 'absolute w-[3px] rounded-sm';
+
+  return (
+    <div className="relative w-[288px] max-w-full">
+      {/* Sessize alma + ses tuşları (sol), güç tuşu (sağ). */}
+      <span className={`${sideButton} -left-[2px] top-[92px] h-8`} style={{ background: 'linear-gradient(90deg,#7c8493,#3a414e)' }} />
+      <span className={`${sideButton} -left-[2px] top-[136px] h-12`} style={{ background: 'linear-gradient(90deg,#7c8493,#3a414e)' }} />
+      <span className={`${sideButton} -left-[2px] top-[196px] h-12`} style={{ background: 'linear-gradient(90deg,#7c8493,#3a414e)' }} />
+      <span className={`${sideButton} -right-[2px] top-[160px] h-16`} style={{ background: 'linear-gradient(270deg,#7c8493,#3a414e)' }} />
+
+      <div
+        className="rounded-[2.9rem] p-[3px] shadow-2xl"
+        style={{ background: 'linear-gradient(150deg,#9aa1ae,#39404c 28%,#1b1f27 62%,#828a97)' }}
+      >
+        <div className="rounded-[2.78rem] p-[9px]" style={{ background: '#0b0d11' }}>
+          <div className="relative overflow-hidden rounded-[2.2rem] bg-canvas">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Ekranın durum çubuğu. Marka degradesinin üzerinde durduğu için yazı ve
+ * simgeler inline `#ffffff` ile verilir — Tailwind'in `text-white`'ı tema
+ * değişkenleri yeniden eşlendiğinde güvenilir değil.
+ */
+function StatusBar() {
+  const white = '#ffffff';
+
+  return (
+    <div className="relative flex items-center justify-between px-5 pt-2.5 text-[11px] font-semibold" style={{ color: white }}>
+      <span>9:41</span>
+      {/* Dinamik ada: saat ile simgelerin arasına oturur. */}
+      <span className="absolute left-1/2 top-[7px] h-[26px] w-[84px] -translate-x-1/2 rounded-full" style={{ background: '#0b0d11' }} />
+      <span className="flex items-center gap-[3px]">
+        {/* Çekim gücü */}
+        <svg viewBox="0 0 16 10" className="h-[9px] w-[15px]" aria-hidden>
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x={i * 4} y={7 - i * 2.2} width="2.6" height={3 + i * 2.2} rx="0.8" fill={white} />
+          ))}
+        </svg>
+        {/* WiFi */}
+        <svg viewBox="0 0 16 12" className="h-[10px] w-[13px]" fill="none" stroke={white} strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+          <path d="M1.5 4.2a9.5 9.5 0 0 1 11 0M4 7a6 6 0 0 1 6 0" />
+          <circle cx="7" cy="9.6" r="0.9" fill={white} stroke="none" />
+        </svg>
+        {/* Pil */}
+        <svg viewBox="0 0 26 12" className="h-[10px] w-[21px]" aria-hidden>
+          <rect x="0.6" y="0.6" width="21" height="10.8" rx="3" fill="none" stroke={white} strokeOpacity="0.55" />
+          <rect x="2.2" y="2.2" width="15" height="7.6" rx="1.8" fill={white} />
+          <path d="M23.4 4.2v3.6a2 2 0 0 0 0-3.6z" fill={white} fillOpacity="0.6" />
+        </svg>
+      </span>
     </div>
   );
 }
