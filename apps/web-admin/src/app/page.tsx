@@ -1,12 +1,9 @@
 import type { Metadata } from 'next';
 import MarketingHome from '@/components/marketing-home';
-import { FAQS, TRIAL_DAYS } from '@/lib/marketing';
+import { getMessages } from 'next-intl/server';
+import { TRIAL_DAYS } from '@/lib/marketing';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://comiqr.com';
-const TITLE = 'ComiQR — QR menü, masadan sipariş ve restoran yönetimi';
-const DESCRIPTION =
-  `Dijital QR menü ile başlayın; masadan sipariş, mutfak ekranı, personel POS ve gider-kâr raporu aynı panelde. ` +
-  `Beş dil, kurulum ücreti yok, ${TRIAL_DAYS} gün ücretsiz.`;
 
 /**
  * Pazarlama sayfasının sunucu kabuğu.
@@ -16,42 +13,49 @@ const DESCRIPTION =
  * metadata dışa aktarılmasına izin vermez. Bu ayrım olmadan sayfa, yönetim
  * panelinin İngilizce ve jenerik açıklamasını miras alıyordu.
  */
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: TITLE,
-  description: DESCRIPTION,
-  alternates: { canonical: '/' },
-  openGraph: {
-    type: 'website',
-    locale: 'tr_TR',
-    url: '/',
-    siteName: 'ComiQR',
-    title: TITLE,
-    description: DESCRIPTION,
-    images: [{ url: '/comiqr-logo.png', alt: 'ComiQR' }],
-  },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const M = ((await getMessages()) as any).marketing;
+  const title = M.meta.title;
+  const description = M.meta.description.replace('{days}', String(TRIAL_DAYS));
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title,
+    description,
+    alternates: { canonical: '/' },
+    openGraph: {
+      type: 'website',
+      url: '/',
+      siteName: 'ComiQR',
+      title,
+      description,
+      images: [{ url: '/comiqr-logo.png', alt: 'ComiQR' }],
+    },
+    twitter: { card: 'summary_large_image', title, description },
+  };
+}
 
 /** Arama sonucunda soru-cevap olarak görünebilmesi için FAQPage şeması. */
-function faqSchema() {
+function faqSchema(items: { q: string; a: string }[]) {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: FAQS.map(([question, answer]) => ({
+    mainEntity: items.map(({ q, a }) => ({
       '@type': 'Question',
-      name: question,
-      acceptedAnswer: { '@type': 'Answer', text: answer },
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
     })),
   };
 }
 
-export default function Page() {
+export default async function Page() {
+  const M = ((await getMessages()) as any).marketing;
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema()) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(M.faq.items)) }}
       />
       <MarketingHome />
     </>

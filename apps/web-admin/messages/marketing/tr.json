@@ -1,0 +1,218 @@
+{
+  "nav": {
+    "features": "Özellikler",
+    "verticals": "İşletme Türleri",
+    "pricing": "Fiyatlar",
+    "faq": "S.S.S.",
+    "contact": "İletişim",
+    "login": "Giriş",
+    "loginLong": "Giriş Yap →",
+    "try": "Ücretsiz Dene",
+    "panel": "Panele Git",
+    "menu": "Menü",
+    "language": "Dil"
+  },
+  "hero": {
+    "title1": "Menünüz kağıttan",
+    "title2": "daha iyisini hak ediyor.",
+    "title3": "İşletmeniz de.",
+    "body": "ComiQR dijital menüyle başlar ama orada bitmez: misafir masadan sipariş verir, mutfak ekranı görür, personel kasadan yönetir, siz de gün sonunda ciroyu değil kârı okursunuz. Tek panel, tek abonelik.",
+    "demo": "Canlı Menüyü Aç",
+    "chips": ["Dijital menü", "Masadan sipariş", "Personel POS", "Mutfak ekranı", "Self-servis kiosk", "Gider & kâr raporu"],
+    "checks": ["{days} gün ücretsiz deneme", "Kurulum ücreti yok", "İstediğin an iptal"]
+  },
+  "demos": {
+    "label": "Anlatmayalım, açın bakın — bunlar çalışan gerçek menüler",
+    "suffix": "menüsü",
+    "demo": { "title": "Restoran", "desc": "Sepet, masadan sipariş ve kategori akışı." },
+    "demo-otel": { "title": "Otel", "desc": "Oda servisi ve odaya yansıtma (folyo)." },
+    "demo-bar": { "title": "Bar", "desc": "18+ işaretleri ve Happy Hour indirimi." }
+  },
+  "sections": {
+    "import": {
+      "badge": "Yeni özellik",
+      "title": "Fotoğrafını çek, menüyü biz kuralım.",
+      "body": "Eskiden en çok yorulduğunuz kısım artık yok. Basılı menünüzün birkaç fotoğrafını çekin ya da PDF yükleyin; her kategori, ürün, açıklama ve fiyat — hatta malzeme, alerjen ve besin değerleri sayfadan okunup doldurulur. Siz hiçbir şey yazmazsınız.",
+      "points": ["Menü fotoğraflarını çek ya da PDF yükle", "Her kategori, ürün ve açıklama sırasıyla", "Her boy ve fiyatı ayrı ayrı", "Malzeme, alerjen ve besin değeri otomatik", "Gözden geçir, kaydet — menün hazır"]
+    },
+    "live": {
+      "badge": "Dijital menü",
+      "title": "Paneliniz menünüzdür. Canlı düzenleyin.",
+      "body": "Düzenlediğiniz şey, misafirin gördüğü şeydir; her değişiklik anında telefonlarına ulaşır. Yeniden baskı yok, bekleme yok, menünüz asla güncelliğini yitirmez.",
+      "points": ["Ürünleri sürükleyip sırala ya da başka kategoriye taşı", "Tek ürünü veya tüm kategoriyi tek düğmeyle gizle", "İsim, fiyat, boy, açıklama, malzeme, alerjen — hepsini düzenle", "İndirimli fiyatla öne çıkar ya da “kampanya” işaretle", "Bir kategoriye toplu indirim uygula (ör. %20)"]
+    },
+    "order": {
+      "badge": "Sipariş & Servis",
+      "title": "Sadece menü değil — masadan sipariş, servis ve ödeme.",
+      "body": "ComiQR menüyü göstermekle kalmaz. Misafir sepete ekler; masada, gel-al veya teslimat siparişi verir, garson çağırır veya hesap ister. Sipariş mutfak ekranına (KDS), çağrı personele anında düşer.",
+      "points": ["Varyant ve ekstra seçenekli sepet", "Masada, gel-al ve teslimat", "Garson çağır & hesap iste — masayı seçerek", "Mutfak ekranı (KDS), personel POS ve garson app", "Online ödeme (Tiko) — kapıda ya da online"]
+    },
+    "service": {
+      "badge": "Servis ekibi",
+      "title": "Kasadan mutfağa, garsonun cebine kadar.",
+      "body": "Sipariş nereden gelirse gelsin — misafirin telefonundan, kiosktan ya da garsonun elinden — aynı yere düşer. Kasa açar, mutfak görür, garson servis eder; kimse kimseye bağırmaz.",
+      "points": ["Personel POS: masaya sipariş, ikram, indirim, hesap bölme", "Mutfak ekranı (KDS): kalem kalem hazırlanıyor / hazır", "Garson uygulaması (iOS & Android): masa çağrıları ve adisyon", "Mutfak ve bar fişleri kendi istasyon yazıcısına", "Self-servis kiosk: misafir kendi siparişini verir", "Vardiya açma-kapama ve kasa (Z) raporu"]
+    },
+    "chat": {
+      "badge": "Anında yanıt",
+      "title": "Kendi kendine yanıtlayan menü.",
+      "body": "Misafir menü hakkında her şeyi sorabilir; asistan malzeme, alerjen, fiyat ve kampanyalara göre kendi dilinde yanıtlar. Ekibiniz aynı soruları tekrar tekrar cevaplamaktan kurtulur.",
+      "points": ["Her ürünü; malzeme, alerjen ve fiyatını bilir", "Her misafire kendi dilinde otomatik yanıt", "Bütçe, iştah veya diyete göre öneri (ör. glutensiz)", "Çalışma saati, konum, WiFi ve güncel kampanyalar", "Gece gündüz, kapalıyken bile"]
+    },
+    "analytics": {
+      "badge": "Analitik",
+      "title": "Menünüzün nasıl performans gösterdiğini görün.",
+      "body": "Menünüzü kaç kişi açtı, ne kadar süre inceledi, hangi ürünler öne çıktı — hepsini görün. Değerlendirme ve itibar puanıyla misafir memnuniyetini takip edin.",
+      "points": ["Günlük menü açılışları", "Görüntülenme ve ortalama inceleme süresi", "En çok bakılan ürünler", "Değerlendirme & yorumlar, itibar puanı", "Tek tıkla dışa aktar (rapor)"]
+    },
+    "finance": {
+      "badge": "İşletme yönetimi",
+      "title": "Ciro değil, kâr gösteren bir panel.",
+      "body": "Çoğu sistem ne sattığınızı söyler. ComiQR ne kazandığınızı söyler: reçeteden gelen ürün maliyetini ve giderlerinizi satışın karşısına koyar. Ay sonunu beklemeden, hangi günün kâr ettiğini görürsünüz.",
+      "points": ["Gider yönetimi: kategori, KDV ve belge no ile", "Cari hesap ve veresiye — limitli, tahsilat takipli", "Reçeteden ürün maliyeti (COGS) ve gerçek kâr marjı", "Saatlik yoğunluk: hangi gün, hangi saat doluyorsunuz", "Personel performansı, ikram/iptal ve vergi kırılımı", "Muhasebeciye tek tıkla CSV"]
+    }
+  },
+  "verticals": {
+    "badge": "Tek Sistem, Dört Dikey",
+    "heading": "İşletmeniz ne olursa olsun",
+    "sub": "Kayıt sırasında türünüzü seçin; sistem kendini ona göre kurar — masalar, odalar, şezlonglar veya adisyon.",
+    "items": {
+      "restaurant": { "title": "Restoran & Kafe", "desc": "Masa siparişi, gel-al ve teslimat; garson çağırma ve hesap akışı." },
+      "hotel": { "title": "Otel", "desc": "Oda servisi ve odaya yansıtma (folyo); çıkışta tek hesap." },
+      "bar": { "title": "Bar & Pub", "desc": "Adisyon akışı, 18+ işaret ve otomatik Happy Hour indirimi." },
+      "beach": { "title": "Plaj Kulübü", "desc": "Şezlong servisi ve şezlonga yansıtma; sahilden sipariş." }
+    }
+  },
+  "more": {
+    "badge": "Menüde & Panelde",
+    "heading": "Ve dahası",
+    "items": [
+      { "title": "Ürün detay ekranı", "body": "Karta dokunan misafir büyük görsel, açıklama, alerjen, besin değerleri ve “kaç gram et” malzeme reçetesini tek ekranda görür." },
+      { "title": "Alerjen filtreleri", "body": "Misafir menüyü glutensiz, laktozsuz ya da alerjensiz olacak şekilde tek dokunuşla süzer." },
+      { "title": "Kampanya & kupon", "body": "Zamanlı kampanyalar, indirim kodları ve kategoriye toplu indirim; barda happy hour otomatik uygulanır." },
+      { "title": "AI Danışman (işletme)", "body": "Panelde yapay zekâ; öne çıkan ürünleri, menü boşluklarını ve misafir yorumlarının özetini çıkarır." },
+      { "title": "Çok şube", "body": "Şubeleri tek panelden yönetin; menü, masa ve raporları şubeye göre ayırın." },
+      { "title": "Sadakat & puan", "body": "Misafir telefonuyla tanınır, harcadıkça puan kazanır ve puanını hesapta kullanır." },
+      { "title": "Stok ve 86 listesi", "body": "Malzeme stoğu reçeteden düşer; biten ürünü mutfak tek dokunuşla menüden kaldırır." },
+      { "title": "Çok dil ve kendi markanız", "body": "Menü ve panel çok dilli; üst paketlerde kendi renginiz ve markanız." }
+    ]
+  },
+  "pricing": {
+    "heading1": "Ücretsiz başlayın.",
+    "heading2": "Hazır olunca büyüyün.",
+    "sub": "{days} gün deneyin, komisyon yok, gizli ücret yok. İstediğiniz an yükseltin.",
+    "monthly": "Aylık",
+    "yearly": "Yıllık",
+    "saving": "Yıllıkta %{pct} indirim",
+    "perMonth": "/ay",
+    "custom": "Özel",
+    "yearlyNote": "Yılda {total} tek seferde",
+    "popular": "En popüler",
+    "allFeatures": "Tüm özellikler",
+    "unlimited": "Sınırsız",
+    "plans": {
+      "free": {
+        "title": "Başlangıç",
+        "desc": "Dijital QR menüye geçen küçük işletmeler için.",
+        "cta": "Ücretsiz Başla",
+        "items": ["QR menü + 3 tema", "Çalışma saati, WiFi, iletişim", "Kalori & alerjen gösterimi", "Menü çok dilli"]
+      },
+      "pro": {
+        "title": "Pro",
+        "desc": "Masadan sipariş ve servis akışı isteyenler için.",
+        "cta": "{days} Gün Ücretsiz",
+        "items": ["Başlangıç’taki her şey", "Sepet, masadan sipariş & mutfak ekranı", "Garson uygulaması, çağrı ve hesap isteme", "Tam besin değerleri & AI menü asistanı", "Analitik ve menü performansı", "Mutfak & bar fiş yazıcısı"]
+      },
+      "business": {
+        "title": "Business",
+        "desc": "Otel, plaj ve çok şubeli işletmeler için.",
+        "cta": "{days} Gün Ücretsiz",
+        "items": ["Pro’daki her şey", "Gider, cari hesap & kâr raporu", "Otel odası ve plaj şezlong folyosu", "Çok şube, sadakat puanı & kuponlar", "AI Danışman: menü içgörüleri"]
+      },
+      "enterprise": {
+        "title": "Kurumsal",
+        "desc": "Markalı deneyim ve öncelikli destek.",
+        "cta": "İletişime Geç",
+        "items": ["Business’taki her şey", "White-label: kendi markanız", "Öncelikli destek & SLA"]
+      }
+    },
+    "rows": {
+      "menu": "Dijital QR menü",
+      "nutrition_display": "Kalori & alerjen",
+      "nutrition_full": "Tam besin değerleri",
+      "ordering": "Masadan sipariş & sepet",
+      "payments": "Online ödeme",
+      "kds": "Mutfak ekranı (KDS)",
+      "waiter_app": "Garson uygulaması",
+      "printing": "Mutfak & bar fiş yazıcısı",
+      "analytics": "Analitik",
+      "ai": "AI menü asistanı",
+      "ai_advanced": "AI Danışman (işletme)",
+      "loyalty": "Sadakat puanı & kupon",
+      "multi_branch": "Çok şube",
+      "folio": "Otel / plaj folyosu",
+      "happy_hour": "Happy Hour (bar)",
+      "finance": "Gider · cari · kâr raporu",
+      "pos_integration": "Entegrasyon (webhook)",
+      "white_label": "White-label",
+      "sla": "SLA & öncelikli destek"
+    },
+    "limits": { "branches": "Şube", "menu_items": "Menü ürünü", "monthly_scans": "Aylık menü açılışı" }
+  },
+  "faq": {
+    "heading": "Restoranların ortak dertleri.",
+    "sub": "İşte her biri nasıl çözülüyor.",
+    "items": [
+      { "q": "Menüyü tekrar tekrar bastırıyor musunuz?", "a": "Fiyat değişti, ürün bitti, kampanya başladı — panelden değiştirdiğiniz an misafirin telefonunda güncellenir. Baskı yok, bekleme yok." },
+      { "q": "Turistler menünüzü okuyamıyor mu?", "a": "Menü çok dilli. Misafir kendi dilini seçer; AI asistan da sorularını kendi dilinde yanıtlar." },
+      { "q": "Personel her gün aynı soruları mı yanıtlıyor?", "a": "“Bu glutensiz mi? Kaçta kapanıyorsunuz?” — AI asistan malzeme, alerjen, saat ve kampanyayı bilir, gece gündüz yanıtlar." },
+      { "q": "Siparişleri ve masaları zor mu yönetiyorsunuz?", "a": "Sipariş misafirin telefonundan, kiosktan ya da garsonun elinden gelsin — hepsi aynı yere düşer. Mutfak ekranı görür, kasa yönetir, fiş kendi istasyonunda basılır." },
+      { "q": "Menünüzün nasıl performans gösterdiğini bilmiyor musunuz?", "a": "Hangi ürüne kaç kişi baktı, ne kadar sattı, ne kadar kâr bıraktı — reçeteden gelen maliyetle birlikte görürsünüz." },
+      { "q": "Birden fazla şube mi yönetiyorsunuz?", "a": "Şubeleri tek panelden yönetin; menüyü, masaları ve raporları şubeye göre ayırın." },
+      { "q": "Kurulum ne kadar sürüyor?", "a": "Basılı menünüzün fotoğrafını çekin ya da PDF yükleyin; kategori, ürün, fiyat ve alerjenler sayfadan okunup doldurulur. {days} gün ücretsiz deneyebilir, kart vermeden başlayabilirsiniz." }
+    ]
+  },
+  "contact": {
+    "badge": "İletişim",
+    "heading": "Konuşarak da başlayabilirsiniz",
+    "sub": "Üç ülkede ofisimiz var. Size en yakın olanı arayın, menünüzü birlikte kuralım.",
+    "regions": { "cyprus": "Kıbrıs", "turkey": "Türkiye", "uk": "İngiltere" }
+  },
+  "stats": {
+    "businesses": "İşletme kullanıyor",
+    "languages": "Misafir dili",
+    "verticals": "İşletme türü",
+    "noApp": "Uygulamasız",
+    "trial": "Ücretsiz deneme",
+    "days": "gün"
+  },
+  "finalCta": {
+    "heading": "İlk menünüz {days} gün ücretsiz.",
+    "phone": "Ya da bize ulaşın:",
+    "sub": "Kurulum dakikalar sürer, misafirleriniz farkı ilk taramada görür."
+  },
+  "footer": {
+    "tagline": "Restoran, otel, bar ve plaj işletmeleri için uçtan uca QR menü, sipariş ve servis platformu.",
+    "platform": "Platform",
+    "start": "Başla",
+    "company": "Şirket",
+    "links": {
+      "features": "Özellikler",
+      "verticals": "İşletme türleri",
+      "pricing": "Fiyatlar",
+      "faq": "S.S.S.",
+      "contact": "İletişim",
+      "register": "Ücretsiz kayıt",
+      "login": "Giriş",
+      "panel": "Panel",
+      "privacy": "Gizlilik",
+      "terms": "Koşullar"
+    },
+    "copyright": "© 2026 ComiQR. Tüm hakları saklıdır.",
+    "regions": "Kıbrıs · Türkiye · İngiltere"
+  },
+  "meta": {
+    "title": "ComiQR — QR menü, masadan sipariş ve restoran yönetimi",
+    "description": "Dijital QR menü ile başlayın; masadan sipariş, mutfak ekranı, personel POS ve gider-kâr raporu aynı panelde. Çok dilli, kurulum ücreti yok, {days} gün ücretsiz."
+  }
+}

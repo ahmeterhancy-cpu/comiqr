@@ -12,30 +12,24 @@ export const TRIAL_DAYS = 30;
  * Ziyaretçinin ürünü anlatı olarak değil, çalışırken görebileceği menüler.
  * Slug'lar demo seeder'larından gelir (DemoMenuSeeder · DemoHotelSeeder · DemoBarSeeder).
  */
-export const DEMOS: { slug: string; title: string; desc: string; emoji: string }[] = [
-  { slug: 'demo', title: 'Restoran', desc: 'Sepet, masadan sipariş ve kategori akışı.', emoji: '🍽️' },
-  { slug: 'demo-otel', title: 'Otel', desc: 'Oda servisi ve odaya yansıtma (folyo).', emoji: '🏨' },
-  { slug: 'demo-bar', title: 'Bar', desc: '18+ işaretleri ve Happy Hour indirimi.', emoji: '🍹' },
+export const DEMOS: { slug: DemoSlug; emoji: string }[] = [
+  { slug: 'demo', emoji: '🍽️' },
+  { slug: 'demo-otel', emoji: '🏨' },
+  { slug: 'demo-bar', emoji: '🍹' },
 ];
+
+export type DemoSlug = 'demo' | 'demo-otel' | 'demo-bar';
 
 export const demoUrl = (slug: string) => `${CUSTOMER_URL}/${slug}`;
 
-export const FAQS: [string, string][] = [
-  ['Menüyü tekrar tekrar bastırıyor musunuz?', 'Fiyat değişti, ürün bitti, kampanya başladı — panelden değiştirdiğiniz an misafirin telefonunda güncellenir. Baskı yok, bekleme yok.'],
-  ['Turistler menünüzü okuyamıyor mu?', 'Menü 5 dilde (TR, EN, DE, RU, AR). Misafir kendi dilini seçer; AI asistan da sorularını kendi dilinde yanıtlar.'],
-  ['Personel her gün aynı soruları mı yanıtlıyor?', '“Bu glutensiz mi? Kaçta kapanıyorsunuz?” — AI asistan malzeme, alerjen, saat ve kampanyayı bilir, gece gündüz yanıtlar.'],
-  ['Siparişleri ve masaları zor mu yönetiyorsunuz?', 'Sipariş misafirin telefonundan, kiosktan ya da garsonun elinden gelsin — hepsi aynı yere düşer. Mutfak ekranı görür, kasa yönetir, fiş kendi istasyonunda basılır.'],
-  ['Menünüzün nasıl performans gösterdiğini bilmiyor musunuz?', 'Hangi ürüne kaç kişi baktı, ne kadar sattı, ne kadar kâr bıraktı — reçeteden gelen maliyetle birlikte görürsünüz.'],
-  ['Birden fazla şube mi yönetiyorsunuz?', 'Şubeleri tek panelden yönetin; menüyü, masaları ve raporları şubeye göre ayırın.'],
-  ['Kurulum ne kadar sürüyor?', `Basılı menünüzün fotoğrafını çekin ya da PDF yükleyin; kategori, ürün, fiyat ve alerjenler sayfadan okunup doldurulur. ${TRIAL_DAYS} gün ücretsiz deneyebilir, kart vermeden başlayabilirsiniz.`],
-];
 
 /**
  * Bölge ofisleri. Kart üzerinde yalnız adres ve telefon durur; yazışma tek
  * adresten yürüdüğü için e-posta ofis başına değil, ortak olarak verilir.
  */
 export type Office = {
-  region: string;
+  /** Çeviri anahtarı; görünen ad marketing mesajlarından gelir. */
+  key: 'cyprus' | 'turkey' | 'uk';
   address: string[];
   phone: string;
 };
@@ -45,17 +39,17 @@ export const CONTACT_EMAIL = 'info@comiqr.com';
 
 export const OFFICES: Office[] = [
   {
-    region: 'Kıbrıs',
+    key: 'cyprus',
     address: ['Zafer Sokak No:1', 'Bellapais, Girne, Kıbrıs'],
     phone: '+90 548 840 4000',
   },
   {
-    region: 'Türkiye',
+    key: 'turkey',
     address: ['İstasyon Street, Hakim Çağlar Işık Cd.', 'Özen Plaza No:1 D.31 Merkez', 'Edirne, Türkiye'],
     phone: '+90 541 392 77 05',
   },
   {
-    region: 'İngiltere',
+    key: 'uk',
     address: ['71–75 Shelton Street', 'Covent Garden, WC2H 9JQ', 'London, UK'],
     phone: '+44 789 911 86 74',
   },
@@ -66,3 +60,9 @@ export const telHref = (phone: string) => `tel:${phone.replace(/[^0-9+]/g, '')}`
 
 /** Birincil kanal — hero/CTA'da tek numara gösterilecekse bu. */
 export const PRIMARY_OFFICE = OFFICES[0]!;
+
+/**
+ * Pazarlama metinlerinin şekli. Türkçe dosya kaynak kabul edilir; yeni bir
+ * anahtar eklendiğinde tip kendiliğinden büyür ve eksik çeviri derlemede görünür.
+ */
+export type MarketingContent = typeof import('../../messages/marketing/tr.json');

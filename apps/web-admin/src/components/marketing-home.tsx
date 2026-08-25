@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMessages } from 'next-intl';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/BrandLogo';
 import { createApi } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
-import { CONTACT_EMAIL, CUSTOMER_URL, DEMOS, FAQS, OFFICES, PRIMARY_OFFICE, TRIAL_DAYS, demoUrl, telHref } from '@/lib/marketing';
+import { CONTACT_EMAIL, CUSTOMER_URL, DEMOS, OFFICES, PRIMARY_OFFICE, TRIAL_DAYS, demoUrl, telHref } from '@/lib/marketing';
+import type { MarketingContent } from '@/lib/marketing';
 
 /* Orange brand scope — overrides the admin's indigo tokens for the public site only. */
 const ORANGE: CSSProperties = {
@@ -248,12 +250,13 @@ function MockAnalytics() {
 }
 
 /* --------------------------------------------------------------- Content */
-const VERTICALS = [
-  { e: '🍽️', t: 'Restoran & Kafe', d: 'Masa siparişi, gel-al ve teslimat; garson çağırma ve hesap akışı.' },
-  { e: '🏨', t: 'Otel', d: 'Oda servisi ve odaya yansıtma (folyo); çıkışta tek hesap.' },
-  { e: '🍹', t: 'Bar & Pub', d: 'Adisyon akışı, 18+ işaret ve otomatik Happy Hour indirimi.' },
-  { e: '🏖️', t: 'Plaj Kulübü', d: 'Şezlong servisi ve şezlonga yansıtma; sahilden sipariş.' },
-];
+/** Emoji ve sıra burada; metin çeviri dosyasından gelir. */
+const VERTICAL_KEYS = [
+  { e: '🍽️', k: 'restaurant' },
+  { e: '🏨', k: 'hotel' },
+  { e: '🍹', k: 'bar' },
+  { e: '🏖️', k: 'beach' },
+] as const;
 
 /**
  * API'ye ulaşılamazsa fiyat bölümü boş kalmasın diye yedek. Kaynak gerçeklik
@@ -276,80 +279,24 @@ const FALLBACK_PLANS = [
  * gelir (superadmin planı panelden değiştirebiliyor); burada yalnızca sıralama,
  * anlatım ve hangi kartın öne çıkacağı durur. Böylece liste gerçeklikten kayamaz.
  */
-const PLAN_META: Record<string, { title: string; desc: string; cta: string; feat?: boolean; items: string[] }> = {
-  free: {
-    title: 'Başlangıç',
-    desc: 'Dijital QR menüye geçen küçük işletmeler için.',
-    cta: 'Ücretsiz Başla',
-    items: ['QR menü + 3 tema', 'Çalışma saati, WiFi, iletişim', 'Kalori & alerjen gösterimi', 'Menü beş dilde'],
-  },
-  pro: {
-    title: 'Pro',
-    desc: 'Masadan sipariş ve servis akışı isteyenler için.',
-    cta: `${TRIAL_DAYS} Gün Ücretsiz`,
-    feat: true,
-    items: [
-      'Başlangıç’taki her şey',
-      'Sepet, masadan sipariş & mutfak ekranı',
-      'Garson uygulaması, çağrı ve hesap isteme',
-      'Tam besin değerleri & AI menü asistanı',
-      'Analitik ve menü performansı',
-      'Mutfak & bar fiş yazıcısı',
-    ],
-  },
-  business: {
-    title: 'Business',
-    desc: 'Otel, plaj ve çok şubeli işletmeler için.',
-    cta: `${TRIAL_DAYS} Gün Ücretsiz`,
-    items: [
-      'Pro’daki her şey',
-      'Gider, cari hesap & kâr raporu',
-      'Otel odası ve plaj şezlong folyosu',
-      'Çok şube, sadakat puanı & kuponlar',
-      'AI Danışman: menü içgörüleri',
-    ],
-  },
-  enterprise: {
-    title: 'Kurumsal',
-    desc: 'Markalı deneyim ve öncelikli destek.',
-    cta: 'İletişime Geç',
-    items: ['Business’taki her şey', 'White-label: kendi markanız', 'Öncelikli destek & SLA'],
-  },
-};
+/** Plan sırası ve hangisinin öne çıkacağı; metin çeviri dosyasından. */
+const PLAN_ORDER = ['free', 'pro', 'business', 'enterprise'] as const;
+const POPULAR_PLAN = 'pro';
 
 /** Karşılaştırma tablosu — işaretler plan bayraklarından gelir, elle yazılmaz. */
-const FEATURE_ROWS: [string, string][] = [
-  ['menu', 'Dijital QR menü'],
-  ['nutrition_display', 'Kalori & alerjen'],
-  ['nutrition_full', 'Tam besin değerleri'],
-  ['ordering', 'Masadan sipariş & sepet'],
-  ['payments', 'Online ödeme'],
-  ['kds', 'Mutfak ekranı (KDS)'],
-  ['waiter_app', 'Garson uygulaması'],
-  ['printing', 'Mutfak & bar fiş yazıcısı'],
-  ['analytics', 'Analitik'],
-  ['ai', 'AI menü asistanı'],
-  ['ai_advanced', 'AI Danışman (işletme)'],
-  ['loyalty', 'Sadakat puanı & kupon'],
-  ['multi_branch', 'Çok şube'],
-  ['folio', 'Otel / plaj folyosu'],
-  ['happy_hour', 'Happy Hour (bar)'],
-  ['finance', 'Gider · cari · kâr raporu'],
-  ['pos_integration', 'Entegrasyon (webhook)'],
-  ['white_label', 'White-label'],
-  ['sla', 'SLA & öncelikli destek'],
-];
+/** Karşılaştırma tablosunun satır sırası; etiketler çeviri dosyasından. */
+const FEATURE_KEYS = [
+  'menu', 'nutrition_display', 'nutrition_full', 'ordering', 'payments', 'kds', 'waiter_app',
+  'printing', 'analytics', 'ai', 'ai_advanced', 'loyalty', 'multi_branch', 'folio',
+  'happy_hour', 'finance', 'pos_integration', 'white_label', 'sla',
+] as const;
 
-const LIMIT_ROWS: [string, string][] = [
-  ['branches', 'Şube'],
-  ['menu_items', 'Menü ürünü'],
-  ['monthly_scans', 'Aylık menü açılışı'],
-];
+const LIMIT_KEYS = ['branches', 'menu_items', 'monthly_scans'] as const;
 
 /** -1 / eksik değer = sınırsız. */
-function limitLabel(v: unknown): string {
+function limitLabel(v: unknown, unlimited: string): string {
   const n = Number(v);
-  if (v === undefined || v === null || !Number.isFinite(n) || n === -1) return 'Sınırsız';
+  if (v === undefined || v === null || !Number.isFinite(n) || n === -1) return unlimited;
 
   return n.toLocaleString('tr-TR');
 }
@@ -360,8 +307,12 @@ type Billing = 'monthly' | 'yearly';
  * Yıllıkta gösterilen rakam AYLIK karşılıktır (yıllık ÷ 12) — kartlar arasında
  * elma-elma karşılaştırma bozulmasın diye. Toplam yıllık tutar altında yazar.
  */
-function priceLabel(p: { code: string; price_monthly?: unknown; price_yearly?: unknown }, billing: Billing) {
-  if (p.code === 'enterprise') return { price: 'Özel', per: '', note: '' };
+function priceLabel(
+  p: { code: string; price_monthly?: unknown; price_yearly?: unknown },
+  billing: Billing,
+  labels: { custom: string; perMonth: string; yearlyNote: string },
+) {
+  if (p.code === 'enterprise') return { price: labels.custom, per: '', note: '' };
 
   const monthly = Number(p.price_monthly ?? 0);
   const yearly = Number(p.price_yearly ?? 0);
@@ -371,12 +322,12 @@ function priceLabel(p: { code: string; price_monthly?: unknown; price_yearly?: u
 
     return {
       price: `₺${perMonth.toLocaleString('tr-TR')}`,
-      per: '/ay',
-      note: `Yılda ₺${yearly.toLocaleString('tr-TR')} tek seferde`,
+      per: labels.perMonth,
+      note: labels.yearlyNote.replace('{total}', `₺${yearly.toLocaleString('tr-TR')}`),
     };
   }
 
-  return { price: monthly > 0 ? `₺${monthly.toLocaleString('tr-TR')}` : '₺0', per: '/ay', note: '' };
+  return { price: monthly > 0 ? `₺${monthly.toLocaleString('tr-TR')}` : '₺0', per: labels.perMonth, note: '' };
 }
 
 /** Yıllık ödemenin aylığa göre kazandırdığı yüzde; planlar arasında en yükseği. */
@@ -394,15 +345,16 @@ function yearlySavingPct(plans: any[]): number {
 }
 
 
-const MORE = [
-  { t: 'Ürün detay ekranı', b: 'Karta dokunan misafir büyük görsel, açıklama, alerjen, besin değerleri ve “kaç gram et” malzeme reçetesini tek ekranda görür.', d: 'M4 4h16v16H4zM4 14l4-4 4 4 3-3 5 5M8.5 9.5a1 1 0 100-.01' },
-  { t: 'Alerjen filtreleri', b: 'Misafir menüyü glutensiz, laktozsuz ya da alerjensiz olacak şekilde tek dokunuşla süzer.', d: 'M3 4h18l-7 9v6l-4 2v-8z' },
-  { t: 'Kampanya & kupon', b: 'Zamanlı kampanyalar, indirim kodları ve kategoriye toplu indirim; barda happy hour otomatik uygulanır.', d: 'M3 7v5l8 8 9-9-8-8H6a3 3 0 00-3 3zM7.5 7.5h.01' },
-  { t: 'AI Danışman (işletme)', b: 'Panelde yapay zekâ; öne çıkan ürünleri, menü boşluklarını ve misafir yorumlarının özetini çıkarır.', d: 'M3 3v18h18M7 14l3-3 3 2 5-6' },
-  { t: 'Çok şube', b: 'Şubeleri tek panelden yönetin; menü, masa ve raporları şubeye göre ayırın.', d: 'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16' },
-  { t: 'Sadakat & puan', b: 'Misafir telefonuyla tanınır, harcadıkça puan kazanır ve puanını hesapta kullanır.', d: 'M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z' },
-  { t: 'Stok ve 86 listesi', b: 'Malzeme stoğu reçeteden düşer; biten ürünü mutfak tek dokunuşla menüden kaldırır.', d: 'M4 7h16v13H4zM4 7l2-3h12l2 3M9 12h6' },
-  { t: 'Beş dil ve kendi markanız', b: 'Menü ve panel Türkçe, İngilizce, Almanca, Rusça ve Arapça; üst paketlerde kendi renginiz ve markanız.', d: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.6 2.5 15 0 18M12 3c-2.5 2.6-2.5 15 0 18' },
+/** Kart ikonları; başlık ve metin çeviri dosyasından (aynı sırada). */
+const MORE_ICONS = [
+  'M4 4h16v16H4zM4 14l4-4 4 4 3-3 5 5M8.5 9.5a1 1 0 100-.01',
+  'M3 4h18l-7 9v6l-4 2v-8z',
+  'M3 7v5l8 8 9-9-8-8H6a3 3 0 00-3 3zM7.5 7.5h.01',
+  'M3 3v18h18M7 14l3-3 3 2 5-6',
+  'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16',
+  'M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z',
+  'M4 7h16v13H4zM4 7l2-3h12l2 3M9 12h6',
+  'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.6 2.5 15 0 18M12 3c-2.5 2.6-2.5 15 0 18',
 ];
 
 export default function MarketingHome() {
@@ -413,6 +365,9 @@ export default function MarketingHome() {
   const [plans, setPlans] = useState<any[]>(FALLBACK_PLANS);
   const [billing, setBilling] = useState<Billing>('monthly');
   const saving = yearlySavingPct(plans);
+  // Tüm pazarlama metni çeviri dosyasından; dizileri olduğu gibi okuyabilmek için
+  // useTranslations yerine ham mesaj ağacı kullanılıyor.
+  const M = (useMessages() as any).marketing as MarketingContent;
 
   useEffect(() => {
     setAuthed(isAuthenticated());
@@ -439,16 +394,16 @@ export default function MarketingHome() {
             <BrandLogo className="h-9 w-auto" />
           </div>
           <div className="hidden items-center gap-8 md:flex">
-            <a href="#ozellikler" className="text-sm font-semibold text-muted transition hover:text-ink">Özellikler</a>
-            <a href="#turler" className="text-sm font-semibold text-muted transition hover:text-ink">İşletme Türleri</a>
-            <a href="#fiyatlar" className="text-sm font-semibold text-muted transition hover:text-ink">Fiyatlar</a>
-            <a href="#sss" className="text-sm font-semibold text-muted transition hover:text-ink">S.S.S.</a>
-            <a href="#iletisim" className="text-sm font-semibold text-muted transition hover:text-ink">İletişim</a>
+            <a href="#ozellikler" className="text-sm font-semibold text-muted transition hover:text-ink">{M.nav.features}</a>
+            <a href="#turler" className="text-sm font-semibold text-muted transition hover:text-ink">{M.nav.verticals}</a>
+            <a href="#fiyatlar" className="text-sm font-semibold text-muted transition hover:text-ink">{M.nav.pricing}</a>
+            <a href="#sss" className="text-sm font-semibold text-muted transition hover:text-ink">{M.nav.faq}</a>
+            <a href="#iletisim" className="text-sm font-semibold text-muted transition hover:text-ink">{M.nav.contact}</a>
           </div>
           <div className="flex items-center gap-2.5">
-            {!authed && <Link href="/login" className="hidden text-sm font-semibold text-muted transition hover:text-ink sm:block">Giriş</Link>}
-            <Link href={primaryHref} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600">{authed ? 'Panele Git' : 'Ücretsiz Dene'}</Link>
-            <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label="Menü" aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-ink md:hidden">
+            {!authed && <Link href="/login" className="hidden text-sm font-semibold text-muted transition hover:text-ink sm:block">{M.nav.login}</Link>}
+            <Link href={primaryHref} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600">{authed ? M.nav.panel : M.nav.try}</Link>
+            <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label={M.nav.menu} aria-expanded={menuOpen} className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-ink md:hidden">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
                 {menuOpen ? <path d="m6 6 12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
               </svg>
@@ -458,10 +413,10 @@ export default function MarketingHome() {
         {menuOpen && (
           <div className="border-t border-line bg-canvas md:hidden">
             <div className="mx-auto flex max-w-6xl flex-col px-5 py-2">
-              {[['Özellikler', '#ozellikler'], ['İşletme Türleri', '#turler'], ['Fiyatlar', '#fiyatlar'], ['S.S.S.', '#sss'], ['İletişim', '#iletisim']].map(([l, href]) => (
+              {([[M.nav.features, '#ozellikler'], [M.nav.verticals, '#turler'], [M.nav.pricing, '#fiyatlar'], [M.nav.faq, '#sss'], [M.nav.contact, '#iletisim']] as [string, string][]).map(([l, href]) => (
                 <a key={href} href={href} onClick={() => setMenuOpen(false)} className="border-b border-line/70 py-3 text-sm font-semibold text-ink last:border-0">{l}</a>
               ))}
-              {!authed && <Link href="/login" onClick={() => setMenuOpen(false)} className="py-3 text-sm font-semibold text-brand-600">Giriş Yap →</Link>}
+              {!authed && <Link href="/login" onClick={() => setMenuOpen(false)} className="py-3 text-sm font-semibold text-brand-600">{M.nav.loginLong}</Link>}
             </div>
           </div>
         )}
@@ -473,15 +428,15 @@ export default function MarketingHome() {
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 lg:grid-cols-2 lg:py-24">
           <div>
             <h1 className="text-[2.7rem] font-extrabold leading-[1.04] tracking-tight text-balance sm:text-6xl">
-              Menünüz kağıttan <span className="text-brand-600">daha iyisini hak ediyor.</span>
-              <span className="block">İşletmeniz de.</span>
+              {M.hero.title1} <span className="text-brand-600">{M.hero.title2}</span>
+              <span className="block">{M.hero.title3}</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-              ComiQR dijital menüyle başlar ama orada bitmez: misafir masadan sipariş verir, mutfak ekranı görür, personel kasadan yönetir, siz de gün sonunda ciroyu değil kârı okursunuz. Tek panel, tek abonelik.
+              {M.hero.body}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href={primaryHref} className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-600 hover:shadow-md">
-                {authed ? 'Panele Git' : 'Ücretsiz Dene'} <Arrow />
+                {authed ? M.nav.panel : M.nav.try} <Arrow />
               </Link>
               <a
                 href={demoUrl(DEMOS[0]!.slug)}
@@ -489,11 +444,11 @@ export default function MarketingHome() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-6 py-3.5 text-sm font-bold text-ink shadow-sm transition hover:bg-canvas"
               >
-                Canlı Menüyü Aç
+                {M.hero.demo}
               </a>
             </div>
             <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-muted">
-              {['Dijital menü', 'Masadan sipariş', 'Personel POS', 'Mutfak ekranı', 'Self-servis kiosk', 'Gider & kâr raporu'].map((x) => (
+              {M.hero.chips.map((x) => (
                 <li key={x} className="flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#ea5b1a' }} />
                   {x}
@@ -501,7 +456,7 @@ export default function MarketingHome() {
               ))}
             </ul>
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
-              {[`${TRIAL_DAYS} gün ücretsiz deneme`, 'Kurulum ücreti yok', 'İstediğin an iptal'].map((x) => (
+              {M.hero.checks.map((x) => x.replace('{days}', String(TRIAL_DAYS))).map((x) => (
                 <span key={x} className="inline-flex items-center gap-2"><Check />{x}</span>
               ))}
             </div>
@@ -545,7 +500,7 @@ export default function MarketingHome() {
       <div className="border-y border-line bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-10">
           <p className="text-center text-xs font-bold uppercase tracking-widest text-muted">
-            Anlatmayalım, açın bakın — bunlar çalışan gerçek menüler
+            {M.demos.label}
           </p>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {DEMOS.map((d) => (
@@ -558,8 +513,8 @@ export default function MarketingHome() {
               >
                 <span className="text-2xl">{d.emoji}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-ink">{d.title} menüsü</span>
-                  <span className="block text-xs leading-relaxed text-muted">{d.desc}</span>
+                  <span className="block text-sm font-bold text-ink">{M.demos[d.slug].title} {M.demos.suffix}</span>
+                  <span className="block text-xs leading-relaxed text-muted">{M.demos[d.slug].desc}</span>
                 </span>
                 <span className="text-brand-600 transition group-hover:translate-x-0.5">↗</span>
               </a>
@@ -571,69 +526,55 @@ export default function MarketingHome() {
       {/* FEATURE SECTIONS */}
       <div id="ozellikler" className="divide-y divide-line">
         <FeatureSection
-          badge="Yeni özellik"
-          title="Fotoğrafını çek, menüyü biz kuralım."
-          body="Eskiden en çok yorulduğunuz kısım artık yok. Basılı menünüzün birkaç fotoğrafını çekin ya da PDF yükleyin; her kategori, ürün, açıklama ve fiyat — hatta malzeme, alerjen ve besin değerleri sayfadan okunup doldurulur. Siz hiçbir şey yazmazsınız."
-          points={['Menü fotoğraflarını çek ya da PDF yükle', 'Her kategori, ürün ve açıklama sırasıyla', 'Her boy ve fiyatı ayrı ayrı', 'Malzeme, alerjen ve besin değeri otomatik', 'Gözden geçir, kaydet — menün hazır']}
+          badge={M.sections.import.badge}
+          title={M.sections.import.title}
+          body={M.sections.import.body}
+          points={M.sections.import.points}
           mockup={<MockImport />}
         />
         <FeatureSection
           flip
-          badge="Dijital menü"
-          title="Paneliniz menünüzdür. Canlı düzenleyin."
-          body="Düzenlediğiniz şey, misafirin gördüğü şeydir; her değişiklik anında telefonlarına ulaşır. Yeniden baskı yok, bekleme yok, menünüz asla güncelliğini yitirmez."
-          points={['Ürünleri sürükleyip sırala ya da başka kategoriye taşı', 'Tek ürünü veya tüm kategoriyi tek düğmeyle gizle', 'İsim, fiyat, boy, açıklama, malzeme, alerjen — hepsini düzenle', 'İndirimli fiyatla öne çıkar ya da “kampanya” işaretle', 'Bir kategoriye toplu indirim uygula (ör. %20)']}
+          badge={M.sections.live.badge}
+          title={M.sections.live.title}
+          body={M.sections.live.body}
+          points={M.sections.live.points}
           mockup={<MockLive />}
         />
         <FeatureSection
-          badge="Sipariş & Servis"
-          title="Sadece menü değil — masadan sipariş, servis ve ödeme."
-          body="ComiQR menüyü göstermekle kalmaz. Misafir sepete ekler; masada, gel-al veya teslimat siparişi verir, garson çağırır veya hesap ister. Sipariş mutfak ekranına (KDS), çağrı personele anında düşer."
-          points={['Varyant ve ekstra seçenekli sepet', 'Masada, gel-al ve teslimat', 'Garson çağır & hesap iste — masayı seçerek', 'Mutfak ekranı (KDS), personel POS ve garson app', 'Online ödeme (Tiko) — kapıda ya da online']}
+          badge={M.sections.order.badge}
+          title={M.sections.order.title}
+          body={M.sections.order.body}
+          points={M.sections.order.points}
           mockup={<MockOrder />}
         />
         <FeatureSection
           flip
-          badge="Servis ekibi"
-          title="Kasadan mutfağa, garsonun cebine kadar."
-          body="Sipariş nereden gelirse gelsin — misafirin telefonundan, kiosktan ya da garsonun elinden — aynı yere düşer. Kasa açar, mutfak görür, garson servis eder; kimse kimseye bağırmaz."
-          points={[
-            'Personel POS: masaya sipariş, ikram, indirim, hesap bölme',
-            'Mutfak ekranı (KDS): kalem kalem hazırlanıyor / hazır',
-            'Garson uygulaması (iOS & Android): masa çağrıları ve adisyon',
-            'Mutfak ve bar fişleri kendi istasyon yazıcısına',
-            'Self-servis kiosk: misafir kendi siparişini verir',
-            'Vardiya açma-kapama ve kasa (Z) raporu',
-          ]}
+          badge={M.sections.service.badge}
+          title={M.sections.service.title}
+          body={M.sections.service.body}
+          points={M.sections.service.points}
           mockup={<MockService />}
         />
         <FeatureSection
-          badge="Anında yanıt"
-          title="Kendi kendine yanıtlayan menü."
-          body="Misafir menü hakkında her şeyi sorabilir; asistan malzeme, alerjen, fiyat ve kampanyalara göre kendi dilinde yanıtlar. Ekibiniz aynı soruları tekrar tekrar cevaplamaktan kurtulur."
-          points={['Her ürünü; malzeme, alerjen ve fiyatını bilir', 'Her misafire kendi dilinde otomatik yanıt', 'Bütçe, iştah veya diyete göre öneri (ör. glutensiz)', 'Çalışma saati, konum, WiFi ve güncel kampanyalar', 'Gece gündüz, kapalıyken bile']}
+          badge={M.sections.chat.badge}
+          title={M.sections.chat.title}
+          body={M.sections.chat.body}
+          points={M.sections.chat.points}
           mockup={<MockChat />}
         />
         <FeatureSection
           flip
-          badge="Analitik"
-          title="Menünüzün nasıl performans gösterdiğini görün."
-          body="Menünüzü kaç kişi açtı, ne kadar süre inceledi, hangi ürünler öne çıktı — hepsini görün. Değerlendirme ve itibar puanıyla misafir memnuniyetini takip edin."
-          points={['Günlük menü açılışları', 'Görüntülenme ve ortalama inceleme süresi', 'En çok bakılan ürünler', 'Değerlendirme & yorumlar, itibar puanı', 'Tek tıkla dışa aktar (rapor)']}
+          badge={M.sections.analytics.badge}
+          title={M.sections.analytics.title}
+          body={M.sections.analytics.body}
+          points={M.sections.analytics.points}
           mockup={<MockAnalytics />}
         />
         <FeatureSection
-          badge="İşletme yönetimi"
-          title="Ciro değil, kâr gösteren bir panel."
-          body="Çoğu sistem ne sattığınızı söyler. ComiQR ne kazandığınızı söyler: reçeteden gelen ürün maliyetini ve giderlerinizi satışın karşısına koyar. Ay sonunu beklemeden, hangi günün kâr ettiğini görürsünüz."
-          points={[
-            'Gider yönetimi: kategori, KDV ve belge no ile',
-            'Cari hesap ve veresiye — limitli, tahsilat takipli',
-            'Reçeteden ürün maliyeti (COGS) ve gerçek kâr marjı',
-            'Saatlik yoğunluk: hangi gün, hangi saat doluyorsunuz',
-            'Personel performansı, ikram/iptal ve vergi kırılımı',
-            'Muhasebeciye tek tıkla CSV',
-          ]}
+          badge={M.sections.finance.badge}
+          title={M.sections.finance.title}
+          body={M.sections.finance.body}
+          points={M.sections.finance.points}
           mockup={<MockFinance />}
         />
       </div>
@@ -642,16 +583,16 @@ export default function MarketingHome() {
       <section id="turler" className="border-y border-line bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-20 lg:py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-600">Tek Sistem, Dört Dikey</span>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">İşletmeniz ne olursa olsun</h2>
-            <p className="mt-4 text-lg text-muted">Kayıt sırasında türünüzü seçin; sistem kendini ona göre kurar — masalar, odalar, şezlonglar veya adisyon.</p>
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600">{M.verticals.badge}</span>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">{M.verticals.heading}</h2>
+            <p className="mt-4 text-lg text-muted">{M.verticals.sub}</p>
           </div>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {VERTICALS.map((v) => (
-              <div key={v.t} className="rounded-2xl border border-line bg-canvas p-6 transition hover:-translate-y-1 hover:shadow-md">
+            {VERTICAL_KEYS.map((v) => (
+              <div key={v.k} className="rounded-2xl border border-line bg-canvas p-6 transition hover:-translate-y-1 hover:shadow-md">
                 <div className="text-3xl">{v.e}</div>
-                <h3 className="mt-3 text-base font-bold">{v.t}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{v.d}</p>
+                <h3 className="mt-3 text-base font-bold">{M.verticals.items[v.k].title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">{M.verticals.items[v.k].desc}</p>
               </div>
             ))}
           </div>
@@ -661,17 +602,17 @@ export default function MarketingHome() {
       {/* MORE FEATURES */}
       <section className="mx-auto max-w-6xl px-5 py-20 lg:py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-600">Menüde & Panelde</span>
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">Ve dahası</h2>
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-600">{M.more.badge}</span>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">{M.more.heading}</h2>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {MORE.map((f) => (
-            <div key={f.t} className="rounded-2xl border border-line bg-surface p-6 shadow-sm">
+          {MORE_ICONS.map((icon, i) => (
+            <div key={icon} className="rounded-2xl border border-line bg-surface p-6 shadow-sm">
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-600">
-                <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={f.d} /></svg>
+                <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={icon} /></svg>
               </span>
-              <h3 className="mt-4 text-base font-bold">{f.t}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{f.b}</p>
+              <h3 className="mt-4 text-base font-bold">{M.more.items[i]?.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{M.more.items[i]?.body}</p>
             </div>
           ))}
         </div>
@@ -680,8 +621,8 @@ export default function MarketingHome() {
       {/* PRICING */}
       <section id="fiyatlar" className="mx-auto max-w-6xl px-5 py-20 lg:py-28">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-balance sm:text-[2.6rem]">Ücretsiz başlayın.<br /><span className="text-brand-600">Hazır olunca büyüyün.</span></h2>
-          <p className="mt-4 text-lg text-muted">{TRIAL_DAYS} gün deneyin, komisyon yok, gizli ücret yok. İstediğiniz an yükseltin.</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-balance sm:text-[2.6rem]">{M.pricing.heading1}<br /><span className="text-brand-600">{M.pricing.heading2}</span></h2>
+          <p className="mt-4 text-lg text-muted">{M.pricing.sub.replace('{days}', String(TRIAL_DAYS))}</p>
         </div>
 
         {/* Dönem seçici — indirim oranı plan verisinden hesaplanır, elle yazılmaz. */}
@@ -695,27 +636,29 @@ export default function MarketingHome() {
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${billing === mode ? 'shadow-sm' : 'text-muted hover:text-ink'}`}
                 style={billing === mode ? { background: '#ea5b1a', color: '#ffffff' } : undefined}
               >
-                {mode === 'monthly' ? 'Aylık' : 'Yıllık'}
+                {mode === 'monthly' ? M.pricing.monthly : M.pricing.yearly}
               </button>
             ))}
           </div>
           {saving > 0 && (
             <span className="ml-3 self-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-              Yıllıkta %{saving} indirim
+              {M.pricing.saving.replace('{pct}', String(saving))}
             </span>
           )}
         </div>
 
         <div className="mt-14 grid gap-5 lg:grid-cols-4">
-          {plans.map((p) => {
-            const meta = PLAN_META[p.code];
-            if (!meta) return null;
-            const { price, per, note } = priceLabel(p, billing);
-            const caps = LIMIT_ROWS.map(([k, l]) => `${l}: ${limitLabel(p.limits?.[k])}`).join(' · ');
+          {PLAN_ORDER.map((code) => {
+            const p = plans.find((x: any) => x.code === code);
+            const meta = p ? M.pricing.plans[code] : null;
+            if (!p || !meta) return null;
+            const featured = code === POPULAR_PLAN;
+            const { price, per, note } = priceLabel(p, billing, M.pricing);
+            const caps = LIMIT_KEYS.map((k) => `${M.pricing.limits[k]}: ${limitLabel(p.limits?.[k], M.pricing.unlimited)}`).join(' · ');
 
             return (
-              <div key={p.code} className={`relative flex flex-col rounded-2xl border bg-surface p-6 ${meta.feat ? 'border-brand-500 shadow-lg ring-1 ring-brand-100' : 'border-line shadow-sm'}`}>
-                {meta.feat && <span className="absolute -top-3 left-6 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide" style={{ background: '#ea5b1a', color: '#ffffff' }}>En popüler</span>}
+              <div key={code} className={`relative flex flex-col rounded-2xl border bg-surface p-6 ${featured ? 'border-brand-500 shadow-lg ring-1 ring-brand-100' : 'border-line shadow-sm'}`}>
+                {featured && <span className="absolute -top-3 left-6 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide" style={{ background: '#ea5b1a', color: '#ffffff' }}>{M.pricing.popular}</span>}
                 <div className="text-sm font-bold">{meta.title}</div>
                 <div className="mt-3 text-4xl font-extrabold tracking-tight">{price}<span className="text-sm font-semibold text-muted">{per}</span></div>
                 {note ? (
@@ -728,7 +671,7 @@ export default function MarketingHome() {
                   {meta.items.map((it) => (<li key={it} className="flex gap-2.5 text-sm"><Check />{it}</li>))}
                 </ul>
                 <p className="mb-4 text-[11px] leading-relaxed text-muted">{caps}</p>
-                <Link href={authed ? '/billing' : '/register'} className={`rounded-xl py-2.5 text-center text-sm font-bold transition ${meta.feat ? 'text-white hover:opacity-90' : 'border border-line bg-surface text-ink hover:bg-canvas'}`} style={meta.feat ? { background: '#ea5b1a', color: '#ffffff' } : undefined}>{meta.cta}</Link>
+                <Link href={authed ? '/billing' : '/register'} className={`rounded-xl py-2.5 text-center text-sm font-bold transition ${featured ? 'text-white hover:opacity-90' : 'border border-line bg-surface text-ink hover:bg-canvas'}`} style={featured ? { background: '#ea5b1a', color: '#ffffff' } : undefined}>{meta.cta}</Link>
               </div>
             );
           })}
@@ -739,16 +682,16 @@ export default function MarketingHome() {
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-line">
-                <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-muted">Tüm özellikler</th>
+                <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-muted">{M.pricing.allFeatures}</th>
                 {plans.map((p) => (
-                  <th key={p.code} className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wide text-muted">{PLAN_META[p.code]?.title ?? p.name}</th>
+                  <th key={p.code} className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wide text-muted">{M.pricing.plans[p.code as keyof typeof M.pricing.plans]?.title ?? p.name}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {FEATURE_ROWS.map(([key, label]) => (
+              {FEATURE_KEYS.map((key) => (
                 <tr key={key} className="border-b border-line/60 last:border-0">
-                  <td className="px-5 py-3 text-ink">{label}</td>
+                  <td className="px-5 py-3 text-ink">{M.pricing.rows[key]}</td>
                   {plans.map((p) => (
                     <td key={p.code} className="px-4 py-3 text-center">
                       {p.features?.[key] === true ? (
@@ -760,11 +703,11 @@ export default function MarketingHome() {
                   ))}
                 </tr>
               ))}
-              {LIMIT_ROWS.map(([key, label]) => (
+              {LIMIT_KEYS.map((key) => (
                 <tr key={key} className="border-b border-line/60 bg-canvas/60 last:border-0">
-                  <td className="px-5 py-3 font-medium text-ink">{label}</td>
+                  <td className="px-5 py-3 font-medium text-ink">{M.pricing.limits[key]}</td>
                   {plans.map((p) => (
-                    <td key={p.code} className="px-4 py-3 text-center text-muted">{limitLabel(p.limits?.[key])}</td>
+                    <td key={p.code} className="px-4 py-3 text-center text-muted">{limitLabel(p.limits?.[key], M.pricing.unlimited)}</td>
                   ))}
                 </tr>
               ))}
@@ -777,11 +720,11 @@ export default function MarketingHome() {
       <section id="sss" className="border-y border-line bg-surface">
         <div className="mx-auto max-w-3xl px-5 py-20 lg:py-24">
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">Restoranların ortak dertleri.</h2>
-            <p className="mt-3 text-lg text-brand-600 font-semibold">İşte her biri nasıl çözülüyor.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">{M.faq.heading}</h2>
+            <p className="mt-3 text-lg text-brand-600 font-semibold">{M.faq.sub}</p>
           </div>
           <div className="mt-10 space-y-3">
-            {FAQS.map(([q, a], i) => (
+            {M.faq.items.map(({ q, a }, i) => (
               <div key={q} className="overflow-hidden rounded-2xl border border-line bg-canvas">
                 <button type="button" onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left" aria-expanded={open === i}>
                   <span className="text-[15px] font-bold">{q}</span>
@@ -796,7 +739,7 @@ export default function MarketingHome() {
 
       {/* STATS */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-14 gap-y-6 px-5 py-14 text-center">
-        {[['1.000+', 'İşletme kullanıyor'], ['5', 'Misafir dili'], ['4', 'İşletme türü'], ['%100', 'Uygulamasız'], [`${TRIAL_DAYS} gün`, 'Ücretsiz deneme']].map(([n, l]) => (
+        {([['1.000+', M.stats.businesses], ['7', M.stats.languages], ['4', M.stats.verticals], ['%100', M.stats.noApp], [`${TRIAL_DAYS} ${M.stats.days}`, M.stats.trial]] as [string, string][]).map(([n, l]) => (
           <div key={l}>
             <div className="text-3xl font-extrabold tracking-tight text-brand-600">{n}</div>
             <div className="mt-1 text-xs font-semibold text-muted">{l}</div>
@@ -808,15 +751,15 @@ export default function MarketingHome() {
       <section id="iletisim" className="border-y border-line bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-20 lg:py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-600">İletişim</span>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">Konuşarak da başlayabilirsiniz</h2>
-            <p className="mt-4 text-lg text-muted">Üç ülkede ofisimiz var. Size en yakın olanı arayın, menünüzü birlikte kuralım.</p>
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600">{M.contact.badge}</span>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">{M.contact.heading}</h2>
+            <p className="mt-4 text-lg text-muted">{M.contact.sub}</p>
           </div>
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {OFFICES.map((office) => (
-              <div key={office.region} className="rounded-2xl border border-line bg-canvas p-6">
-                <h3 className="text-base font-bold text-brand-600">{office.region}</h3>
+              <div key={office.key} className="rounded-2xl border border-line bg-canvas p-6">
+                <h3 className="text-base font-bold text-brand-600">{M.contact.regions[office.key]}</h3>
                 <address className="mt-3 not-italic text-sm leading-relaxed text-ink">
                   {office.address.map((line) => (<span key={line} className="block">{line}</span>))}
                 </address>
@@ -844,14 +787,14 @@ export default function MarketingHome() {
       {/* FINAL CTA */}
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <div className="relative overflow-hidden rounded-3xl px-6 py-16 text-center shadow-xl" style={{ background: 'radial-gradient(120% 140% at 50% -20%,#ea5b1a,#9e3a0c 72%)' }}>
-          <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white text-balance sm:text-4xl">İlk menünüz {TRIAL_DAYS} gün ücretsiz.</h2>
+          <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white text-balance sm:text-4xl">{M.finalCta.heading.replace('{days}', String(TRIAL_DAYS))}</h2>
           <p className="mt-4 text-sm" style={{ color: '#ffffff', opacity: 0.9 }}>
-            Ya da bize ulaşın:{' '}
+            {M.finalCta.phone}{' '}
             <a href={telHref(PRIMARY_OFFICE.phone)} className="font-bold underline" style={{ color: '#ffffff' }}>
               {PRIMARY_OFFICE.phone}
             </a>
           </p>
-          <p className="mx-auto mt-4 max-w-lg text-lg text-white/85">Kurulum dakikalar sürer, misafirleriniz farkı ilk taramada görür.</p>
+          <p className="mx-auto mt-4 max-w-lg text-lg text-white/85">{M.finalCta.sub}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href={primaryHref} className="rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-brand-700 shadow-sm transition hover:bg-white/90">{authed ? 'Panele Git' : 'Ücretsiz Dene'}</Link>
             {!authed && <Link href="/login" className="rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20">Giriş Yap</Link>}
@@ -867,12 +810,12 @@ export default function MarketingHome() {
               <div className="flex items-center gap-2.5">
                 <BrandLogo className="h-9 w-auto" />
               </div>
-              <p className="mt-4 max-w-xs text-sm text-muted">Restoran, otel, bar ve plaj işletmeleri için uçtan uca QR menü, sipariş ve servis platformu.</p>
+              <p className="mt-4 max-w-xs text-sm text-muted">{M.footer.tagline}</p>
             </div>
             {([
-              ['Platform', [['Özellikler', '#ozellikler'], ['İşletme türleri', '#turler'], ['Fiyatlar', '#fiyatlar'], ['S.S.S.', '#sss']]],
-              ['Başla', [['Ücretsiz kayıt', '/register'], ['Giriş', '/login'], ['Panel', '/dashboard']]],
-              ['Şirket', [['İletişim', '/iletisim'], ['Gizlilik', '/gizlilik'], ['Koşullar', '/kosullar']]],
+              [M.footer.platform, [[M.footer.links.features, '#ozellikler'], [M.footer.links.verticals, '#turler'], [M.footer.links.pricing, '#fiyatlar'], [M.footer.links.faq, '#sss']]],
+              [M.footer.start, [[M.footer.links.register, '/register'], [M.footer.links.login, '/login'], [M.footer.links.panel, '/dashboard']]],
+              [M.footer.company, [[M.footer.links.contact, '/iletisim'], [M.footer.links.privacy, '/gizlilik'], [M.footer.links.terms, '/kosullar']]],
             ] as [string, [string, string][]][]).map(([h, links]) => (
               <div key={h}>
                 <h4 className="text-xs font-bold uppercase tracking-widest text-muted">{h}</h4>
@@ -883,8 +826,8 @@ export default function MarketingHome() {
             ))}
           </div>
           <div className="mt-12 flex flex-wrap justify-between gap-3 border-t border-line pt-6 text-sm text-muted">
-            <span>© 2026 ComiQR. Tüm hakları saklıdır.</span>
-            <span>Kıbrıs · Türkiye · İngiltere</span>
+            <span>{M.footer.copyright}</span>
+            <span>{M.footer.regions}</span>
           </div>
         </div>
       </footer>

@@ -1,3 +1,4 @@
+import { getMessages } from 'next-intl/server';
 import { MarketingShell } from '@/components/MarketingShell';
 import { CONTACT_EMAIL, OFFICES, TRIAL_DAYS, telHref } from '@/lib/marketing';
 
@@ -6,7 +7,9 @@ export const metadata = {
   description: 'Kıbrıs, Türkiye ve İngiltere ofislerimiz. Demo, destek ve teklif için bize ulaşın.',
 };
 
-export default function IletisimPage() {
+export default async function IletisimPage() {
+  const M = ((await getMessages()) as any).marketing;
+
   return (
     <MarketingShell>
       <div className="mx-auto max-w-5xl px-5 py-16">
@@ -19,8 +22,8 @@ export default function IletisimPage() {
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {OFFICES.map((office) => (
-            <div key={office.region} className="rounded-2xl border border-line bg-surface p-6 shadow-sm">
-              <h2 className="text-base font-bold text-brand-600">{office.region}</h2>
+            <div key={office.key} className="rounded-2xl border border-line bg-surface p-6 shadow-sm">
+              <h2 className="text-base font-bold text-brand-600">{M.contact.regions[office.key]}</h2>
 
               <address className="mt-3 not-italic text-sm leading-relaxed text-ink">
                 {office.address.map((line) => (
