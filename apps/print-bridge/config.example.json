@@ -1,0 +1,14 @@
+{
+  "apiUrl": "https://api.comiqr.com/v1",
+  "email": "mutfak@isletmeniz.com",
+  "password": "yazici-koprusu-parolasi",
+  "printerId": null,
+  "pollSeconds": 3,
+  "dryRun": false,
+  "render": {
+    "width": 42,
+    "codepageEscpos": 13,
+    "codepageIconv": "cp857",
+    "partialCut": true
+  }
+}

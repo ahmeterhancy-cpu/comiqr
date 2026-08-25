@@ -40,3 +40,7 @@ files/
 
 # Coverage
 coverage/
+
+# Fiş köprüsü: derleme çıktısı ve sahadaki gizli yapılandırma
+apps/print-bridge/dist/
+apps/print-bridge/config.json

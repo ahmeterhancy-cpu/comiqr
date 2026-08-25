@@ -1081,7 +1081,7 @@
   "printers": {
     "title": "Yazıcı yönlendirme",
     "gated": "Yazıcı yönlendirme bu planda kapalı. Mutfak/bar fiş yönlendirmesi için planı yükseltin.",
-    "bridgeNote": "Hangi ürün grubunun nerede basılacağını burada belirlersiniz; fişler kuyruğa düşer. Kâğıda basma işini işletmenin ağındaki küçük bir yardımcı program üstlenir — kuyruğu çeker ve sonucu bildirir. Yardımcı program kurulmadan fişler kuyrukta bekler.",
+    "bridgeNote": "Hangi ürün grubunun nerede basılacağını burada belirlersiniz; fişler kuyruğa düşer. Kâğıda basma işini işletmenin ağındaki ComiQR Fiş Köprüsü üstlenir — kuyruğu çeker ve sonucu bildirir. Köprü kurulu değilse fişler kuyrukta bekler, kaybolmaz.",
     "addPrinter": "Yazıcı ekle",
     "noPrinters": "Henüz yazıcı tanımlı değil.",
     "namePlaceholder": "Mutfak, Bar, Kasa…",

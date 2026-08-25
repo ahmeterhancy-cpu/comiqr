@@ -1081,7 +1081,7 @@
   "printers": {
     "title": "Printer routing",
     "gated": "Printer routing is off on this plan. Upgrade to route kitchen and bar tickets.",
-    "bridgeNote": "Decide here which product group prints where; tickets land in the queue. Putting them on paper is done by a small helper on the venue network — it pulls the queue and reports back. Until it is installed, tickets simply wait.",
+    "bridgeNote": "Decide here which product group prints where; tickets land in the queue. The ComiQR Print Bridge on your own network puts them on paper — it pulls the queue and reports back. Without the bridge tickets simply wait; nothing is lost.",
     "addPrinter": "Add printer",
     "noPrinters": "No printers yet.",
     "namePlaceholder": "Kitchen, Bar, Till…",

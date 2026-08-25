@@ -1,0 +1,21 @@
+{
+  "name": "@comiqr/print-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ComiQR yerel fiş köprüsü — kuyruktaki fişleri işletmenin ağındaki ESC/POS yazıcılara basar.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "npm run build && node --test \"dist/*.test.js\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

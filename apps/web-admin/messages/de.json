@@ -1081,7 +1081,7 @@
   "printers": {
     "title": "Druckerzuordnung",
     "gated": "Die Druckerzuordnung ist in diesem Tarif deaktiviert. Für Küchen- und Barbons bitte upgraden.",
-    "bridgeNote": "Hier legen Sie fest, welche Warengruppe wo gedruckt wird; die Bons landen in der Warteschlange. Das Drucken übernimmt ein kleines Hilfsprogramm im Netz des Betriebs — es holt die Warteschlange ab und meldet zurück. Bis dahin warten die Bons.",
+    "bridgeNote": "Hier legen Sie fest, welche Warengruppe wo gedruckt wird; die Bons landen in der Warteschlange. Die ComiQR Druckbrücke in Ihrem Netz bringt sie aufs Papier — sie holt die Warteschlange ab und meldet zurück. Ohne Brücke warten die Bons einfach; nichts geht verloren.",
     "addPrinter": "Drucker anlegen",
     "noPrinters": "Noch keine Drucker.",
     "namePlaceholder": "Küche, Bar, Kasse…",
