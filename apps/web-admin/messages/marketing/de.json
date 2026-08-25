@@ -1,0 +1,218 @@
+{
+  "nav": {
+    "features": "Funktionen",
+    "verticals": "Betriebsarten",
+    "pricing": "Preise",
+    "faq": "FAQ",
+    "contact": "Kontakt",
+    "login": "Anmelden",
+    "loginLong": "Anmelden →",
+    "try": "Kostenlos testen",
+    "panel": "Zum Panel",
+    "menu": "Menü",
+    "language": "Sprache"
+  },
+  "hero": {
+    "title1": "Ihre Karte verdient mehr",
+    "title2": "als Papier.",
+    "title3": "Ihr Betrieb auch.",
+    "body": "ComiQR beginnt mit einer digitalen Karte, hört dort aber nicht auf: Gäste bestellen am Tisch, die Küche sieht es auf dem Bildschirm, das Personal führt die Kasse — und am Feierabend lesen Sie den Gewinn, nicht nur den Umsatz. Ein Panel, ein Abo.",
+    "demo": "Live-Karte öffnen",
+    "chips": ["Digitale Karte", "Bestellen am Tisch", "Personal-POS", "Küchenbildschirm", "Selbstbedienungs-Kiosk", "Ausgaben & Gewinn"],
+    "checks": ["{days} Tage kostenlos testen", "Keine Einrichtungsgebühr", "Jederzeit kündbar"]
+  },
+  "demos": {
+    "label": "Nicht erzählen, ansehen — das sind echte, laufende Karten",
+    "suffix": "Karte",
+    "demo": { "title": "Restaurant", "desc": "Warenkorb, Tischbestellung und Kategorienführung." },
+    "demo-otel": { "title": "Hotel", "desc": "Zimmerservice und Buchung aufs Zimmerkonto." },
+    "demo-bar": { "title": "Bar", "desc": "18+-Kennzeichnung und Happy-Hour-Rabatt." }
+  },
+  "sections": {
+    "import": {
+      "badge": "Neu",
+      "title": "Fotografieren Sie sie — wir bauen die Karte.",
+      "body": "Der Teil, der bisher am meisten Arbeit machte, entfällt. Machen Sie ein paar Fotos Ihrer gedruckten Karte oder laden Sie ein PDF hoch; jede Kategorie, jedes Gericht, jede Beschreibung und jeder Preis — sogar Zutaten, Allergene und Nährwerte — wird von der Seite gelesen und eingetragen. Sie tippen nichts.",
+      "points": ["Karte fotografieren oder PDF hochladen", "Jede Kategorie, jedes Gericht und jede Beschreibung der Reihe nach", "Jede Größe mit eigenem Preis", "Zutaten, Allergene und Nährwerte automatisch", "Prüfen, speichern — Ihre Karte ist online"]
+    },
+    "live": {
+      "badge": "Digitale Karte",
+      "title": "Ihr Panel ist Ihre Karte. Live bearbeitbar.",
+      "body": "Was Sie bearbeiten, sieht der Gast; jede Änderung erreicht sein Telefon sofort. Kein Nachdruck, kein Warten — und Ihre Karte ist nie veraltet.",
+      "points": ["Gerichte per Ziehen sortieren oder in eine andere Kategorie schieben", "Ein Gericht oder eine ganze Kategorie mit einem Schalter ausblenden", "Name, Preis, Größe, Beschreibung, Zutaten, Allergene — alles änderbar", "Mit reduziertem Preis hervorheben oder als Aktion markieren", "Sammelrabatt auf eine Kategorie anwenden (z. B. 20 %)"]
+    },
+    "order": {
+      "badge": "Bestellung & Service",
+      "title": "Nicht nur eine Karte — Bestellung am Tisch, Service und Zahlung.",
+      "body": "ComiQR zeigt nicht nur die Karte. Gäste legen in den Warenkorb, bestellen am Tisch, zum Abholen oder zur Lieferung, rufen die Bedienung oder bitten um die Rechnung. Die Bestellung landet auf dem Küchenbildschirm, der Ruf sofort beim Personal.",
+      "points": ["Warenkorb mit Varianten und Extras", "Vor Ort, Abholung und Lieferung", "Bedienung rufen & Rechnung anfordern — mit Tischauswahl", "Küchenbildschirm (KDS), Personal-POS und Kellner-App", "Online-Zahlung (Tiko) — an der Tür oder online"]
+    },
+    "service": {
+      "badge": "Serviceteam",
+      "title": "Von der Kasse über die Küche bis in die Kellnertasche.",
+      "body": "Woher die Bestellung auch kommt — vom Telefon des Gastes, vom Kiosk oder aus der Hand der Bedienung — sie landet am selben Ort. Die Kasse eröffnet, die Küche sieht, die Bedienung serviert; niemand ruft quer durch den Raum.",
+      "points": ["Personal-POS: Bestellung an den Tisch, Freigaben, Rabatte, Rechnung teilen", "Küchenbildschirm (KDS): Position für Position, in Arbeit / fertig", "Kellner-App (iOS & Android): Tischrufe und offene Rechnungen", "Küchen- und Barbons auf dem eigenen Stationsdrucker", "Selbstbedienungs-Kiosk: der Gast bestellt selbst", "Schicht öffnen/schließen und Tagesabschluss (Z-Bericht)"]
+    },
+    "chat": {
+      "badge": "Sofort antworten",
+      "title": "Eine Karte, die selbst antwortet.",
+      "body": "Gäste können alles zur Karte fragen; der Assistent antwortet in ihrer Sprache anhand von Zutaten, Allergenen, Preisen und Aktionen. Ihr Team beantwortet nicht mehr den ganzen Abend dieselben Fragen.",
+      "points": ["Kennt jedes Gericht, seine Zutaten, Allergene und den Preis", "Antwortet jedem Gast in dessen Sprache", "Empfiehlt nach Budget, Appetit oder Ernährung (z. B. glutenfrei)", "Öffnungszeiten, Standort, WLAN und aktuelle Aktionen", "Tag und Nacht, auch wenn geschlossen ist"]
+    },
+    "analytics": {
+      "badge": "Analytik",
+      "title": "Sehen Sie, wie Ihre Karte wirklich läuft.",
+      "body": "Wie viele Menschen Ihre Karte geöffnet haben, wie lange sie gestöbert haben, welche Gerichte herausstachen — alles sichtbar. Verfolgen Sie die Zufriedenheit über Bewertungen und einen Reputationswert.",
+      "points": ["Tägliche Kartenaufrufe", "Aufrufe und durchschnittliche Verweildauer", "Meistangesehene Gerichte", "Bewertungen & Rezensionen, Reputationswert", "Export mit einem Klick"]
+    },
+    "finance": {
+      "badge": "Betriebsführung",
+      "title": "Ein Panel, das Gewinn zeigt, nicht nur Umsatz.",
+      "body": "Die meisten Systeme sagen Ihnen, was Sie verkauft haben. ComiQR sagt Ihnen, was Sie verdient haben: Es stellt den aus dem Rezept berechneten Wareneinsatz und Ihre Ausgaben dem Umsatz gegenüber. Sie sehen ohne Monatsabschluss, welcher Tag Geld gebracht hat.",
+      "points": ["Ausgabenverwaltung: Kategorie, MwSt. und Belegnummer", "Kontokorrent und Anschreiben — mit Limit und Zahlungsverfolgung", "Wareneinsatz aus dem Rezept und echte Marge", "Stündliche Auslastung: an welchem Tag und zu welcher Stunde es voll wird", "Mitarbeiterleistung, Freigaben/Stornos und Steueraufteilung", "CSV für die Buchhaltung mit einem Klick"]
+    }
+  },
+  "verticals": {
+    "badge": "Ein System, vier Bereiche",
+    "heading": "Was für ein Betrieb Sie auch sind",
+    "sub": "Wählen Sie bei der Anmeldung Ihre Art; das System richtet sich danach ein — Tische, Zimmer, Liegen oder Deckel.",
+    "items": {
+      "restaurant": { "title": "Restaurant & Café", "desc": "Tischbestellung, Abholung und Lieferung; Bedienung rufen und Rechnungsablauf." },
+      "hotel": { "title": "Hotel", "desc": "Zimmerservice und Buchung aufs Zimmerkonto; eine Rechnung beim Auschecken." },
+      "bar": { "title": "Bar & Pub", "desc": "Deckelführung, 18+-Kennzeichnung und automatischer Happy-Hour-Rabatt." },
+      "beach": { "title": "Beachclub", "desc": "Liegenservice und Buchung auf die Liege; Bestellung vom Strand." }
+    }
+  },
+  "more": {
+    "badge": "Auf der Karte & im Panel",
+    "heading": "Und mehr",
+    "items": [
+      { "title": "Detailansicht des Gerichts", "body": "Tippt der Gast auf eine Karte, sieht er großes Bild, Beschreibung, Allergene, Nährwerte und das Rezept mit „wie viel Gramm Fleisch“ auf einem Bildschirm." },
+      { "title": "Allergenfilter", "body": "Gäste filtern die Karte mit einem Tippen auf glutenfrei, laktosefrei oder allergenfrei." },
+      { "title": "Aktionen & Gutscheine", "body": "Zeitgesteuerte Aktionen, Rabattcodes und Sammelrabatte je Kategorie; Happy Hour greift an der Bar von selbst." },
+      { "title": "KI-Berater (Betrieb)", "body": "KI im Panel: Sie zeigt Zugpferde, Lücken in der Karte und eine Zusammenfassung der Gästebewertungen." },
+      { "title": "Mehrere Filialen", "body": "Führen Sie alle Filialen aus einem Panel; Karte, Tische und Berichte je Filiale getrennt." },
+      { "title": "Treue & Punkte", "body": "Gäste werden an der Telefonnummer erkannt, sammeln Punkte und lösen sie auf der Rechnung ein." },
+      { "title": "Bestand und 86er-Liste", "body": "Der Zutatenbestand wird über das Rezept abgezogen; die Küche nimmt ein ausverkauftes Gericht mit einem Tippen aus der Karte." },
+      { "title": "Viele Sprachen, Ihre Marke", "body": "Karte und Panel sind mehrsprachig; in höheren Tarifen mit Ihrer eigenen Farbe und Marke." }
+    ]
+  },
+  "pricing": {
+    "heading1": "Kostenlos starten.",
+    "heading2": "Wachsen, wenn Sie so weit sind.",
+    "sub": "{days} Tage testen, keine Provision, keine versteckten Kosten. Jederzeit upgraden.",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "saving": "{pct} % jährlich sparen",
+    "perMonth": "/Mon.",
+    "custom": "Individuell",
+    "yearlyNote": "{total} einmal im Jahr",
+    "popular": "Am beliebtesten",
+    "allFeatures": "Alle Funktionen",
+    "unlimited": "Unbegrenzt",
+    "plans": {
+      "free": {
+        "title": "Einstieg",
+        "desc": "Für kleine Betriebe, die auf eine digitale QR-Karte wechseln.",
+        "cta": "Kostenlos starten",
+        "items": ["QR-Karte + 3 Designs", "Öffnungszeiten, WLAN, Kontakt", "Kalorien & Allergene", "Mehrsprachige Karte"]
+      },
+      "pro": {
+        "title": "Pro",
+        "desc": "Für Betriebe, die Tischbestellung und Serviceablauf wollen.",
+        "cta": "{days} Tage gratis",
+        "items": ["Alles aus Einstieg", "Warenkorb, Tischbestellung & Küchenbildschirm", "Kellner-App, Rufe und Rechnungsanfragen", "Volle Nährwerte & KI-Kartenassistent", "Analytik und Kartenleistung", "Küchen- & Barbondruck"]
+      },
+      "business": {
+        "title": "Business",
+        "desc": "Für Hotels, Beachclubs und Betriebe mit mehreren Filialen.",
+        "cta": "{days} Tage gratis",
+        "items": ["Alles aus Pro", "Ausgaben, Kontokorrent & Gewinnbericht", "Hotelzimmer- und Strandliegen-Folio", "Mehrere Filialen, Treuepunkte & Gutscheine", "KI-Berater: Karteneinblicke"]
+      },
+      "enterprise": {
+        "title": "Enterprise",
+        "desc": "Für ein Markenerlebnis und bevorzugten Support.",
+        "cta": "Kontakt aufnehmen",
+        "items": ["Alles aus Business", "White-Label: Ihre eigene Marke", "Bevorzugter Support & SLA"]
+      }
+    },
+    "rows": {
+      "menu": "Digitale QR-Karte",
+      "nutrition_display": "Kalorien & Allergene",
+      "nutrition_full": "Volle Nährwerte",
+      "ordering": "Tischbestellung & Warenkorb",
+      "payments": "Online-Zahlung",
+      "kds": "Küchenbildschirm (KDS)",
+      "waiter_app": "Kellner-App",
+      "printing": "Küchen- & Bardruck",
+      "analytics": "Analytik",
+      "ai": "KI-Kartenassistent",
+      "ai_advanced": "KI-Berater (Betrieb)",
+      "loyalty": "Treuepunkte & Gutscheine",
+      "multi_branch": "Mehrere Filialen",
+      "folio": "Hotel-/Strand-Folio",
+      "happy_hour": "Happy Hour (Bar)",
+      "finance": "Ausgaben · Konten · Gewinn",
+      "pos_integration": "Integration (Webhook)",
+      "white_label": "White-Label",
+      "sla": "SLA & bevorzugter Support"
+    },
+    "limits": { "branches": "Filialen", "menu_items": "Kartenpositionen", "monthly_scans": "Kartenaufrufe im Monat" }
+  },
+  "faq": {
+    "heading": "Die Sorgen, die jeder Betrieb teilt.",
+    "sub": "So wird jede einzelne gelöst.",
+    "items": [
+      { "q": "Drucken Sie die Karte immer wieder neu?", "a": "Preis geändert, Gericht aus, Aktion gestartet — sobald Sie es im Panel ändern, ist es auf dem Telefon des Gastes aktuell. Kein Druck, kein Warten." },
+      { "q": "Können Touristen Ihre Karte nicht lesen?", "a": "Die Karte ist mehrsprachig. Gäste wählen ihre Sprache, und der KI-Assistent antwortet ebenfalls darin." },
+      { "q": "Beantwortet Ihr Personal täglich dieselben Fragen?", "a": "„Ist das glutenfrei? Wann schließen Sie?“ — der KI-Assistent kennt Zutaten, Allergene, Zeiten und Aktionen und antwortet Tag und Nacht." },
+      { "q": "Sind Bestellungen und Tische schwer zu überblicken?", "a": "Ob die Bestellung vom Telefon des Gastes, vom Kiosk oder von der Bedienung kommt — sie landet am selben Ort. Der Küchenbildschirm zeigt sie, die Kasse verwaltet sie, der Bon druckt an seiner Station." },
+      { "q": "Wissen Sie, wie Ihre Karte läuft?", "a": "Wie oft jedes Gericht angesehen wurde, wie viel es verkauft und wie viel Gewinn es gelassen hat — zusammen mit den Kosten aus dem Rezept." },
+      { "q": "Führen Sie mehrere Filialen?", "a": "Führen Sie alle aus einem Panel; Karte, Tische und Berichte je Filiale getrennt." },
+      { "q": "Wie lange dauert die Einrichtung?", "a": "Fotografieren Sie Ihre gedruckte Karte oder laden Sie ein PDF hoch; Kategorien, Gerichte, Preise und Allergene werden von der Seite gelesen und eingetragen. Sie haben {days} Tage gratis und starten ohne Karte." }
+    ]
+  },
+  "contact": {
+    "badge": "Kontakt",
+    "heading": "Sie können auch mit einem Gespräch anfangen",
+    "sub": "Wir haben Büros in drei Ländern. Rufen Sie das nächstgelegene an — wir richten Ihre Karte gemeinsam ein.",
+    "regions": { "cyprus": "Zypern", "turkey": "Türkei", "uk": "Vereinigtes Königreich" }
+  },
+  "stats": {
+    "businesses": "Betriebe nutzen es",
+    "languages": "Gästesprachen",
+    "verticals": "Betriebsarten",
+    "noApp": "ohne App",
+    "trial": "kostenlos testen",
+    "days": "Tage"
+  },
+  "finalCta": {
+    "heading": "Ihre erste Karte ist {days} Tage kostenlos.",
+    "phone": "Oder erreichen Sie uns:",
+    "sub": "Die Einrichtung dauert Minuten, und Ihre Gäste sehen den Unterschied beim ersten Scan."
+  },
+  "footer": {
+    "tagline": "Durchgängige Plattform für QR-Karte, Bestellung und Service — für Restaurants, Hotels, Bars und Beachclubs.",
+    "platform": "Plattform",
+    "start": "Loslegen",
+    "company": "Unternehmen",
+    "links": {
+      "features": "Funktionen",
+      "verticals": "Betriebsarten",
+      "pricing": "Preise",
+      "faq": "FAQ",
+      "contact": "Kontakt",
+      "register": "Kostenlos registrieren",
+      "login": "Anmelden",
+      "panel": "Panel",
+      "privacy": "Datenschutz",
+      "terms": "Bedingungen"
+    },
+    "copyright": "© 2026 ComiQR. Alle Rechte vorbehalten.",
+    "regions": "Zypern · Türkei · Vereinigtes Königreich"
+  },
+  "meta": {
+    "title": "ComiQR — QR-Karte, Tischbestellung und Restaurantführung",
+    "description": "Starten Sie mit einer digitalen QR-Karte; Tischbestellung, Küchenbildschirm, Personal-POS und Ausgaben-Gewinn-Bericht im selben Panel. Mehrsprachig, keine Einrichtungsgebühr, {days} Tage gratis."
+  }
+}
