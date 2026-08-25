@@ -6,33 +6,36 @@
 # sürekli çalışan bir Node süreci istiyor; paylaşımlı pakette cPanel'in
 # "Setup Node.js App" aracı yoksa oraya konulamazlar (bkz. docs/09).
 #
+# SSH YOK VARSAYIMI: bu hesapta kabuk erişimi kapalı, dolayısıyla burada
+# `composer install` ya da `php artisan` ÇALIŞTIRILMAZ. Görev listesi sadece
+# dosya kopyalar. Bir kereye mahsus işler (vendor yükleme, migrate, key)
+# docs/09'da anlatıldığı gibi cPanel Dosya Yöneticisi ve Cron ile yapılır.
+#
 # Yerleşim: uygulama ev dizininde, yalnız `public/` içeriği public_html'de.
 # Laravel'in kodu web kökünün DIŞINDA durmalı — .env ve storage aksi hâlde
 # tarayıcıdan indirilebilir hâle gelir.
 #
-# DEPLOYPATH ev dizininden okunur; cPanel kullanıcı adı degisirse dosya
-# duzenlenmek zorunda kalmasin diye. $HOME tanimsizsa bilinen yola duser.
+# DEPLOYPATH ev dizininden okunur; cPanel kullanıcı adı değişirse dosya
+# düzenlenmek zorunda kalmasın diye. $HOME tanımsızsa bilinen yola düşer.
 deployment:
   tasks:
     - export DEPLOYPATH=${HOME:-/home/comi3149}
     - export APPPATH=$DEPLOYPATH/comiqr
 
     # --- Uygulama kodu (web kökünün dışına) ---
+    # `cp` silmez: sunucuda duran `vendor/`, `.env` ve `storage/` içeriği
+    # dağıtımda korunur. Bunlar bilerek depoda yok.
     - /bin/mkdir -p $APPPATH
     - /bin/cp -R apps/api/. $APPPATH/
-    # .env deponun içinde değil; sunucuda bir kez elle oluşturulur ve
-    # dağıtımda korunur.
-
-    # --- Bağımlılıklar ve şema ---
-    - cd $APPPATH && /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction
-    - cd $APPPATH && /usr/local/bin/php artisan migrate --force
-    - cd $APPPATH && /usr/local/bin/php artisan config:cache
-    - cd $APPPATH && /usr/local/bin/php artisan route:cache
-    - cd $APPPATH && /usr/local/bin/php artisan storage:link || true
 
     # --- Web kökü: yalnız public/ ---
     - /bin/cp -R $APPPATH/public/. $DEPLOYPATH/public_html/
-    # public_html/index.php ev dizinindeki uygulamaya işaret etmeli;
-    # docs/09'daki iki satırlık düzeltme bir kez uygulanır ve burada
-    # ezilmemesi için index.php kopyalamanın ardından geri yazılır.
+    # Laravel'in kendi index.php'si uygulamayı bir üst klasörde arar; burada
+    # uygulama ev dizininde olduğu için giriş dosyası değiştirilmiş sürümle
+    # ezilir.
     - /bin/cp -f $APPPATH/deploy/public_html-index.php $DEPLOYPATH/public_html/index.php
+
+    # --- Önbelleği tazele ---
+    # Yapılandırma önbelleği eskiyse .env değişiklikleri görünmez. Dosyayı
+    # silmek yeterli; Laravel önbellek yoksa .env'i doğrudan okur.
+    - /bin/rm -f $APPPATH/bootstrap/cache/config.php $APPPATH/bootstrap/cache/routes-v7.php

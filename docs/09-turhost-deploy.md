@@ -59,26 +59,57 @@ ve `vendor/` tarayıcıdan indirilebilir.
     └── ...            ← public/ içeriği
 ```
 
+## SSH yoksa (Turhost paylaşımlı paketin durumu)
+
+Bu hesapta kabuk erişimi kapalı. İki sonucu var ve ikisinin de çözümü var:
+
+| Normalde | SSH yokken |
+|---|---|
+| `composer install` | Çalışmaz → `vendor/` **bir kez elle yüklenir** (ZIP) |
+| `php artisan migrate` | Çalışmaz → **tek seferlik cron** ile koşturulur |
+
+`.cpanel.yml` bu yüzden yalnızca dosya kopyalar; composer ve artisan çağırmaz.
+
+**Private depoyu SSH anahtarı olmadan klonlama.** cPanel HTTPS ile çekecek,
+yani adreste kimlik olmalı. GitHub'da **fine-grained personal access token**
+üretin: yalnız `comiqr` deposu, izin **Contents: Read-only**. Klon adresi:
+
+```
+https://x-access-token:<TOKEN>@github.com/<kullanıcı>/comiqr.git
+```
+
+⚠️ Token sunucuda `.git/config` içinde **düz metin** durur. Bu yüzden yalnız
+okuma yetkisi ve tek depo kapsamı verin; gerektiğinde GitHub'dan iptal edilir.
+
 ## Adımlar
 
-1. **Depoyu uzak sunucuya al.** cPanel Git bir uzak adresten çeker; önce projeyi
-   GitHub'a (private) push edin.
-2. **Private depo için dağıtım anahtarı.** cPanel HTTPS ile private bir depoyu
-   parolasız çekemez; SSH anahtarı gerekir:
-   - cPanel → **SSH Access → Manage SSH Keys** → anahtar üretin ve **Authorize** edin.
-   - Genel anahtarı kopyalayın (**View/Download**).
-   - GitHub → depo → **Settings → Deploy keys → Add deploy key** → yapıştırın.
-     *Write access işaretlemeyin* — dağıtım yalnız okur.
-3. **cPanel → Git Version Control → Create.** Değerler:
-   - **Clone URL:** `git@github.com:<kullanıcı>/comiqr.git`
+1. **Depoyu GitHub'a push edin** (private).
+2. **cPanel → Git Version Control → Create.** Değerler:
+   - **Clone URL:** yukarıdaki token'lı HTTPS adresi
    - **Repository Path:** `repositories/comiqr` (⚠️ `public_html` OLMAYACAK —
      dağıtım oraya `.cpanel.yml` ile kopyalar)
    - **Repository Name:** `ComiQR`
-4. **MySQL veritabanı ve kullanıcısı oluşturun** (cPanel → MySQL Databases).
-5. **`~/comiqr/.env` dosyasını oluşturun** — aşağıdaki asgari set.
-6. **Deploy HEAD Commit** deyin; `.cpanel.yml` composer + migrate + cache yapar.
-7. **Cron ekleyin** (cPanel → Cron Jobs, dakikada bir):
-   `cd ~/comiqr && php artisan schedule:run >/dev/null 2>&1`
+3. **MySQL veritabanı ve kullanıcısı oluşturun** (cPanel → MySQL Databases).
+4. **`vendor/` yükleyin (bir kez).** Yerelde üretim bağımlılıkları kurulup
+   ZIP'lenir, cPanel **Dosya Yöneticisi** ile `~/comiqr/` altına çıkarılır.
+   Composer bağımlılıkları değişmedikçe tekrar gerekmez.
+5. **`~/comiqr/.env` dosyasını oluşturun** (Dosya Yöneticisi) — aşağıdaki
+   asgari set. `APP_KEY` yerelde `php artisan key:generate --show` ile
+   üretilip yapıştırılır.
+6. **Deploy HEAD Commit** deyin — dosyalar yerine yerleşir.
+7. **Şemayı kurun (tek seferlik cron).** cPanel → Cron Jobs → dakikada bir:
+   ```
+   /usr/local/bin/php /home/<kullanıcı>/comiqr/artisan migrate --force >> /home/<kullanıcı>/migrate.log 2>&1
+   ```
+   Bir kez çalıştıktan sonra `migrate.log`'a bakıp **cron'u silin**.
+8. **Zamanlanmış görev cron'u** (kalıcı, dakikada bir):
+   ```
+   cd /home/<kullanıcı>/comiqr && /usr/local/bin/php artisan schedule:run >/dev/null 2>&1
+   ```
+
+**Not:** PHP CLI yolu barındırıcıya göre değişir (`/usr/local/bin/php`,
+`/opt/cpanel/ea-php83/root/usr/bin/php` gibi). cPanel Cron ekranı genelde
+doğru yolu örnekte gösterir.
 
 ## Asgari `.env`
 
