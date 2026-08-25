@@ -29,3 +29,45 @@ export const FAQS: [string, string][] = [
   ['Birden fazla şube mi yönetiyorsunuz?', 'Şubeleri tek panelden yönetin; menüyü, masaları ve raporları şubeye göre ayırın.'],
   ['Kurulum ne kadar sürüyor?', `Basılı menünüzün fotoğrafını çekin ya da PDF yükleyin; kategori, ürün, fiyat ve alerjenler sayfadan okunup doldurulur. ${TRIAL_DAYS} gün ücretsiz deneyebilir, kart vermeden başlayabilirsiniz.`],
 ];
+
+/**
+ * Bölge ofisleri. Her bölge kendi şirketi ve kendi iletişim kanalıyla çalışıyor;
+ * sayfada da böyle gösteriliyor. Birincil kanal Kıbrıs (ürünün merkezi).
+ */
+export type Office = {
+  region: string;
+  company?: string;
+  site?: string;
+  address: string[];
+  phone: string;
+  email: string;
+};
+
+export const OFFICES: Office[] = [
+  {
+    region: 'Kıbrıs',
+    address: ['Zafer Sokak No:1', 'Bellapais, Girne, Kıbrıs'],
+    phone: '+90 548 840 4000',
+    email: 'info@amesisdijital.com',
+  },
+  {
+    region: 'Türkiye',
+    site: 'www.maysila.com',
+    address: ['İstasyon Street, Hakim Çağlar Işık Cd.', 'Özen Plaza No:1 D.31 Merkez', 'Edirne, Türkiye'],
+    phone: '+90 541 392 77 05',
+    email: 'info@maysila.com',
+  },
+  {
+    region: 'İngiltere',
+    site: 'www.creafinity.co.uk',
+    address: ['71–75 Shelton Street', 'Covent Garden, WC2H 9JQ', 'London, UK'],
+    phone: '+44 789 911 86 74',
+    email: 'info@creafinity.co.uk',
+  },
+];
+
+/** Aramaya uygun biçim: yalnız rakam ve baştaki artı. */
+export const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
+
+/** Birincil kanal — hero/CTA'da tek numara gösterilecekse bu. */
+export const PRIMARY_OFFICE = OFFICES[0]!;

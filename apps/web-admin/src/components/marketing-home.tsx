@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { BrandLogo } from '@/components/BrandLogo';
 import { createApi } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
-import { CUSTOMER_URL, DEMOS, FAQS, TRIAL_DAYS, demoUrl } from '@/lib/marketing';
+import { CUSTOMER_URL, DEMOS, FAQS, OFFICES, PRIMARY_OFFICE, TRIAL_DAYS, demoUrl, telHref } from '@/lib/marketing';
 
 /* Orange brand scope — overrides the admin's indigo tokens for the public site only. */
 const ORANGE: CSSProperties = {
@@ -443,6 +443,7 @@ export default function MarketingHome() {
             <a href="#turler" className="text-sm font-semibold text-muted transition hover:text-ink">İşletme Türleri</a>
             <a href="#fiyatlar" className="text-sm font-semibold text-muted transition hover:text-ink">Fiyatlar</a>
             <a href="#sss" className="text-sm font-semibold text-muted transition hover:text-ink">S.S.S.</a>
+            <a href="#iletisim" className="text-sm font-semibold text-muted transition hover:text-ink">İletişim</a>
           </div>
           <div className="flex items-center gap-2.5">
             {!authed && <Link href="/login" className="hidden text-sm font-semibold text-muted transition hover:text-ink sm:block">Giriş</Link>}
@@ -457,7 +458,7 @@ export default function MarketingHome() {
         {menuOpen && (
           <div className="border-t border-line bg-canvas md:hidden">
             <div className="mx-auto flex max-w-6xl flex-col px-5 py-2">
-              {[['Özellikler', '#ozellikler'], ['İşletme Türleri', '#turler'], ['Fiyatlar', '#fiyatlar'], ['S.S.S.', '#sss']].map(([l, href]) => (
+              {[['Özellikler', '#ozellikler'], ['İşletme Türleri', '#turler'], ['Fiyatlar', '#fiyatlar'], ['S.S.S.', '#sss'], ['İletişim', '#iletisim']].map(([l, href]) => (
                 <a key={href} href={href} onClick={() => setMenuOpen(false)} className="border-b border-line/70 py-3 text-sm font-semibold text-ink last:border-0">{l}</a>
               ))}
               {!authed && <Link href="/login" onClick={() => setMenuOpen(false)} className="py-3 text-sm font-semibold text-brand-600">Giriş Yap →</Link>}
@@ -803,10 +804,47 @@ export default function MarketingHome() {
         ))}
       </div>
 
+      {/* İLETİŞİM — restoran sahibi çoğu zaman formu değil telefonu tercih eder. */}
+      <section id="iletisim" className="border-y border-line bg-surface">
+        <div className="mx-auto max-w-6xl px-5 py-20 lg:py-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-600">İletişim</span>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">Konuşarak da başlayabilirsiniz</h2>
+            <p className="mt-4 text-lg text-muted">Üç ülkede ofisimiz var. Size en yakın olanı arayın, menünüzü birlikte kuralım.</p>
+          </div>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {OFFICES.map((office) => (
+              <div key={office.region} className="rounded-2xl border border-line bg-canvas p-6">
+                <h3 className="text-base font-bold text-brand-600">{office.region}</h3>
+                {office.site && (
+                  <a href={`https://${office.site}`} target="_blank" rel="noopener noreferrer" className="mt-3 block text-[11px] font-semibold uppercase tracking-wide text-muted transition hover:text-brand-600">
+                    {office.site}
+                  </a>
+                )}
+                <address className="mt-3 not-italic text-sm leading-relaxed text-ink">
+                  {office.address.map((line) => (<span key={line} className="block">{line}</span>))}
+                </address>
+                <div className="mt-4 space-y-1.5 text-sm">
+                  <a href={telHref(office.phone)} className="block font-semibold text-ink transition hover:text-brand-600">{office.phone}</a>
+                  <a href={`mailto:${office.email}`} className="block text-muted transition hover:text-brand-600">{office.email}</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FINAL CTA */}
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <div className="relative overflow-hidden rounded-3xl px-6 py-16 text-center shadow-xl" style={{ background: 'radial-gradient(120% 140% at 50% -20%,#ea5b1a,#9e3a0c 72%)' }}>
           <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white text-balance sm:text-4xl">İlk menünüz {TRIAL_DAYS} gün ücretsiz.</h2>
+          <p className="mt-4 text-sm" style={{ color: '#ffffff', opacity: 0.9 }}>
+            Ya da bize ulaşın:{' '}
+            <a href={telHref(PRIMARY_OFFICE.phone)} className="font-bold underline" style={{ color: '#ffffff' }}>
+              {PRIMARY_OFFICE.phone}
+            </a>
+          </p>
           <p className="mx-auto mt-4 max-w-lg text-lg text-white/85">Kurulum dakikalar sürer, misafirleriniz farkı ilk taramada görür.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href={primaryHref} className="rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-brand-700 shadow-sm transition hover:bg-white/90">{authed ? 'Panele Git' : 'Ücretsiz Dene'}</Link>
@@ -840,7 +878,7 @@ export default function MarketingHome() {
           </div>
           <div className="mt-12 flex flex-wrap justify-between gap-3 border-t border-line pt-6 text-sm text-muted">
             <span>© 2026 ComiQR. Tüm hakları saklıdır.</span>
-            <span>Kıbrıs · Türkiye</span>
+            <span>Kıbrıs · Türkiye · İngiltere</span>
           </div>
         </div>
       </footer>
