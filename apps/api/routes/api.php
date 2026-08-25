@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\LandingController;
 use App\Http\Controllers\Api\SuperadminController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\WaiterController;
@@ -97,6 +98,10 @@ Route::get('plans', function () {
             'limits' => $p->limits_json,
         ])]);
 })->middleware('throttle:60,1');
+
+// --- Public landing content (süperadmin panelden yönetilir) ---
+// Yalnız üzerine yazılan alanlar döner; varsayılan metin sayfayı basan tarafta.
+Route::get('landing', [LandingController::class, 'show'])->middleware('throttle:120,1');
 
 // --- Public consumer discovery portal (M20) — central, tenant-less ---
 Route::get('discover', [DiscoveryController::class, 'index'])->middleware('throttle:120,1');
@@ -180,6 +185,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('tenants/{id}/subscription', [SuperadminController::class, 'startSubscription']);
         Route::get('audit-logs', [SuperadminController::class, 'auditLogs']);
         Route::get('menu-model-demos', [SuperadminController::class, 'menuModelDemos']);
+        Route::get('landing/{locale}', [LandingController::class, 'edit']);
+        Route::put('landing/{locale}', [LandingController::class, 'update']);
+        Route::post('landing-media', [LandingController::class, 'uploadMedia']);
+        Route::delete('landing-media/{slot}', [LandingController::class, 'deleteMedia']);
     });
 
     // Tenant-scoped: binds the active tenant from the signed-in user.

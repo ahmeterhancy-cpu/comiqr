@@ -9,6 +9,7 @@ import { createApi } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 import { CONTACT_EMAIL, CUSTOMER_URL, DEMOS, OFFICES, PRIMARY_OFFICE, TRIAL_DAYS, demoUrl, telHref } from '@/lib/marketing';
 import type { MarketingContent } from '@/lib/marketing';
+import type { LandingMedia } from '@/lib/landing-content';
 
 /* Orange brand scope — overrides the admin's indigo tokens for the public site only. */
 const ORANGE: CSSProperties = {
@@ -400,7 +401,7 @@ const MORE_ICONS = [
   'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.6 2.5 15 0 18M12 3c-2.5 2.6-2.5 15 0 18',
 ];
 
-export default function MarketingHome() {
+export default function MarketingHome({ media = {} }: { media?: LandingMedia }) {
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -510,7 +511,7 @@ export default function MarketingHome() {
           {/* Telefon mockup + QR rozeti */}
           <div className="relative flex justify-center">
             <PhoneMockup>
-              <LiveMenuScreen labels={M.mockup} />
+              <LiveMenuScreen labels={M.mockup} screenshot={media.heroPhone} />
             </PhoneMockup>
             <div className="absolute -bottom-4 -left-3 rounded-2xl border border-line bg-surface p-2.5 shadow-xl sm:-left-6">
               <QrGlyph />
@@ -892,7 +893,7 @@ const MENU_OFFSET = 210;
  * Gösterim amaçlı olduğu için tıklama geçirmez; ziyaretçi menüyü "Canlı Menüyü
  * Aç" ile kendi sekmesinde açar.
  */
-function LiveMenuScreen({ labels }: { labels: { add: string; cart: string } }) {
+function LiveMenuScreen({ labels, screenshot }: { labels: { add: string; cart: string }; screenshot?: string }) {
   const [mounted, setMounted] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
@@ -916,6 +917,20 @@ function LiveMenuScreen({ labels }: { labels: { add: string; cart: string } }) {
       clearTimeout(timer);
     };
   }, [mounted]);
+
+  /*
+   * Panelden bir ekran görüntüsü yüklendiyse onu göster: gerçek pikseller,
+   * çalışma zamanı maliyeti yok, müşteri uygulamasının ayakta olmasına bağlı
+   * değil. Canlı iframe yalnızca görsel yokken devreye girer.
+   */
+  if (screenshot) {
+    return (
+      <div className="relative bg-canvas" style={{ height: SCREEN_H }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={screenshot} alt="" className="h-full w-full object-cover object-top" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative bg-canvas" style={{ height: SCREEN_H }}>

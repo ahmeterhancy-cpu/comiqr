@@ -10,6 +10,7 @@ export const DEFAULT_LOCALE: AppLocale = 'tr';
 const TRANSLATED: AppLocale[] = ['tr', 'en', 'de', 'ru', 'ar'];
 
 import { MARKETING_LOCALES } from './locales';
+import { applyOverrides, fetchLandingPayload } from '../lib/landing-content';
 
 export { MARKETING_LOCALES, MARKETING_LOCALE_NAMES, RTL_LOCALES } from './locales';
 export type { MarketingLocale } from './locales';
@@ -22,11 +23,18 @@ export type { MarketingLocale } from './locales';
 export async function marketingMessages(locale: string) {
   const key = (MARKETING_LOCALES as readonly string[]).includes(locale) ? locale : 'tr';
 
+  let defaults: any;
   try {
-    return (await import(`../../messages/marketing/${key}.json`)).default;
+    defaults = (await import(`../../messages/marketing/${key}.json`)).default;
   } catch {
-    return (await import('../../messages/marketing/tr.json')).default;
+    defaults = (await import('../../messages/marketing/tr.json')).default;
   }
+
+  // Süperadminin panelden değiştirdiği alanlar dosyanın ÜZERİNE biner; API
+  // kapalıysa ya da hiç düzenleme yapılmadıysa dosya olduğu gibi yayınlanır.
+  const { content } = await fetchLandingPayload();
+
+  return applyOverrides(defaults, content[key]);
 }
 
 export default getRequestConfig(async () => {

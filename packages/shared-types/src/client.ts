@@ -718,6 +718,24 @@ export class ApiClient {
   superUpdatePlan(id: number, body: Record<string, unknown>): Promise<any> {
     return this.request(`/superadmin/plans/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
   }
+
+  // --- Superadmin: landing sayfası içeriği ve görselleri ---
+  // Saklanan şey tam metin değil, çeviri dosyasının ÜZERİNE yazılan alanlar.
+  superLanding(locale: string): Promise<{ locale: string; overrides: Record<string, string>; media: Record<string, string> }> {
+    return this.request(`/superadmin/landing/${locale}`);
+  }
+  superSaveLanding(locale: string, overrides: Record<string, string>): Promise<any> {
+    return this.request(`/superadmin/landing/${locale}`, { method: 'PUT', body: JSON.stringify({ overrides }) });
+  }
+  superUploadLandingMedia(slot: string, file: File): Promise<{ slot: string; url: string }> {
+    const form = new FormData();
+    form.append('slot', slot);
+    form.append('image', file);
+    return this.request('/superadmin/landing-media', { method: 'POST', body: form });
+  }
+  superDeleteLandingMedia(slot: string): Promise<any> {
+    return this.request(`/superadmin/landing-media/${slot}`, { method: 'DELETE' });
+  }
   superTenantDetail(id: number): Promise<any> {
     return this.request(`/superadmin/tenants/${id}`);
   }

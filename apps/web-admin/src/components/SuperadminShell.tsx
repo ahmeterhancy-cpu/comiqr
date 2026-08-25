@@ -50,6 +50,7 @@ const NAV: { group: string; items: { label: string; href: string; icon: IconName
     items: [
       { label: 'İşletmeler', href: '/superadmin/restaurants', icon: 'store' },
       { label: 'QR Menü Tasarımları', href: '/superadmin/menu-designs', icon: 'design', badge: 'Yeni' },
+      { label: 'Landing Sayfası', href: '/superadmin/landing', icon: 'design', badge: 'Yeni' },
       { label: 'Alerjenler', href: '/superadmin/allergens', icon: 'allergy', badge: 'Yeni' },
       { label: 'Üyelik / Planlar', href: '/superadmin/membership', icon: 'membership' },
       { label: 'İşlemler', href: '/superadmin/transactions', icon: 'transactions' },

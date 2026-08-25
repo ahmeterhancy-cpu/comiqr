@@ -5,6 +5,7 @@ import MarketingHome from '@/components/marketing-home';
 import { marketingMessages } from '@/i18n/request';
 import { RTL_LOCALES, type MarketingLocale } from '@/i18n/locales';
 import { PATH_LOCALES, faqSchema, marketingMetadata } from '@/lib/marketing-seo';
+import { fetchLandingPayload } from '@/lib/landing-content';
 
 /**
  * Dile göre adreslenen pazarlama sayfası: /en, /de, /ru, /ar, /bg, /el.
@@ -45,6 +46,7 @@ export default async function LocalisedMarketingPage({
   if (!isMarketingLocale(lang)) notFound();
 
   const messages = (await marketingMessages(lang)) as any;
+  const { media } = await fetchLandingPayload();
   const rtl = RTL_LOCALES.includes(lang);
 
   return (
@@ -55,7 +57,7 @@ export default async function LocalisedMarketingPage({
       />
       {/* Kök <html> yönü proxy başlığına dayanıyor; başlık düşerse burası yine doğru. */}
       <div dir={rtl ? 'rtl' : 'ltr'}>
-        <MarketingHome />
+        <MarketingHome media={media} />
       </div>
     </NextIntlClientProvider>
   );
