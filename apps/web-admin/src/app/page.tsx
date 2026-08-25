@@ -1,63 +1,36 @@
 import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
 import MarketingHome from '@/components/marketing-home';
-import { getMessages } from 'next-intl/server';
-import { TRIAL_DAYS } from '@/lib/marketing';
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://comiqr.com';
+import { marketingMessages } from '@/i18n/request';
+import { faqSchema, marketingMetadata } from '@/lib/marketing-seo';
 
 /**
- * Pazarlama sayfasının sunucu kabuğu.
+ * Pazarlama sayfasının Türkçe kökü (`/`).
  *
  * Görünüm istemci bileşeninde (durum, kaydırma, sekmeler) ama `metadata` ve
  * yapılandırılmış veri sunucuda üretilmek zorunda — Next istemci bileşeninden
- * metadata dışa aktarılmasına izin vermez. Bu ayrım olmadan sayfa, yönetim
- * panelinin İngilizce ve jenerik açıklamasını miras alıyordu.
+ * metadata dışa aktarılmasına izin vermez.
+ *
+ * Metin çerezden DEĞİL, sabit Türkçeden gelir. Bu adresin kanonik dili
+ * hreflang'da `tr` olarak ilan ediliyor; panel çerezine göre değişen bir gövde
+ * aynı URL'i ziyaretçiden ziyaretçiye başka dilde gösterip yinelenen içerik
+ * sinyali üretiyordu. Ziyaretçi dilini sayfadaki seçiciden `/en`, `/de` ...
+ * adresine geçerek değiştirir.
  */
-export async function generateMetadata(): Promise<Metadata> {
-  const M = ((await getMessages()) as any).marketing;
-  const title = M.meta.title;
-  const description = M.meta.description.replace('{days}', String(TRIAL_DAYS));
-
-  return {
-    metadataBase: new URL(SITE_URL),
-    title,
-    description,
-    alternates: { canonical: '/' },
-    openGraph: {
-      type: 'website',
-      url: '/',
-      siteName: 'ComiQR',
-      title,
-      description,
-      images: [{ url: '/comiqr-logo.png', alt: 'ComiQR' }],
-    },
-    twitter: { card: 'summary_large_image', title, description },
-  };
-}
-
-/** Arama sonucunda soru-cevap olarak görünebilmesi için FAQPage şeması. */
-function faqSchema(items: { q: string; a: string }[]) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: items.map(({ q, a }) => ({
-      '@type': 'Question',
-      name: q,
-      acceptedAnswer: { '@type': 'Answer', text: a },
-    })),
-  };
+export function generateMetadata(): Promise<Metadata> {
+  return marketingMetadata('tr');
 }
 
 export default async function Page() {
-  const M = ((await getMessages()) as any).marketing;
+  const messages = (await marketingMessages('tr')) as any;
 
   return (
-    <>
+    <NextIntlClientProvider locale="tr" messages={{ marketing: messages }}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(M.faq.items)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(messages.faq.items, 'tr')) }}
       />
       <MarketingHome />
-    </>
+    </NextIntlClientProvider>
   );
 }

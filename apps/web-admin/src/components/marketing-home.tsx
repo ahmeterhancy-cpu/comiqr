@@ -775,7 +775,8 @@ export default function MarketingHome() {
                   <span className="text-[15px] font-bold">{q}</span>
                   <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-brand-600 transition-transform ${open === i ? 'rotate-45' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
                 </button>
-                {open === i && <p className="px-5 pb-5 text-[15px] leading-relaxed text-muted">{a}</p>}
+                {/* Cevap {days} taşıyabilir; ham basılınca akordeon açılınca yer tutucu görünüyordu. */}
+                {open === i && <p className="px-5 pb-5 text-[15px] leading-relaxed text-muted">{a.replace('{days}', String(TRIAL_DAYS))}</p>}
               </div>
             ))}
           </div>

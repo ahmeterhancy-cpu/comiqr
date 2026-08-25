@@ -3,13 +3,8 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import MarketingHome from '@/components/marketing-home';
 import { marketingMessages } from '@/i18n/request';
-import { MARKETING_LOCALES, RTL_LOCALES, type MarketingLocale } from '@/i18n/locales';
-import { TRIAL_DAYS } from '@/lib/marketing';
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://comiqr.com';
-
-/** Türkçe kökte (/) yayınlanır; diğer diller kendi adresinde. */
-const PATH_LOCALES = MARKETING_LOCALES.filter((l) => l !== 'tr');
+import { RTL_LOCALES, type MarketingLocale } from '@/i18n/locales';
+import { PATH_LOCALES, faqSchema, marketingMetadata } from '@/lib/marketing-seo';
 
 /**
  * Dile göre adreslenen pazarlama sayfası: /en, /de, /ru, /ar, /bg, /el.
@@ -30,14 +25,6 @@ function isMarketingLocale(value: string): value is MarketingLocale {
   return (PATH_LOCALES as readonly string[]).includes(value);
 }
 
-/** Her dil için karşılıklı hreflang; Türkçe kök adresi x-default. */
-function alternates(current: string) {
-  const languages: Record<string, string> = { tr: '/', 'x-default': '/' };
-  for (const l of PATH_LOCALES) languages[l] = `/${l}`;
-
-  return { canonical: current === 'tr' ? '/' : `/${current}`, languages };
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -46,26 +33,7 @@ export async function generateMetadata({
   const { lang } = await params;
   if (!isMarketingLocale(lang)) return {};
 
-  const M = (await marketingMessages(lang)) as any;
-  const title = M.meta.title;
-  const description = M.meta.description.replace('{days}', String(TRIAL_DAYS));
-
-  return {
-    metadataBase: new URL(SITE_URL),
-    title,
-    description,
-    alternates: alternates(lang),
-    openGraph: {
-      type: 'website',
-      locale: lang,
-      url: `/${lang}`,
-      siteName: 'ComiQR',
-      title,
-      description,
-      images: [{ url: '/comiqr-logo.png', alt: 'ComiQR' }],
-    },
-    twitter: { card: 'summary_large_image', title, description },
-  };
+  return marketingMetadata(lang);
 }
 
 export default async function LocalisedMarketingPage({
@@ -76,12 +44,16 @@ export default async function LocalisedMarketingPage({
   const { lang } = await params;
   if (!isMarketingLocale(lang)) notFound();
 
-  const messages = await marketingMessages(lang);
+  const messages = (await marketingMessages(lang)) as any;
   const rtl = RTL_LOCALES.includes(lang);
 
   return (
     <NextIntlClientProvider locale={lang} messages={{ marketing: messages }}>
-      {/* Kök <html> paneli de kapsadığı için yön burada, sayfa sarmalında verilir. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema(messages.faq.items, lang)) }}
+      />
+      {/* Kök <html> yönü proxy başlığına dayanıyor; başlık düşerse burası yine doğru. */}
       <div dir={rtl ? 'rtl' : 'ltr'}>
         <MarketingHome />
       </div>
