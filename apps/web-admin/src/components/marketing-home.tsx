@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { BrandLogo } from '@/components/BrandLogo';
 import { createApi } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
-import { CUSTOMER_URL, DEMOS, FAQS, OFFICES, PRIMARY_OFFICE, TRIAL_DAYS, demoUrl, telHref } from '@/lib/marketing';
+import { CONTACT_EMAIL, CUSTOMER_URL, DEMOS, FAQS, OFFICES, PRIMARY_OFFICE, TRIAL_DAYS, demoUrl, telHref } from '@/lib/marketing';
 
 /* Orange brand scope — overrides the admin's indigo tokens for the public site only. */
 const ORANGE: CSSProperties = {
@@ -817,21 +817,22 @@ export default function MarketingHome() {
             {OFFICES.map((office) => (
               <div key={office.region} className="rounded-2xl border border-line bg-canvas p-6">
                 <h3 className="text-base font-bold text-brand-600">{office.region}</h3>
-                {office.site && (
-                  <a href={`https://${office.site}`} target="_blank" rel="noopener noreferrer" className="mt-3 block text-[11px] font-semibold uppercase tracking-wide text-muted transition hover:text-brand-600">
-                    {office.site}
-                  </a>
-                )}
                 <address className="mt-3 not-italic text-sm leading-relaxed text-ink">
                   {office.address.map((line) => (<span key={line} className="block">{line}</span>))}
                 </address>
-                <div className="mt-4 space-y-1.5 text-sm">
-                  <a href={telHref(office.phone)} className="block font-semibold text-ink transition hover:text-brand-600">{office.phone}</a>
-                  <a href={`mailto:${office.email}`} className="block text-muted transition hover:text-brand-600">{office.email}</a>
-                </div>
+                <a href={telHref(office.phone)} className="mt-4 block text-sm font-semibold text-ink transition hover:text-brand-600">
+                  {office.phone}
+                </a>
               </div>
             ))}
           </div>
+
+          <p className="mt-8 text-center text-sm text-muted">
+            Yazışma için tek adres:{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-ink transition hover:text-brand-600">
+              {CONTACT_EMAIL}
+            </a>
+          </p>
         </div>
       </section>
 

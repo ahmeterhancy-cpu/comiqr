@@ -1,5 +1,5 @@
 import { MarketingShell } from '@/components/MarketingShell';
-import { OFFICES, TRIAL_DAYS, telHref } from '@/lib/marketing';
+import { CONTACT_EMAIL, OFFICES, TRIAL_DAYS, telHref } from '@/lib/marketing';
 
 export const metadata = {
   title: 'İletişim — ComiQR',
@@ -21,16 +21,6 @@ export default function IletisimPage() {
           {OFFICES.map((office) => (
             <div key={office.region} className="rounded-2xl border border-line bg-surface p-6 shadow-sm">
               <h2 className="text-base font-bold text-brand-600">{office.region}</h2>
-              {office.site && (
-                <a
-                  href={`https://${office.site}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 block text-xs font-semibold uppercase tracking-wide text-muted transition hover:text-brand-600"
-                >
-                  {office.site}
-                </a>
-              )}
 
               <address className="mt-3 not-italic text-sm leading-relaxed text-ink">
                 {office.address.map((line) => (
@@ -40,17 +30,19 @@ export default function IletisimPage() {
                 ))}
               </address>
 
-              <div className="mt-4 space-y-1.5 text-sm">
-                <a href={telHref(office.phone)} className="block font-semibold text-ink transition hover:text-brand-600">
-                  {office.phone}
-                </a>
-                <a href={`mailto:${office.email}`} className="block text-muted transition hover:text-brand-600">
-                  {office.email}
-                </a>
-              </div>
+              <a href={telHref(office.phone)} className="mt-4 block text-sm font-semibold text-ink transition hover:text-brand-600">
+                {office.phone}
+              </a>
             </div>
           ))}
         </div>
+
+        <p className="mt-8 text-sm text-muted">
+          Yazışma için tek adres:{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-ink transition hover:text-brand-600">
+            {CONTACT_EMAIL}
+          </a>
+        </p>
 
         <div className="mt-10 rounded-2xl border border-line bg-brand-50/60 p-6">
           <h2 className="text-base font-bold">Demo mu istiyorsunuz?</h2>
