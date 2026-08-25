@@ -90,6 +90,12 @@ deployment:
     # --- Bagimliliklar ---
     # composer sunucuda kurulu degil; resmi phar bir kez indirilir ve
     # ~/composer.phar olarak saklanir. Sonraki dagitimlarda tekrar inmez.
+    # APP_URL bozuksa her artisan komutu "Invalid URI" ile duser. Gizli deger
+    # degil, gunluge yazilabilir. Yer tutucu kalmis mi hemen gorulsun.
+    - /bin/echo "-- app url --" >> $LOG
+    - (/bin/grep -E "^APP_URL=" $APPPATH/.env || /bin/echo "APP_URL satiri yok") >> $LOG 2>&1
+    - (/bin/grep -cE "<[a-z-]+>" $APPPATH/.env | /usr/bin/xargs -I{} /bin/echo "doldurulmamis yer tutucu sayisi {}") >> $LOG 2>&1
+
     - /bin/echo "-- composer kurulum --" >> $LOG
     # Once curl, olmazsa PHP. Ikisi de olmazsa NEDEN olmadigini yaz --
     # sessiz basarisizlik yuzunden bir tur kaybettik.
