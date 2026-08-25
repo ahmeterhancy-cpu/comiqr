@@ -48,6 +48,8 @@ deployment:
     - /bin/echo "-- composer --" >> $LOG
     - (command -v composer || /bin/echo "composer PATH disinda") >> $LOG 2>&1
     - (/usr/bin/test -f $DEPLOYPATH/composer.phar && /bin/echo "composer.phar var" || /bin/echo "composer.phar yok") >> $LOG 2>&1
+    - (/usr/bin/test -x /usr/local/bin/composer && /bin/echo "composer /usr/local/bin" || /bin/echo "yok /usr/local/bin/composer") >> $LOG 2>&1
+    - (/usr/bin/test -x /opt/cpanel/composer/bin/composer && /bin/echo "composer /opt/cpanel" || /bin/echo "yok /opt/cpanel/composer") >> $LOG 2>&1
     - /bin/echo "-- vendor --" >> $LOG
     - (/usr/bin/test -f $APPPATH/vendor/autoload.php && /bin/echo "vendor var" || /bin/echo "vendor yok") >> $LOG 2>&1
     - /bin/echo "-- env --" >> $LOG
@@ -74,4 +76,23 @@ deployment:
 
     # --- Eskimis yapilandirma onbellegi .env degisikliklerini gizler ---
     - /bin/rm -f $APPPATH/bootstrap/cache/config.php $APPPATH/bootstrap/cache/routes-v7.php >> $LOG 2>&1
+
+    # --- Bagimliliklar ---
+    # composer sunucuda kurulu degil; resmi phar bir kez indirilir ve
+    # ~/composer.phar olarak saklanir. Sonraki dagitimlarda tekrar inmez.
+    - /bin/echo "-- composer kurulum --" >> $LOG
+    - (/usr/bin/test -f $DEPLOYPATH/composer.phar || php -r "copy('https://getcomposer.org/composer.phar', '$DEPLOYPATH/composer.phar');") >> $LOG 2>&1
+    - (cd $APPPATH && php $DEPLOYPATH/composer.phar install --no-dev --optimize-autoloader --no-interaction --no-progress) >> $LOG 2>&1 || /bin/echo "composer install BASARISIZ" >> $LOG
+
+    # --- APP_KEY (yalnizca bos ise) ---
+    # Her dagitimda yeniden uretilirse oturumlar ve sifreli veriler bozulur;
+    # bu yuzden sadece .env'de APP_KEY bos birakilmissa doldurulur.
+    - /bin/echo "-- app key --" >> $LOG
+    - (/bin/grep -q "^APP_KEY=$" $APPPATH/.env && cd $APPPATH && php artisan key:generate --force && /bin/echo "APP_KEY uretildi" || /bin/echo "APP_KEY zaten dolu veya .env yok") >> $LOG 2>&1
+
+    # --- Sema ---
+    # .env yoksa migrate calistirilmaz; cPanel ilk hatada durdugu icin
+    # eksik .env tum dagitimi dusurmemeli.
+    - /bin/echo "-- migrate --" >> $LOG
+    - (/usr/bin/test -f $APPPATH/.env && cd $APPPATH && php artisan migrate --force) >> $LOG 2>&1 || /bin/echo "migrate atlandi veya basarisiz" >> $LOG
     - /bin/echo "-- bitti --" >> $LOG
